@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Band Book</title>
+
+	<style>
+		.sr-only {
+			opacity: 0;	border: 0 !important;
+			clip: rect(1px, 1px, 1px, 1px) !important;
+			-webkit-clip-path: inset(50%) !important;
+			clip-path: inset(50%) !important;
+			height: 1px !important;
+			overflow: hidden !important;
+			margin: -1px !important;
+			padding: 0 !important;
+			position: absolute !important;
+			width: 1px !important;
+			white-space: nowrap !important;
+		}
+	</style>
+	<script src="band-book.js"></script>
+</head>
+<body>
+	<h1 class="sr-only">Band Book - a sandbox of tools for ear musicians</h1>
+</body>
+
+<script>
+	const book = new BandBook()
+	book.init()
+</script>
+
+</html>
