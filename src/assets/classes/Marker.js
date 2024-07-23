@@ -13,6 +13,24 @@ export class Marker {
 	constructor(time, song) {
 		this.time = time
 		this.song = song
+
+		this.setTitle("")
+	}
+
+	/**
+	 * Sets the title of the marker
+	 * @param {string} title - A title for the marker
+	*/
+	setTitle(title) {
+		this.title = title
+	}
+
+	/**
+	 * Returns the title of the marker
+	 * @returns {string} - The title of the marker
+	*/
+	getTitle() {
+		return this.title
 	}
 
 	/**
@@ -21,5 +39,13 @@ export class Marker {
 	*/
 	getFormattedTime() {
 		return secondsToFormattedTime(this.time)
+	}
+
+	/**
+	 * Returns the time of the marker
+	 * @returns {number} - The time of the marker in seconds
+	*/
+	getTime() {
+		return this.time
 	}
 }

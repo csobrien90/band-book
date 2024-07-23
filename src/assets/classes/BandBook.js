@@ -7,10 +7,12 @@ export class BandBook {
 	/**
 	 * @constructor
 	 * @param {Array} songData - An array of song data objects
+	 * @param {HTMLElement} wrapperElement - An HTML element to render the workspace
 	 * @returns {BandBook} - A new BandBook instance
 	*/
-	constructor(songData = []) {
+	constructor(songData = [], wrapperElement) {
 		this.songData = songData
+		this.wrapper = wrapperElement
 		this.init()
 	}
 
@@ -21,9 +23,11 @@ export class BandBook {
     init() {
 		// Create an array of Song instances from the song data
         this.songs = this.songData.map(song => {
-			const { slug, src } = song
-			return new Song(slug, src)
+			return new Song(song)
 		})
+
+		// Render the song navigation
+		this.renderSongNavigation()
     }
 
 	/**
@@ -43,5 +47,33 @@ export class BandBook {
 	*/
 	getSongBySlug(slug) {
 		return this.songs.find(song => song.slug === slug)
+	}
+
+	/**
+	 * Renders the song navigation
+	 * @returns {void}
+	*/
+	renderSongNavigation() {
+		const navigation = document.createElement('nav')
+		navigation.classList.add('song-navigation')
+
+		this.songs.forEach(song => {
+			const button = document.createElement('button')
+			button.textContent = song.title
+			button.addEventListener('click', () => this.setWorkspace(song))
+			navigation.appendChild(button)
+		})
+
+		this.wrapper.parentElement.insertBefore(navigation, this.wrapper)
+	}
+
+	/**
+	 * Sets the workspace
+	 * @param {Song} song - A Song instance
+	 * @returns {void}
+	*/
+	setWorkspace(song) {
+		this.wrapper.innerHTML = ''
+		if (song) this.wrapper.appendChild(song.getWorkspace())
 	}
 }

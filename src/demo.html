@@ -26,30 +26,32 @@
 			gap: 1rem;
 			justify-content: center;
 		}
+
+		ul {
+			display: grid;
+			gap: .5rem;
+			padding: 0;
+			margin: 0;
+			list-style: none;
+		}
+
+		li {
+			display: grid;
+			grid-template-columns: 1fr 2fr;
+			gap: 1rem;
+		}
 	</style>
 	<script type="module" src="index.js"></script>
 </head>
 <body>
 	<h1 class="sr-only">Band Book - a sandbox of tools for ear musicians</h1>
+	<main></main>
 </body>
 
 <script type="module">
 	import { BandBook } from './index.js'
-
-	const data = [
-		{
-			slug: "elemental-warp",
-			title: "Elemental Warp",
-			composer: "Chad O'Brien",
-			src: "/src/assets/test-media/elemental-warp.wav",
-		}
-	]
-
-	const book = new BandBook(data)
-
-	const song = book.getSongBySlug('elemental-warp')
-	const songEl = song.getWorkspace()
-	document.querySelector('h1').after(songEl)
+	import data from './test-data.js'
+	const book = new BandBook(data, document.querySelector('main'))
 </script>
 
 </html>

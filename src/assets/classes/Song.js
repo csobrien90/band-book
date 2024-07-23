@@ -6,13 +6,17 @@ import { Marker } from './Marker.js'
 export class Song {
 	/**
 	 * @constructor
-	 * @param {string} slug - A song slug
-	 * @param {string} src - A URL to the song audio file
+	 * @param {string} slug - The song slug
+	 * @param {string} src - The URL to the song audio file
+	 * @param {string} title - The title for the song
+	 * @param {string} composer - The composer for the song
 	 * @returns {Song} - A new Song instance
 	*/
-	constructor(slug, src) {
+	constructor({slug, src, title, composer}) {
 		this.slug = slug
 		this.src = src
+		this.title = title
+		this.composer = composer
 		this.markers = []
 	}
 
@@ -84,13 +88,26 @@ export class Song {
 			return a.time - b.time
 		}).forEach(marker => {
 			const item = document.createElement('li')
+
+			// Create a button for each marker to skip to that time
 			const button = document.createElement('button')
 			button.textContent = marker.getFormattedTime()
 			button.addEventListener('click', () => {
 				this.getAudioElement().currentTime = marker.time
 				this.getAudioElement().play()
 			})
+
+			// Create an input for each marker to set the title
+			const input = document.createElement('input')
+			input.type = 'text'
+			input.value = marker.getTitle()
+			input.addEventListener('input', () => {
+				marker.setTitle(input.value)
+			})
+
+			// Append all elements to the list
 			item.appendChild(button)
+			item.appendChild(input)
 			list.appendChild(item)
 		})
 		return list
