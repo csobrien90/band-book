@@ -12,9 +12,10 @@ export class Song {
 	 * @param {string} composer - The composer for the song
 	 * @param {Array} markers - An array of markers for the song
 	 * @param {Function} update - A function to sync the BandBook instance
+	 * @param {Function} remove - A function to remove the song from the BandBook instance
 	 * @returns {Song} - A new Song instance
 	*/
-	constructor({slug, src, title, composer, markers = []}, update) {
+	constructor({slug, src, title, composer, markers = []}, update, remove) {
 		this.slug = slug
 		this.src = src
 		this.title = title
@@ -22,6 +23,7 @@ export class Song {
 		this.markerData = markers
 
 		this.update = update
+		this.remove = remove
 		this.init()
 	}
 
@@ -35,6 +37,19 @@ export class Song {
 		})
 
 		this.renderMarkersList()
+	}
+
+	/**
+	 * Returns a delete song button
+	 */
+	getDeleteSongButton() {
+		const button = document.createElement('button')
+		button.textContent = 'Delete Song'
+		button.addEventListener('click', () => {
+			this.remove()
+			this.update()
+		})
+		return button
 	}
 
 	/**
@@ -161,6 +176,7 @@ export class Song {
 	getWorkspace() {
 		const workspace = document.createElement('section')
 		workspace.classList.add('workspace')
+		workspace.appendChild(this.getDeleteSongButton())
 		workspace.appendChild(this.getAudioElement())
 		workspace.appendChild(this.getAddMarkerButton())
 		workspace.appendChild(this.renderMarkersList())

@@ -25,7 +25,7 @@ export class BandBook {
     init() {		
 		// Create an array of Song instances from the song data
         this.songs = this.songData.map(song => {
-			return new Song(song, () => this.sync())
+			return new Song(song, () => this.sync(), () => this.removeSong(song))
 		})
 
 		// Render the song navigation
@@ -39,6 +39,17 @@ export class BandBook {
 	*/
 	addSong(song) {
 		this.songs.push(song)
+	}
+
+	/**
+	 * Removes a song from the BandBook instance
+	 * @param {Song} song - A Song instance
+	 */
+	removeSong(song) {
+		this.songs = this.songs.filter(s => s.title !== song.title)
+		this.renderSongNavigation()
+		this.setWorkspace()
+		this.sync()
 	}
 
 	/**
@@ -88,7 +99,6 @@ export class BandBook {
 	 * Sync the BandBook instance with indexedDB
 	 */
 	sync() {
-		if (!this.songs || !this.songs.length) return
 		const data = this.songs.map(song => song.getData())
 		const request = indexedDB.open('bandbook', 1)
 
@@ -137,7 +147,6 @@ export class BandBook {
 				if (!this.id) this.id = this.createId
 				store.add({ id: this.id, data: JSON.stringify(data) })
 			}
-
 		}
 	}
 
@@ -177,19 +186,21 @@ export class BandBook {
 				const all = store.getAll()
 	
 				all.onsuccess = (e) => {
+					let data
 					try {
-						const data = JSON.parse(e.target.result[0]?.data)
-						if (data) {
-							this.songData = data
-							this.id = e.target.result[0]?.id
-						} else {
-							// If there is no ID, make one
-							if (!this.id) this.id = this.createId
-						}
-						this.init()
+						data = JSON.parse(e.target.result[0]?.data)
 					} catch (e) {
-						console.error('Error parsing data', e)
+						data = null
 					}
+
+					if (data) {
+						this.songData = data
+						this.id = e.target.result[0]?.id
+					} else {
+						// If there is no ID, make one
+						if (!this.id) this.id = this.createId
+					}
+					this.init()
 				}
 				
 				all.onerror = (e) => {
@@ -230,7 +241,7 @@ export class BandBook {
 					composer: 'Unknown'
 				}
 
-				const song = new Song(songData, () => this.sync())
+				const song = new Song(songData, () => this.sync(), () => this.removeSong(song))
 				this.addSong(song)
 				this.renderSongNavigation()
 				this.sync()
