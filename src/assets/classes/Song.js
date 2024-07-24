@@ -123,7 +123,17 @@ export class Song {
 				marker.setTitle(input.value)
 			})
 
+			// Create a delete button for each marker
+			const deleteButton = document.createElement('button')
+			deleteButton.textContent = 'Delete'
+			deleteButton.addEventListener('click', () => {
+				this.markers = this.markers.filter(m => m !== marker)
+				this.renderMarkersList()
+				this.update()
+			})
+
 			// Append all elements to the list
+			item.appendChild(deleteButton)
 			item.appendChild(button)
 			item.appendChild(input)
 			list.appendChild(item)
