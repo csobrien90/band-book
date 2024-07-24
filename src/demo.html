@@ -51,7 +51,10 @@
 <script type="module">
 	import { BandBook } from './index.js'
 	import data from './test-data.js'
-	const book = new BandBook(data, document.querySelector('main'))
+
+	const storedData = localStorage.getItem('bandbook')
+	const initialData = storedData ? JSON.parse(storedData) : data
+	const book = new BandBook(initialData, document.querySelector('main'))
 </script>
 
 </html>

@@ -11,6 +11,7 @@ export class BandBook {
 	 * @returns {BandBook} - A new BandBook instance
 	*/
 	constructor(songData = [], wrapperElement) {
+		if (songData.length === 0) songData = JSON.parse(localStorage.getItem('bandbook')) || []
 		this.songData = songData
 		this.wrapper = wrapperElement
 		this.init()
@@ -23,7 +24,7 @@ export class BandBook {
     init() {
 		// Create an array of Song instances from the song data
         this.songs = this.songData.map(song => {
-			return new Song(song)
+			return new Song(song, () => this.sync())
 		})
 
 		// Render the song navigation
@@ -75,5 +76,25 @@ export class BandBook {
 	setWorkspace(song) {
 		this.wrapper.innerHTML = ''
 		if (song) this.wrapper.appendChild(song.getWorkspace())
+	}
+
+	/**
+	 * Sync the BandBook instance with localStorage
+	 */
+	sync() {
+		if (!this.songs || !this.songs.length) return
+		const data = this.songs.map(song => song.getData())
+		localStorage.setItem('bandbook', JSON.stringify(data))
+	}
+
+	/**
+	 * Load the BandBook instance from localStorage
+	 */
+	load() {
+		const data = JSON.parse(localStorage.getItem('bandbook'))
+		if (data) {
+			this.songData = data
+			this.init()
+		}
 	}
 }

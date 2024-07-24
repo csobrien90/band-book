@@ -8,13 +8,14 @@ export class Marker {
 	 * @constructor
 	 * @param {number} time - A time in seconds
 	 * @param {Song} song - A Song instance
+	 * @param {string} title - A title for the marker
 	 * @returns {Marker} - A new Marker instance
 	*/
-	constructor(time, song) {
+	constructor(time, song, title = "") {
 		this.time = time
 		this.song = song
 
-		this.setTitle("")
+		this.setTitle(title)
 	}
 
 	/**
@@ -23,6 +24,7 @@ export class Marker {
 	*/
 	setTitle(title) {
 		this.title = title
+		if (this.title.length > 0) this.song.update()
 	}
 
 	/**

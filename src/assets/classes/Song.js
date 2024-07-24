@@ -10,14 +10,31 @@ export class Song {
 	 * @param {string} src - The URL to the song audio file
 	 * @param {string} title - The title for the song
 	 * @param {string} composer - The composer for the song
+	 * @param {Array} markers - An array of markers for the song
+	 * @param {Function} update - A function to sync the BandBook instance
 	 * @returns {Song} - A new Song instance
 	*/
-	constructor({slug, src, title, composer}) {
+	constructor({slug, src, title, composer, markers = []}, update) {
 		this.slug = slug
 		this.src = src
 		this.title = title
 		this.composer = composer
-		this.markers = []
+		this.markerData = markers
+
+		this.update = update
+		this.init()
+	}
+
+	/**
+	 * Initializes the Song instance
+	 * @returns {void}
+	*/
+	init() {
+		this.markers = this.markerData.map(marker => {
+			return new Marker(marker.time, this, marker.title)
+		})
+
+		this.renderMarkersList()
 	}
 
 	/**
@@ -55,6 +72,7 @@ export class Song {
 	createMarker() {
 		this.markers.push(new Marker(this.getCurrentTime(), this))
 		this.renderMarkersList()
+		this.update()
 	}
 
 	/**
@@ -137,5 +155,23 @@ export class Song {
 		workspace.appendChild(this.getAddMarkerButton())
 		workspace.appendChild(this.renderMarkersList())
 		return workspace
+	}
+
+	/**
+	 * Get song data for serialization
+	 */
+	getData() {
+		return {
+			slug: this.slug,
+			src: this.src,
+			title: this.title,
+			composer: this.composer,
+			markers: this.markers.map(marker => {
+				return {
+					time: marker.getTime(),
+					title: marker.getTitle()
+				}
+			})
+		}
 	}
 }
