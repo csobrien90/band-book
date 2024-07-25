@@ -1,5 +1,6 @@
 import { Song } from './Song.js'
 import { Workspace } from './Workspace.js'
+import { SyncManager } from './SyncManager.js'
 
 /**
  * Represents a collection of songs
@@ -13,9 +14,10 @@ export class BandBook {
 	constructor(wrapperElement) {
 		this.wrapper = wrapperElement
 		this.workspace = new Workspace(wrapperElement)
+		this.syncManager = new SyncManager(this)
 		this.navElement = null
 		this.songData = []
-		this.load()
+		this.syncManager.load()
 		
 		this.init()
 	}
@@ -27,7 +29,7 @@ export class BandBook {
     init() {		
 		// Create an array of Song instances from the song data
         this.songs = this.songData.map(song => {
-			return new Song(song, () => this.sync(), () => this.removeSong(song))
+			return new Song(song, () => this.syncManager.sync(), () => this.removeSong(song))
 		})
 
 		// Render the song navigation
@@ -51,7 +53,7 @@ export class BandBook {
 		this.songs = this.songs.filter(s => s.title !== song.title)
 		this.renderSongNavigation()
 		this.workspace.reset()
-		this.sync()
+		this.syncManager.sync()
 	}
 
 	/**
@@ -88,121 +90,6 @@ export class BandBook {
 	}
 
 	/**
-	 * Sync the BandBook instance with indexedDB
-	 */
-	sync() {
-		const data = this.songs.map(song => song.getData())
-		const request = indexedDB.open('bandbook', 1)
-
-		request.onupgradeneeded = (e) => {
-			const db = e.target.result
-			const store = db.createObjectStore('books', { keyPath: 'id' })
-			store.createIndex('id', 'id', { unique: true })
-		}
-
-		request.onerror = (e) => {
-			console.error('Error opening indexedDB', e)
-		}
-
-		request.onsuccess = (e) => {
-			const db = e.target.result
-			const transaction = db.transaction(['books'], 'readwrite')
-			const store = transaction.objectStore('books')
-
-			// If the data is empty, delete the record
-			if (!data.length) {
-				const request = store.delete(this.id)
-				request.onsuccess = () => {
-					// console.log('Data deleted successfully')
-				}
-				request.onerror = (e) => {
-					console.error('Error deleting data', e)
-				}
-
-				return
-			}
-
-			if (this.id) {
-				// Otherwise, update the record
-				const existing = store.get(this.id)
-				existing.onsuccess = () => {
-					const record = existing.result
-					if (record) {
-						record.data = JSON.stringify(data)
-						store.put(record)
-					} else {
-						store.add({ id: this.id, data: JSON.stringify(data) })
-					}
-				}
-			} else {
-				// If there is no ID, make one
-				if (!this.id) this.id = this.createId
-				store.add({ id: this.id, data: JSON.stringify(data) })
-			}
-		}
-	}
-
-	/**
-	 * Load the BandBook instance from indexedDB
-	 */
-	load() {
-		const request = indexedDB.open('bandbook', 1)
-
-		request.onupgradeneeded = (e) => {
-			const db = e.target.result
-			const store = db.createObjectStore('books', { keyPath: 'id' })
-			store.createIndex('id', 'id', { unique: true })
-		}
-
-		request.onerror = (e) => {
-			console.error('Error opening indexedDB', e)
-		}
-
-		request.onsuccess = async (e) => {
-			const db = e.target.result
-			const transaction = db.transaction(['books'], 'readwrite')
-			const store = transaction.objectStore('books')
-
-
-			if (this?.id) {
-				const existing = store.get(this.id)
-				existing.onsuccess = (e) => {
-					const record = e.target.result
-					if (record) {
-						const data = JSON.parse(record.data)
-						if (data) this.songData = data
-						this.init()
-					}
-				}
-			} else {
-				const all = store.getAll()
-	
-				all.onsuccess = (e) => {
-					let data
-					try {
-						data = JSON.parse(e.target.result[0]?.data)
-					} catch (e) {
-						data = null
-					}
-
-					if (data) {
-						this.songData = data
-						this.id = e.target.result[0]?.id
-					} else {
-						// If there is no ID, make one
-						if (!this.id) this.id = this.createId
-					}
-					this.init()
-				}
-				
-				all.onerror = (e) => {
-					console.error('Error loading data', e)
-				}
-			}
-		}
-	}
-
-	/**
 	 * Returns the add song button
 	 * @returns {HTMLButtonElement} - A button element
 	*/
@@ -233,10 +120,10 @@ export class BandBook {
 					composer: 'Unknown'
 				}
 
-				const song = new Song(songData, () => this.sync(), () => this.removeSong(song))
+				const song = new Song(songData, () => this.syncManager.sync(), () => this.removeSong(song))
 				this.addSong(song)
 				this.renderSongNavigation()
-				this.sync()
+				this.syncManager.sync()
 			}
 			reader.readAsDataURL(e.target.files[0])
 		})
