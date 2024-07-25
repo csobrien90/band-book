@@ -83,6 +83,8 @@ export class BandBook {
 		})
 
 		navigation.appendChild(this.getAddSongButton())
+		navigation.appendChild(this.getImportButton())
+		navigation.appendChild(this.getExportButton())
 
 		this.navElement = navigation
 
@@ -129,6 +131,48 @@ export class BandBook {
 		})
 
 		return upload
+	}
+
+	/**
+	 * Returns the import button
+	 * @returns {HTMLButtonElement} - A button element
+	*/
+	getImportButton() {
+		const button = document.createElement('button')
+		button.textContent = 'Import'
+		button.classList.add('btn')
+		button.addEventListener('click', () => {
+			const data = prompt('Paste the exported data here:')
+			if (data) {
+				const importedData = JSON.parse(data)
+				this.songData = importedData
+				this.init()
+				this.syncManager.sync()
+			}
+		})
+		return button
+	}
+
+	/**
+	 * Returns the export button
+	 * @returns {HTMLButtonElement} - A button element
+	*/
+	getExportButton() {
+		const button = document.createElement('button')
+		button.textContent = 'Export'
+		button.classList.add('btn')
+		button.addEventListener('click', () => {
+			const data = JSON.stringify(this.songData)
+			const blob = new Blob([data], { type: 'application/json' })
+			const url = URL.createObjectURL(blob)
+			const a = document.createElement('a')
+			a.href = url
+			a.download = 'bandbook.json'
+			document.body.appendChild(a)
+			a.click()
+			a.remove()
+		})
+		return button
 	}
 
 	/**
