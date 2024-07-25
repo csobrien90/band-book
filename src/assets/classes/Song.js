@@ -1,4 +1,5 @@
 import { Marker } from './Marker.js'
+import { MarkerList } from './MarkerList.js'
 
 /**
  * Represents a song
@@ -15,17 +16,14 @@ export class Song {
 	 * @param {Function} remove - A function to remove the song from the BandBook instance
 	 * @returns {Song} - A new Song instance
 	*/
-	constructor({slug, src, title, composer, markers = []}, update, remove) {
+	constructor({slug, src, title, composer, markers = []}, bandbook) {
 		// Assign properties
 		this.slug = slug
 		this.src = src
 		this.title = title
 		this.composer = composer
 		this.markerData = markers
-
-		// Assign methods
-		this.update = update
-		this.remove = remove
+		this.bandbook = bandbook
 
 		// Initialize the Song instance
 		this.init()
@@ -36,11 +34,48 @@ export class Song {
 	 * @returns {void}
 	*/
 	init() {
-		this.markers = this.markerData.map(marker => {
-			return new Marker(marker.time, this, marker.title)
+		this.markerList = new MarkerList()
+		this.markerList.song = this
+		this.markerData.forEach(marker => {
+			this.markerList.addMarker(new Marker(marker.time, this, marker.title))
 		})
+	}
 
-		this.renderMarkersList()
+	/**
+	 * Returns a title element for the song
+	 * @returns {HTMLHeadingElement} - A heading element
+	*/
+	getTitleElement() {
+		const titleElement = document.createElement('h2')
+		titleElement.textContent = this.title
+		titleElement.appendChild(this.getEditTitleButton())
+		return titleElement
+	}
+
+	/**
+	 * Returns an edit title button
+	 * @returns {HTMLButtonElement} - A button element
+	*/
+	getEditTitleButton() {
+		const button = document.createElement('button')
+		button.textContent = 'Edit Title'
+		button.addEventListener('click', () => {
+			const newTitle = prompt('Enter a new title:', this.title)
+			if (newTitle) {
+				this.setTitle(newTitle)
+				this.bandbook.syncManager.sync()
+				this.bandbook.refresh()
+				this.bandbook.workspace.setSongWorkspace(this)
+			}
+		})
+		return button
+	}
+
+	/**
+	 * Sets the title of the song
+	*/
+	setTitle(title) {
+		this.title = title
 	}
 
 	/**
@@ -50,8 +85,8 @@ export class Song {
 		const button = document.createElement('button')
 		button.textContent = 'Delete Song'
 		button.addEventListener('click', () => {
-			this.remove()
-			this.update()
+			this.bandbook.removeSong(this)
+			this.bandbook.syncManager.sync()
 		})
 		return button
 	}
@@ -74,103 +109,11 @@ export class Song {
 	}
 
 	/**
-	 * Returns a button to add a marker to the song
-	 * @returns {HTMLButtonElement} - A button element
-	*/
-	getAddMarkerButton() {
-		const button = document.createElement('button')
-		button.textContent = 'Add Marker'
-		button.addEventListener('click', this.createMarker.bind(this))
-		return button
-	}
-
-	/**
-	 * Creates a marker for the song
-	 * @returns {void}
-	*/
-	createMarker() {
-		this.markers.push(new Marker(this.getCurrentTime(), this))
-		this.renderMarkersList()
-		this.update()
-	}
-
-	/**
 	 * Returns the current time of the song
 	 * @returns {number} - The current time of the song
 	*/
 	getCurrentTime() {
 		return this.getAudioElement().currentTime
-	}
-
-	/**
-	 * Renders a list of markers for the song
-	 * @returns {HTMLDivElement} - A div element containing a list of markers
-	*/
-	renderMarkersList() {
-		this.setOrResetMarkersListWrapper()
-		const list = this.createMarkersList()
-		this.markersListWrapper.appendChild(list)
-		return this.markersListWrapper
-	}
-
-	/**
-	 * Creates a list of markers for the song
-	 * @returns {HTMLUListElement} - A list element containing marker items
-	 * Note: markers are sorted by time and, when clicked, skip to that time
-	*/
-	createMarkersList() {
-		const list = document.createElement('ul')
-		list.classList.add('markers-list')
-		this.markers.sort((a,b) => {
-			return a.time - b.time
-		}).forEach(marker => {
-			const item = document.createElement('li')
-
-			// Create a button for each marker to skip to that time
-			const button = document.createElement('button')
-			button.textContent = marker.getFormattedTime()
-			button.addEventListener('click', () => {
-				this.getAudioElement().currentTime = marker.time
-				this.getAudioElement().play()
-			})
-
-			// Create an input for each marker to set the title
-			const input = document.createElement('input')
-			input.type = 'text'
-			input.value = marker.getTitle()
-			input.addEventListener('input', () => {
-				marker.setTitle(input.value)
-			})
-
-			// Create a delete button for each marker
-			const deleteButton = document.createElement('button')
-			deleteButton.textContent = 'Delete'
-			deleteButton.addEventListener('click', () => {
-				this.markers = this.markers.filter(m => m !== marker)
-				this.renderMarkersList()
-				this.update()
-			})
-
-			// Append all elements to the list
-			item.appendChild(deleteButton)
-			item.appendChild(button)
-			item.appendChild(input)
-			list.appendChild(item)
-		})
-		return list
-	}
-
-	/**
-	 * Sets or resets the markers list wrapper
-	 * @returns {void}
-	*/
-	setOrResetMarkersListWrapper() {
-		if (this.markersListWrapper) {
-			this.markersListWrapper.innerHTML = ''
-		} else {
-			this.markersListWrapper = document.createElement('div')
-			this.markersListWrapper.classList.add('markers-list-wrapper')
-		}
 	}
 
 	/**
@@ -182,10 +125,10 @@ export class Song {
 			src: this.src,
 			title: this.title,
 			composer: this.composer,
-			markers: this.markers.map(marker => {
+			markers: this.markerList.markers.map(marker => {
 				return {
-					time: marker.getTime(),
-					title: marker.getTitle()
+					time: marker.time,
+					title: marker.title
 				}
 			})
 		}

@@ -29,7 +29,7 @@ export class BandBook {
     init() {		
 		// Create an array of Song instances from the song data
         this.songs = this.songData.map(song => {
-			return new Song(song, () => this.syncManager.sync(), () => this.removeSong(song))
+			return new Song(song, this)
 		})
 
 		// Render the song navigation
@@ -43,7 +43,7 @@ export class BandBook {
 	*/
 	addSong(song) {
 		this.songs.push(song)
-	}
+	}	
 
 	/**
 	 * Removes a song from the BandBook instance
@@ -120,7 +120,7 @@ export class BandBook {
 					composer: 'Unknown'
 				}
 
-				const song = new Song(songData, () => this.syncManager.sync(), () => this.removeSong(song))
+				const song = new Song(songData, this)
 				this.addSong(song)
 				this.renderSongNavigation()
 				this.syncManager.sync()
@@ -137,5 +137,13 @@ export class BandBook {
 	*/
 	get createId() {
 		return crypto.randomUUID()
+	}
+
+	/**
+	 * Refreshes the DOM
+	*/
+	refresh(activeSong = null) {
+		this.renderSongNavigation()
+		if (activeSong) this.workspace.setSongWorkspace(activeSong)
 	}
 }
