@@ -16,14 +16,18 @@ export class Song {
 	 * @returns {Song} - A new Song instance
 	*/
 	constructor({slug, src, title, composer, markers = []}, update, remove) {
+		// Assign properties
 		this.slug = slug
 		this.src = src
 		this.title = title
 		this.composer = composer
 		this.markerData = markers
 
+		// Assign methods
 		this.update = update
 		this.remove = remove
+
+		// Initialize the Song instance
 		this.init()
 	}
 
@@ -167,20 +171,6 @@ export class Song {
 			this.markersListWrapper = document.createElement('div')
 			this.markersListWrapper.classList.add('markers-list-wrapper')
 		}
-	}
-
-	/**
-	 * Returns the workspace for the song
-	 * @returns {HTMLDivElement} - A div element containing the audio element, add marker button, and markers list
-	*/
-	getWorkspace() {
-		const workspace = document.createElement('section')
-		workspace.classList.add('workspace')
-		workspace.appendChild(this.getDeleteSongButton())
-		workspace.appendChild(this.getAudioElement())
-		workspace.appendChild(this.getAddMarkerButton())
-		workspace.appendChild(this.renderMarkersList())
-		return workspace
 	}
 
 	/**

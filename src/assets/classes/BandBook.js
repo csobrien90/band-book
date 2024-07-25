@@ -1,4 +1,5 @@
 import { Song } from './Song.js'
+import { Workspace } from './Workspace.js'
 
 /**
  * Represents a collection of songs
@@ -11,6 +12,7 @@ export class BandBook {
 	*/
 	constructor(wrapperElement) {
 		this.wrapper = wrapperElement
+		this.workspace = new Workspace(wrapperElement)
 		this.navElement = null
 		this.songData = []
 		this.load()
@@ -48,7 +50,7 @@ export class BandBook {
 	removeSong(song) {
 		this.songs = this.songs.filter(s => s.title !== song.title)
 		this.renderSongNavigation()
-		this.setWorkspace()
+		this.workspace.reset()
 		this.sync()
 	}
 
@@ -74,7 +76,7 @@ export class BandBook {
 		this.songs.forEach(song => {
 			const button = document.createElement('button')
 			button.textContent = song.title
-			button.addEventListener('click', () => this.setWorkspace(song))
+			button.addEventListener('click', () => this.workspace.setSongWorkspace(song))
 			navigation.appendChild(button)
 		})
 
@@ -83,16 +85,6 @@ export class BandBook {
 		this.navElement = navigation
 
 		this.wrapper.parentElement.insertBefore(navigation, this.wrapper)
-	}
-
-	/**
-	 * Sets the workspace
-	 * @param {Song} song - A Song instance
-	 * @returns {void}
-	*/
-	setWorkspace(song) {
-		this.wrapper.innerHTML = ''
-		if (song) this.wrapper.appendChild(song.getWorkspace())
 	}
 
 	/**
