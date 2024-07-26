@@ -12,8 +12,7 @@ export class Song {
 	 * @param {string} title - The title for the song
 	 * @param {string} composer - The composer for the song
 	 * @param {Array} markers - An array of markers for the song
-	 * @param {Function} update - A function to sync the BandBook instance
-	 * @param {Function} remove - A function to remove the song from the BandBook instance
+	 * @param {Bandbook} bandbook - A Bandbook instance
 	 * @returns {Song} - A new Song instance
 	*/
 	constructor({slug, src, title, composer, markers = []}, bandbook) {

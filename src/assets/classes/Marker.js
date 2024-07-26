@@ -24,7 +24,7 @@ export class Marker {
 	*/
 	setTitle(title) {
 		this.title = title
-		if (this.title.length > 0) this.song.update()
+		if (this.title.length > 0) this.song.bandbook.syncManager.sync()
 	}
 
 	/**

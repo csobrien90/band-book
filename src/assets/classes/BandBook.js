@@ -142,13 +142,20 @@ export class BandBook {
 		button.textContent = 'Import'
 		button.classList.add('btn')
 		button.addEventListener('click', () => {
-			const data = prompt('Paste the exported data here:')
-			if (data) {
-				const importedData = JSON.parse(data)
-				this.songData = importedData
-				this.init()
-				this.syncManager.sync()
-			}
+			const input = document.createElement('input')
+			input.type = 'file'
+			input.accept = 'application/json'
+			input.addEventListener('change', (e) => {
+				const file = e.target.files[0]
+				const reader = new FileReader()
+				reader.onload = (readerEvent) => {
+					const data = JSON.parse(readerEvent.target.result)
+					this.songData = data
+					this.init()
+				}
+				reader.readAsText(file)
+			})
+			input.click()
 		})
 		return button
 	}

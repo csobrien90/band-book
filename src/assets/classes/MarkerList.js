@@ -1,7 +1,11 @@
+import { Marker } from './Marker.js'
+import { LoopManager } from './LoopManager.js'
+
 export class MarkerList {
 	constructor() {
 		this.markers = []
 		this.markersListWrapper = null
+		this.loopManager = new LoopManager()
 		this.init()
 	}
 
@@ -10,6 +14,9 @@ export class MarkerList {
 	}
 
 	addMarker(marker) {
+		if (this.markers.length === 0) {
+			this.loopManager.setSong(marker.song)
+		}
 		this.markers.push(marker)
 	}
 
@@ -33,7 +40,7 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	createMarker() {
-		this.addMarker(new Marker(this.song.getCurrentTime(), this))
+		this.addMarker(new Marker(this.song.getCurrentTime(), this.song))
 		this.renderMarkersList()
 		this.song.bandbook.syncManager.sync()
 	}
@@ -75,6 +82,40 @@ export class MarkerList {
 		}).forEach(marker => {
 			const item = document.createElement('li')
 
+			// Create a loop checkbox for each marker
+			const loopCheckbox = document.createElement('input')
+			loopCheckbox.type = 'checkbox'
+			loopCheckbox.classList.add('loop-checkbox')
+			loopCheckbox.checked = this.loopManager.active && this.loopManager.start === marker.time
+			loopCheckbox.addEventListener('change', () => {
+				if (!loopCheckbox.checked && this.loopManager.active) {
+					this.loopManager.toggleLoop()
+				} else if (loopCheckbox.checked) {
+					if (!this.loopManager.active) {
+						this.loopManager.toggleLoop()
+					} else {
+						// Uncheck all other loop checkboxes
+						const checkboxes = document.querySelectorAll('.loop-checkbox')
+						checkboxes.forEach(checkbox => {
+							if (checkbox !== loopCheckbox) checkbox.checked = false
+						})
+					}
+
+					const nextMarkerTime = this.markers.find(m => m.time > marker.time)?.time
+					const endTime = nextMarkerTime || this.song.getAudioElement().duration
+					this.loopManager.setLoopBounds(marker.time, endTime)
+				}
+			})
+
+			// Create a delete button for each marker
+			const deleteButton = document.createElement('button')
+			deleteButton.textContent = 'Delete'
+			deleteButton.addEventListener('click', () => {
+				this.removeMarker(marker)
+				this.renderMarkersList()
+				this.song.bandbook.syncManager.sync()
+			})
+
 			// Create a button for each marker to skip to that time
 			const button = document.createElement('button')
 			button.textContent = marker.getFormattedTime()
@@ -92,16 +133,8 @@ export class MarkerList {
 				marker.setTitle(input.value)
 			})
 
-			// Create a delete button for each marker
-			const deleteButton = document.createElement('button')
-			deleteButton.textContent = 'Delete'
-			deleteButton.addEventListener('click', () => {
-				this.removeMarker(marker)
-				this.renderMarkersList()
-				this.song.bandbook.syncManager.sync()
-			})
-
 			// Append all elements to the list
+			item.appendChild(loopCheckbox)
 			item.appendChild(deleteButton)
 			item.appendChild(button)
 			item.appendChild(input)
