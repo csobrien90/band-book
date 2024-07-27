@@ -1,5 +1,6 @@
 import { Marker } from './Marker.js'
 import { MarkerList } from './MarkerList.js'
+import { Player } from './Player.js'
 
 /**
  * Represents a song
@@ -19,6 +20,7 @@ export class Song {
 		// Assign properties
 		this.slug = slug
 		this.src = src
+		this.player = new Player(src)
 		this.title = title
 		this.composer = composer
 		this.markerData = markers
@@ -33,8 +35,7 @@ export class Song {
 	 * @returns {void}
 	*/
 	init() {
-		this.markerList = new MarkerList()
-		this.markerList.song = this
+		this.markerList = new MarkerList(this)
 		this.markerData.forEach(marker => {
 			this.markerList.addMarker(new Marker(marker.time, this, marker.title))
 		})
@@ -88,31 +89,6 @@ export class Song {
 			this.bandbook.syncManager.sync()
 		})
 		return button
-	}
-
-	/**
-	 * Returns an audio element for the song
-	 * @returns {HTMLAudioElement} - An audio element
-	 * Note: element is created only once and cached for future calls
-	*/
-	getAudioElement() {
-		if (this.audio) return this.audio
-
-		const audio = document.createElement('audio')
-		audio.src = this.src
-		audio.controls = true
-		audio.preload = 'metadata'
-
-		this.audio = audio
-		return audio
-	}
-
-	/**
-	 * Returns the current time of the song
-	 * @returns {number} - The current time of the song
-	*/
-	getCurrentTime() {
-		return this.getAudioElement().currentTime
 	}
 
 	/**

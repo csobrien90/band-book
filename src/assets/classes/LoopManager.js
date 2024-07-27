@@ -20,9 +20,9 @@ export class LoopManager {
 		if (!this.active) {
 			this.setLoopBounds(null, null)
 		} else {
-			this.song.getAudioElement().addEventListener('timeupdate', () => {
-				if (this.active && this.song.getAudioElement().currentTime >= this.end) {
-					this.song.getAudioElement().currentTime = this.start
+			this.song.player.getAudioElement().addEventListener('timeupdate', () => {
+				if (this.active && this.song.player.getAudioElement().currentTime >= this.end) {
+					this.song.player.getAudioElement().currentTime = this.start
 				}
 			})
 		}

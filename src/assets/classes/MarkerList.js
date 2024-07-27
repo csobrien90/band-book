@@ -2,7 +2,13 @@ import { Marker } from './Marker.js'
 import { LoopManager } from './LoopManager.js'
 
 export class MarkerList {
-	constructor() {
+	/**
+	 * @constructor
+	 * @param {Song} song - A Song instance
+	 * @returns {MarkerList} - A new MarkerList instance
+	*/
+	constructor(song) {
+		this.song = song
 		this.markers = []
 		this.markersListWrapper = null
 		this.loopManager = new LoopManager()
@@ -13,6 +19,11 @@ export class MarkerList {
 		this.setOrResetMarkersListWrapper()
 	}
 
+	/**
+	 * Adds a marker to the song
+	 * @param {Marker} marker - A Marker instance
+	 * @returns {void}
+	*/
 	addMarker(marker) {
 		if (this.markers.length === 0) {
 			this.loopManager.setSong(marker.song)
@@ -20,6 +31,11 @@ export class MarkerList {
 		this.markers.push(marker)
 	}
 
+	/**
+	 * Removes a marker from the song
+	 * @param {Marker} marker - A Marker instance
+	 * @returns {void}
+	*/
 	removeMarker(marker) {
 		this.markers = this.markers.filter(m => m !== marker)
 	}
@@ -40,7 +56,7 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	createMarker() {
-		this.addMarker(new Marker(this.song.getCurrentTime(), this.song))
+		this.addMarker(new Marker(this.song.player.getCurrentTime(), this.song))
 		this.renderMarkersList()
 		this.song.bandbook.syncManager.sync()
 	}
@@ -102,7 +118,7 @@ export class MarkerList {
 					}
 
 					const nextMarkerTime = this.markers.find(m => m.time > marker.time)?.time
-					const endTime = nextMarkerTime || this.song.getAudioElement().duration
+					const endTime = nextMarkerTime || this.song.player.getAudioElement().duration
 					this.loopManager.setLoopBounds(marker.time, endTime)
 				}
 			})
@@ -120,7 +136,7 @@ export class MarkerList {
 			const button = document.createElement('button')
 			button.textContent = marker.getFormattedTime()
 			button.addEventListener('click', () => {
-				const audioEl = this.song.getAudioElement()
+				const audioEl = this.song.player.getAudioElement()
 				audioEl.currentTime = marker.time
 				audioEl.play()
 			})
