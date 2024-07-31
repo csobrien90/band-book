@@ -23,3 +23,10 @@
 - create a branch
 - make your changes
 - submit a pull request
+
+## Deployment
+
+```bash
+aws s3 sync ./src s3://bandbook --acl public-read
+aws s3 cp favicon.ico s3://bandbook --acl public-read
+```

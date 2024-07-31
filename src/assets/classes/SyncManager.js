@@ -72,6 +72,79 @@ export class SyncManager {
 		}
 	}
 
+	/*
+		TODO: Break up sync into separate methods to handle different types of data
+			- create bandbook (add bandbook)
+			- create song (add song, update bandbook) **ONLY OPERATION THAT NEEDS TO WORK WITH SRC**
+			- delete song (delete song, update bandook)
+			- update song title (update song)
+			- create marker (add marker, update song)
+			- delete marker (delete marker, update song)
+			- update marker title (update marker)
+
+		SRC is the only data that needs to be handled differently because it is so large
+		bandbook, song, and marker data can be handled in the same way but they should be separate methods to keep things organized
+		SRC data could be stored in a separate object store to keep it separate from the rest of the data
+	*/
+
+	/**
+	 * Create a new BandBook instance in indexedDB
+	*/
+	createBandBook() {
+
+	}
+
+	/**
+	 * Create a new song in indexedDB
+	 * @param {Song} song - A Song instance
+	*/
+	createSong(song) {
+
+	}
+
+	/**
+	 * Delete a song from indexedDB
+	 * @param {Song} song - A Song instance
+	*/
+	deleteSong(song) {
+
+	}
+
+	/**
+	 * Update a song title in indexedDB
+	 * @param {Song} song - A Song instance
+	 * @param {string} title - A new title
+	*/
+	updateSongTitle(song, title) {
+		
+	}
+
+	/**
+	 * Create a new marker in indexedDB
+	 * @param {Marker} marker - A Marker instance
+	*/
+	createMarker(marker) {
+		
+	}
+
+	/**
+	 * Delete a marker from indexedDB
+	 * @param {Marker} marker - A Marker instance
+	*/
+	deleteMarker(marker) {
+
+	}
+
+	/**
+	 * Update a marker title in indexedDB
+	 * @param {Marker} marker - A Marker instance
+	 * @param {string} title - A new title
+	*/
+	updateMarkerTitle(marker, title) {
+
+	}
+
+
 	/**
 	 * Load the BandBook instance from indexedDB
 	*/

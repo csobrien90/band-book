@@ -117,8 +117,9 @@ export class BandBook {
 		// Create an upload input element
 		const upload = document.createElement('input')
 		upload.type = 'file'
-		upload.accept = 'audio/*'
-		upload.addEventListener('change', (event) => {
+		upload.accept = '*'
+		upload.classList.add('btn')
+		upload.addEventListener('change', (e) => {
 			// Validate the file type
 			const { target: { files } } = event
 			const { type: fileType, name } = files[0]

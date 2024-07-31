@@ -85,7 +85,6 @@ export class Song {
 		button.textContent = 'Delete Song'
 		button.addEventListener('click', () => {
 			this.bandbook.removeSong(this)
-			this.bandbook.syncManager.sync()
 		})
 		return button
 	}
