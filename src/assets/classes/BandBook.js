@@ -98,7 +98,7 @@ export class BandBook {
 	getAddSongButton() {
 		const upload = document.createElement('input')
 		upload.type = 'file'
-		upload.accept = 'audio/*'
+		upload.accept = '*'
 		upload.classList.add('btn')
 		upload.addEventListener('change', (e) => {
 			// Validate the file type
