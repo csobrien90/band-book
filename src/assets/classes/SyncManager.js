@@ -9,17 +9,26 @@ export class SyncManager {
 	}
 
 	/**
+	 * Runs on upgradeneeded event
+	*/
+	onUpgradeNeeded(e) {
+		const db = e.target.result
+
+		const books = db.createObjectStore('books', { keyPath: 'id' })
+		books.createIndex('id', 'id', { unique: true })
+
+		const theme = db.createObjectStore('theme', { keyPath: 'id' })
+		theme.createIndex('id', 'id', { unique: true })
+	}
+
+	/**
 	 * Sync the BandBook instance with indexedDB
 	*/
 	sync() {
 		const data = this.bandbook.songs.map(song => song.getData())
 		const request = indexedDB.open('bandbook', 1)
 
-		request.onupgradeneeded = (e) => {
-			const db = e.target.result
-			const store = db.createObjectStore('books', { keyPath: 'id' })
-			store.createIndex('id', 'id', { unique: true })
-		}
+		request.onupgradeneeded = (e) => this.onUpgradeNeeded(e)
 
 		request.onerror = (e) => {
 			console.error('Error opening indexedDB', e)
@@ -69,11 +78,7 @@ export class SyncManager {
 	load() {
 		const request = indexedDB.open('bandbook', 1)
 
-		request.onupgradeneeded = (e) => {
-			const db = e.target.result
-			const store = db.createObjectStore('books', { keyPath: 'id' })
-			store.createIndex('id', 'id', { unique: true })
-		}
+		request.onupgradeneeded = (e) => this.onUpgradeNeeded(e)
 
 		request.onerror = (e) => {
 			console.error('Error opening indexedDB', e)
@@ -118,6 +123,56 @@ export class SyncManager {
 				
 				all.onerror = (e) => {
 					console.error('Error loading data', e)
+				}
+			}
+		}
+	}
+
+	/**
+	 * Save the theme to indexedDB
+	 * @param {string} theme - The theme to save
+	*/
+	saveTheme(theme) {
+		const request = indexedDB.open('bandbook', 1)
+
+		request.onupgradeneeded = (e) => this.onUpgradeNeeded(e)
+
+		request.onerror = (e) => {
+			console.error('Error opening indexedDB', e)
+		}
+
+		request.onsuccess = (e) => {
+			const db = e.target.result
+			const transaction = db.transaction(['theme'], 'readwrite')
+			const store = transaction.objectStore('theme')
+
+			store.put({ id: 'theme', data: theme })
+		}
+	}
+
+	/**
+	 * Load the theme from indexedDB
+	 * @returns {string} - The theme
+	*/
+	loadTheme() {
+		const request = indexedDB.open('bandbook', 1)
+
+		request.onupgradeneeded = (e) => this.onUpgradeNeeded(e)
+
+		request.onerror = (e) => {
+			console.error('Error opening indexedDB', e)
+		}
+
+		request.onsuccess = (e) => {
+			const db = e.target.result
+			const transaction = db.transaction(['theme'], 'readwrite')
+			const store = transaction.objectStore('theme')
+
+			const existing = store.get('theme')
+			existing.onsuccess = (e) => {
+				const record = e.target.result
+				if (record) {
+					this.bandbook.wrapper.classList.toggle('dark', record.data === 'dark')
 				}
 			}
 		}

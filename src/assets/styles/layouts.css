@@ -2,7 +2,7 @@ main {
 	display: grid;
 	gap: 1rem;
 	padding: 1rem;
-	justify-content: center;
+	justify-items: center;
 }
 
 section {
@@ -22,4 +22,17 @@ li {
 	display: grid;
 	grid-template-columns: auto 1fr 1fr 2fr;
 	gap: 1rem;
+}
+
+.song-header {
+	display: grid;
+	grid-template-columns: auto auto;
+	justify-content: flex-start;
+	align-items: center;
+	gap: 1rem;
+}
+
+#workspace {
+	max-width: 1000px;
+	width: 100%;
 }

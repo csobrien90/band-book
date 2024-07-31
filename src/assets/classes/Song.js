@@ -48,7 +48,6 @@ export class Song {
 	getTitleElement() {
 		const titleElement = document.createElement('h2')
 		titleElement.textContent = this.title
-		titleElement.appendChild(this.getEditTitleButton())
 		return titleElement
 	}
 
@@ -92,8 +91,29 @@ export class Song {
 	}
 
 	/**
+	 * Gets the wrapper element with the song action buttons
+	*/
+	getActionButtons() {
+		const wrapper = document.createElement('div')
+		wrapper.appendChild(this.getEditTitleButton())
+		wrapper.appendChild(this.getDeleteSongButton())
+		return wrapper
+	}
+
+	/**
+	 * Get workspace header
+	*/
+	getHeader() {
+		const header = document.createElement('header')
+		header.classList.add('song-header')
+		header.appendChild(this.getTitleElement())
+		header.appendChild(this.getActionButtons())
+		return header
+	}
+
+	/**
 	 * Get song data for serialization
-	 */
+	*/
 	getData() {
 		return {
 			slug: this.slug,

@@ -12,6 +12,7 @@ export class BandBook {
 	 * @returns {BandBook} - A new BandBook instance
 	*/
 	constructor(wrapperElement) {
+		wrapperElement.id = 'bandbook'
 		this.wrapper = wrapperElement
 		this.workspace = new Workspace(wrapperElement)
 		this.syncManager = new SyncManager(this)
@@ -32,8 +33,12 @@ export class BandBook {
 			return new Song(song, this)
 		})
 
-		// Render the song navigation
-		this.renderSongNavigation()
+		// Get the theme from the sync manager
+		const theme = this.syncManager.loadTheme()
+		if (theme) this.wrapper.classList.add(theme)
+
+		// Set the active song
+		this.setActiveSong(this.songs[0])
     }
 
 	/**
@@ -43,6 +48,7 @@ export class BandBook {
 	*/
 	addSong(song) {
 		this.songs.push(song)
+		this.setActiveSong(song)
 	}	
 
 	/**
@@ -51,8 +57,8 @@ export class BandBook {
 	 */
 	removeSong(song) {
 		this.songs = this.songs.filter(s => s.title !== song.title)
+		this.setActiveSong(this.songs[0] || null)
 		this.renderSongNavigation()
-		this.workspace.reset()
 		this.syncManager.sync()
 	}
 
@@ -78,13 +84,15 @@ export class BandBook {
 		this.songs.forEach(song => {
 			const button = document.createElement('button')
 			button.textContent = song.title
-			button.addEventListener('click', () => this.workspace.setSongWorkspace(song))
+			if (song === this.activeSong) button.classList.add('active')
+			button.addEventListener('click', () => this.setActiveSong(song))
 			navigation.appendChild(button)
 		})
 
 		navigation.appendChild(this.getAddSongButton())
 		navigation.appendChild(this.getImportButton())
 		navigation.appendChild(this.getExportButton())
+		navigation.appendChild(this.getThemeToggle())
 
 		this.navElement = navigation
 
@@ -92,20 +100,30 @@ export class BandBook {
 	}
 
 	/**
+	 * Sets the active song
+	*/
+	setActiveSong(song) {
+		this.activeSong = song
+		this.refresh()
+	}
+
+	/**
 	 * Returns the add song button
 	 * @returns {HTMLButtonElement} - A button element
 	*/
 	getAddSongButton() {
+		// Create an upload input element
 		const upload = document.createElement('input')
 		upload.type = 'file'
 		upload.accept = 'audio/*'
 		upload.classList.add('btn')
-		upload.addEventListener('change', (e) => {
+		upload.addEventListener('change', (event) => {
 			// Validate the file type
-			const fileType = e.target.files[0].type
+			const { target: { files } } = event
+			const { type: fileType, name } = files[0]
 			if (!fileType.includes('audio')) {
 				// Alert the user if the file type is invalid
-				alert('Please upload a valid file type (e.g. mp3, wav)')
+				alert('Please upload a valid file type (e.g. mp3, wav, etc.)')
 
 				// Reset the input and return
 				upload.value = ''
@@ -118,7 +136,7 @@ export class BandBook {
 				const base64 = readerEvent.target.result
 				const songData = {
 					src: base64,
-					title: e.target.files[0].name,
+					title: name,
 					composer: 'Unknown'
 				}
 
@@ -127,10 +145,16 @@ export class BandBook {
 				this.renderSongNavigation()
 				this.syncManager.sync()
 			}
-			reader.readAsDataURL(e.target.files[0])
+			reader.readAsDataURL(event.target.files[0])
 		})
 
-		return upload
+		// Create a button element
+		const button = document.createElement('button')
+		button.textContent = 'Add Song'
+		button.classList.add('btn')
+		button.addEventListener('click', () => upload.click())
+
+		return button
 	}
 
 	/**
@@ -183,6 +207,20 @@ export class BandBook {
 	}
 
 	/**
+	 * Returns the theme toggle button
+	*/
+	getThemeToggle() {
+		const button = document.createElement('button')
+		button.textContent = this.wrapper.classList.contains('dark') ? 'Light Mode' : 'Dark Mode'
+		button.addEventListener('click', () => {
+			this.wrapper.classList.toggle('dark')
+			button.textContent = this.wrapper.classList.contains('dark') ? 'Light Mode' : 'Dark Mode'
+			this.syncManager.saveTheme(this.wrapper.classList.contains('dark') ? 'dark' : 'light')
+		})
+		return button
+	}
+
+	/**
 	 * Creates a unique ID
 	 * @returns {string} - A unique ID
 	*/
@@ -193,8 +231,13 @@ export class BandBook {
 	/**
 	 * Refreshes the DOM
 	*/
-	refresh(activeSong = null) {
+	refresh() {
 		this.renderSongNavigation()
-		if (activeSong) this.workspace.setSongWorkspace(activeSong)
+		if (this.activeSong) {
+			this.workspace.reset()
+			this.workspace.setSongWorkspace(this.activeSong)
+		} else {
+			this.workspace.reset()
+		}
 	}
 }

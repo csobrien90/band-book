@@ -24,8 +24,7 @@ export class Workspace {
 	*/
 	setSongWorkspace(song) {
 		this.reset()
-		this.wrapper.appendChild(song.getTitleElement())
-		this.wrapper.appendChild(song.getDeleteSongButton())
+		this.wrapper.appendChild(song.getHeader())
 		this.wrapper.appendChild(song.player.getAudioElement())
 		this.wrapper.appendChild(song.markerList.getAddMarkerButton())
 		this.wrapper.appendChild(song.markerList.renderMarkersList())

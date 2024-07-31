@@ -1,14 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Economica:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather+Sans:ital,wght@0,300..800;1,300..800&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Varela+Round&display=swap');
 
 :root {
-	--primary: #007bff;
-	--secondary: #6c757d;
-	--success: #28a745;
-	--info: #17a2b8;
-	--warning: #ffc107;
-	--danger: #dc3545;
-	--background-neutral: #f8f9fa;
-	--text-neutral: #343a40;
+	/* Colors */
+	--blue: #007bff;
+	--gray: #6c757d;
+	--green: #28a745;
+	--cyan: #17a2b8;
+	--yellow: #ffc107;
+	--red: #dc3545;
+	--white: #f8f9fa;
+	--black: #343a40;
+
+	--primary: var(--blue);
+	--secondary: var(--gray);
+	--success: var(--green);
+	--info: var(--cyan);
+	--warning: var(--yellow);
+	--danger: var(--red);
+	--background-neutral: var(--white);
+	--text-neutral: var(--black);
+}
+
+:root:has(#bandbook.dark) {
+	--background-neutral: var(--black);
+	--text-neutral: var(--white);
+	--primary: var(--cyan);
 }
 
 * {
@@ -27,6 +43,22 @@ body {
 
 main, section, article, aside, header, footer {
 	width: 100%;
+}
+
+h1 {
+	font-size: 2.5rem;
+}
+
+h2 {
+	font-size: 2rem;
+}
+
+h3 {
+	font-size: 1.75rem;
+}
+
+h4 {
+	font-size: 1.5rem;
 }
 
 p, a, button, input, label, select, textarea {
@@ -56,5 +88,9 @@ button {
 }
 
 button:hover, button:focus {
+	background-color: var(--secondary);
+}
+
+button.active {
 	background-color: var(--secondary);
 }

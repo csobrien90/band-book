@@ -1,3 +1,7 @@
-#workspace {
-	width: 1000px;
+.loop-checkbox {
+	display: none;
+}
+
+.loop-proxy.active {
+	background-color: var(--warning);
 }

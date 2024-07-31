@@ -123,6 +123,18 @@ export class MarkerList {
 				}
 			})
 
+			// Create a proxy button for the loop checkbox
+			const loopProxy = document.createElement('button')
+			loopProxy.classList.add('loop-proxy')
+			loopProxy.textContent = 'Loop'
+			loopProxy.addEventListener('click', () => {
+				loopCheckbox.checked = !loopCheckbox.checked
+				if (loopCheckbox.checked) loopProxy.classList.add('active')
+				else loopProxy.classList.remove('active')
+				loopCheckbox.dispatchEvent(new Event('change'))
+				loopProxy.blur()
+			})
+
 			// Create a delete button for each marker
 			const deleteButton = document.createElement('button')
 			deleteButton.textContent = 'Delete'
@@ -151,6 +163,7 @@ export class MarkerList {
 
 			// Append all elements to the list
 			item.appendChild(loopCheckbox)
+			item.appendChild(loopProxy)
 			item.appendChild(deleteButton)
 			item.appendChild(button)
 			item.appendChild(input)
