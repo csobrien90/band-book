@@ -1,0 +1,25 @@
+main {
+	display: grid;
+	gap: 1rem;
+	padding: 1rem;
+	justify-content: center;
+}
+
+section {
+	display: grid;
+	gap: 1rem;
+}
+
+ul {
+	display: grid;
+	gap: .5rem;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+
+li {
+	display: grid;
+	grid-template-columns: auto 1fr 1fr 2fr;
+	gap: 1rem;
+}

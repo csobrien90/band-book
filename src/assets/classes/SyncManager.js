@@ -10,7 +10,7 @@ export class SyncManager {
 
 	/**
 	 * Sync the BandBook instance with indexedDB
-	 */
+	*/
 	sync() {
 		const data = this.bandbook.songs.map(song => song.getData())
 		const request = indexedDB.open('bandbook', 1)
@@ -65,7 +65,7 @@ export class SyncManager {
 
 	/**
 	 * Load the BandBook instance from indexedDB
-	 */
+	*/
 	load() {
 		const request = indexedDB.open('bandbook', 1)
 
