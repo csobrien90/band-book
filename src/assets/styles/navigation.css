@@ -1,0 +1,13 @@
+.song-navigation {
+	display: grid;
+	background: var(--primary);
+}
+
+.song-navigation button {
+	text-align: left;
+}
+
+.song-navigation hr {
+	border: 1px solid var(--secondary);
+	margin: 1rem;
+}

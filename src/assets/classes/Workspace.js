@@ -25,8 +25,13 @@ export class Workspace {
 	setSongWorkspace(song) {
 		this.reset()
 		this.wrapper.appendChild(song.getHeader())
-		this.wrapper.appendChild(song.player.getAudioElement())
-		this.wrapper.appendChild(song.markerList.getAddMarkerButton())
+
+		const playerWrapper = document.createElement('div')
+		playerWrapper.className = 'player-wrapper'
+		playerWrapper.appendChild(song.player.getAudioElement())
+		playerWrapper.appendChild(song.markerList.getAddMarkerButton())
+
+		this.wrapper.appendChild(playerWrapper)
 		this.wrapper.appendChild(song.markerList.renderMarkersList())
 	}
 

@@ -89,6 +89,8 @@ export class BandBook {
 			navigation.appendChild(button)
 		})
 
+		navigation.appendChild(document.createElement('hr'))
+
 		navigation.appendChild(this.getAddSongButton())
 		navigation.appendChild(this.getImportButton())
 		navigation.appendChild(this.getExportButton())
@@ -116,7 +118,6 @@ export class BandBook {
 		const upload = document.createElement('input')
 		upload.type = 'file'
 		upload.accept = 'audio/*'
-		upload.classList.add('btn')
 		upload.addEventListener('change', (event) => {
 			// Validate the file type
 			const { target: { files } } = event
@@ -151,7 +152,6 @@ export class BandBook {
 		// Create a button element
 		const button = document.createElement('button')
 		button.textContent = 'Add Song'
-		button.classList.add('btn')
 		button.addEventListener('click', () => upload.click())
 
 		return button
@@ -164,7 +164,6 @@ export class BandBook {
 	getImportButton() {
 		const button = document.createElement('button')
 		button.textContent = 'Import'
-		button.classList.add('btn')
 		button.addEventListener('click', () => {
 			const input = document.createElement('input')
 			input.type = 'file'
@@ -191,7 +190,6 @@ export class BandBook {
 	getExportButton() {
 		const button = document.createElement('button')
 		button.textContent = 'Export'
-		button.classList.add('btn')
 		button.addEventListener('click', () => {
 			const data = JSON.stringify(this.songData)
 			const blob = new Blob([data], { type: 'application/json' })
@@ -216,6 +214,7 @@ export class BandBook {
 			this.wrapper.classList.toggle('dark')
 			button.textContent = this.wrapper.classList.contains('dark') ? 'Light Mode' : 'Dark Mode'
 			this.syncManager.saveTheme(this.wrapper.classList.contains('dark') ? 'dark' : 'light')
+			button.blur()
 		})
 		return button
 	}

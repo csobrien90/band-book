@@ -94,3 +94,9 @@ button:hover, button:focus {
 button.active {
 	background-color: var(--secondary);
 }
+
+input {
+	border: 1px solid var(--secondary);
+	border-radius: 5px;
+	padding: .5rem;
+}

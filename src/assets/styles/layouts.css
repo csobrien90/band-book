@@ -1,7 +1,12 @@
+body {
+	display: grid;
+	gap: 1rem;
+}
+
 main {
 	display: grid;
 	gap: 1rem;
-	padding: 1rem;
+	padding: 2rem;
 	justify-items: center;
 }
 
@@ -32,7 +37,8 @@ li {
 	gap: 1rem;
 }
 
-#workspace {
-	max-width: 1000px;
-	width: 100%;
+@media (min-width: 600px) {
+	body {
+		grid-template-columns: 300px 1fr;
+	}
 }
