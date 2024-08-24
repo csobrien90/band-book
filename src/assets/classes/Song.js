@@ -62,7 +62,7 @@ export class Song {
 			const newTitle = prompt('Enter a new title:', this.title)
 			if (newTitle) {
 				this.setTitle(newTitle)
-				this.bandbook.syncManager.sync()
+				this.bandbook.syncManager.updateSongTitle(this, newTitle)
 				this.bandbook.refresh()
 				this.bandbook.workspace.setSongWorkspace(this)
 			}
@@ -116,15 +116,40 @@ export class Song {
 	getData() {
 		return {
 			slug: this.slug,
-			src: this.src,
 			title: this.title,
 			composer: this.composer,
-			markers: this.markerList.markers.map(marker => {
-				return {
-					time: marker.time,
-					title: marker.title
-				}
-			})
+			src: this.src,
+			markers: this.getMarkerData()
+		}
+	}
+
+	/**
+	 * Get song metadata for serialization
+	*/
+	getMetadata() {
+		return {
+			slug: this.slug,
+			title: this.title,
+			composer: this.composer
+		}
+	}
+
+	/**
+	 * Get marker data for serialization
+	*/
+	getMarkerData() {
+		return this.markerList.markers.map(marker => {
+			return marker.getData()
+		})
+	}
+
+	/**
+	 * Get song src data for serialization
+	*/
+	getSrcData() {
+		return {
+			id: this.slug,
+			src: this.src
 		}
 	}
 }

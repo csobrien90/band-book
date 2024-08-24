@@ -12,6 +12,7 @@ export class Marker {
 	 * @returns {Marker} - A new Marker instance
 	*/
 	constructor(time, song, title = "") {
+		this.id = crypto.randomUUID()
 		this.time = time
 		this.song = song
 
@@ -24,7 +25,7 @@ export class Marker {
 	*/
 	setTitle(title) {
 		this.title = title
-		if (this.title.length > 0) this.song.bandbook.syncManager.sync()
+		if (this.title.length > 0) this.song.bandbook.syncManager.updateMarkerTitle(this, title)
 	}
 
 	/**
@@ -49,5 +50,13 @@ export class Marker {
 	*/
 	getTime() {
 		return this.time
+	}
+
+	getData() {
+		return {
+			id: this.id,
+			time: this.time,
+			title: this.title
+		}
 	}
 }

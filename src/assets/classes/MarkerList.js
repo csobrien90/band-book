@@ -56,9 +56,10 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	createMarker() {
-		this.addMarker(new Marker(this.song.player.getCurrentTime(), this.song))
+		const newMarker = new Marker(this.song.player.getCurrentTime(), this.song)
+		this.addMarker(newMarker)
 		this.renderMarkersList()
-		this.song.bandbook.syncManager.sync()
+		this.song.bandbook.syncManager.createMarker(newMarker)
 	}
 
 	/**
@@ -141,7 +142,7 @@ export class MarkerList {
 			deleteButton.addEventListener('click', () => {
 				this.removeMarker(marker)
 				this.renderMarkersList()
-				this.song.bandbook.syncManager.sync()
+				this.song.bandbook.syncManager.deleteMarker(marker)
 			})
 
 			// Create a button for each marker to skip to that time

@@ -18,8 +18,7 @@ export class BandBook {
 		this.syncManager = new SyncManager(this)
 		this.navElement = null
 		this.songData = []
-		this.syncManager.load()
-		
+		this.syncManager.loadBandBook()
 		this.init()
 	}
 
@@ -27,7 +26,9 @@ export class BandBook {
 	 * Initializes the BandBook instance
 	 * @returns {void}
 	*/
-    init() {		
+    init() {
+		if (!this.id) this.id = this.createId
+
 		// Create an array of Song instances from the song data
         this.songs = this.songData.map(song => {
 			return new Song(song, this)
@@ -59,7 +60,7 @@ export class BandBook {
 		this.songs = this.songs.filter(s => s.title !== song.title)
 		this.setActiveSong(this.songs[0] || null)
 		this.renderSongNavigation()
-		this.syncManager.sync()
+		this.syncManager.deleteSong(song)
 	}
 
 	/**
@@ -145,7 +146,7 @@ export class BandBook {
 				const song = new Song(songData, this)
 				this.addSong(song)
 				this.renderSongNavigation()
-				this.syncManager.sync()
+				this.syncManager.createSong(song)
 			}
 			reader.readAsDataURL(event.target.files[0])
 		})
@@ -174,7 +175,8 @@ export class BandBook {
 				const reader = new FileReader()
 				reader.onload = (readerEvent) => {
 					const data = JSON.parse(readerEvent.target.result)
-					this.songData = data
+					this.id = data.id
+					this.songData = data.songs
 					this.init()
 				}
 				reader.readAsText(file)
@@ -192,7 +194,10 @@ export class BandBook {
 		const button = document.createElement('button')
 		button.textContent = 'Export'
 		button.addEventListener('click', () => {
-			const data = JSON.stringify(this.songData)
+			const data = JSON.stringify({
+				id: this.id,
+				songs: this.songs.map(song => song.getData())
+			})
 			const blob = new Blob([data], { type: 'application/json' })
 			const url = URL.createObjectURL(blob)
 			const a = document.createElement('a')
