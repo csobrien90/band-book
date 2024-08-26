@@ -37,7 +37,7 @@ export class Song {
 	init() {
 		this.markerList = new MarkerList(this)
 		this.markerData.forEach(marker => {
-			this.markerList.addMarker(new Marker(marker.time, this, marker.title))
+			this.markerList.addMarker(new Marker(marker.time, this, marker.title, marker.id))
 		})
 	}
 
@@ -130,7 +130,8 @@ export class Song {
 		return {
 			slug: this.slug,
 			title: this.title,
-			composer: this.composer
+			composer: this.composer,
+			markers: this.getMarkerData().map(marker => marker.id)
 		}
 	}
 

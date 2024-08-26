@@ -1,6 +1,7 @@
 .song-navigation {
 	display: grid;
 	background: var(--primary);
+	height: fit-content;
 }
 
 .song-navigation button {

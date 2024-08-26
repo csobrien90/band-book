@@ -11,8 +11,8 @@ export class Marker {
 	 * @param {string} title - A title for the marker
 	 * @returns {Marker} - A new Marker instance
 	*/
-	constructor(time, song, title = "") {
-		this.id = crypto.randomUUID()
+	constructor(time, song, title = "", id = null) {
+		this.id = id ?? crypto.randomUUID()
 		this.time = time
 		this.song = song
 

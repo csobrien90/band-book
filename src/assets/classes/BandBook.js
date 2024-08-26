@@ -17,22 +17,21 @@ export class BandBook {
 		this.workspace = new Workspace(wrapperElement)
 		this.syncManager = new SyncManager(this)
 		this.navElement = null
-		this.songData = []
-		this.syncManager.loadBandBook()
-		this.init()
+		this.syncManager.loadBandBook().then((data) => {
+			this.init(data)
+		})
 	}
 
 	/**
 	 * Initializes the BandBook instance
+	 * @param {Object} songData - An object containing song data
 	 * @returns {void}
 	*/
-    init() {
+    init(songData) {
 		if (!this.id) this.id = this.createId
 
 		// Create an array of Song instances from the song data
-        this.songs = this.songData.map(song => {
-			return new Song(song, this)
-		})
+        this.songs = songData ? songData.map(song => new Song(song, this)) : []
 
 		// Get the theme from the sync manager
 		const theme = this.syncManager.loadTheme()
@@ -140,6 +139,7 @@ export class BandBook {
 				const songData = {
 					src: base64,
 					title: name,
+					slug: name.replace(/\s/g, '-').toLowerCase(),
 					composer: 'Unknown'
 				}
 
@@ -174,10 +174,7 @@ export class BandBook {
 				const file = e.target.files[0]
 				const reader = new FileReader()
 				reader.onload = (readerEvent) => {
-					const data = JSON.parse(readerEvent.target.result)
-					this.id = data.id
-					this.songData = data.songs
-					this.init()
+					this.syncManager.importBandBook(readerEvent.target.result)
 				}
 				reader.readAsText(file)
 			})
