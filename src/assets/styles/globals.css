@@ -41,10 +41,6 @@ body {
 	background-color: var(--background-neutral);
 }
 
-main, section, article, aside, header, footer {
-	width: 100%;
-}
-
 h1 {
 	font-size: 2.5rem;
 }

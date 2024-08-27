@@ -1,6 +1,6 @@
 #workspace {
 	max-width: 1000px;
-	width: fit-content;
+	width: 100%;
 	align-content: flex-start;
 }
 
@@ -9,11 +9,6 @@
 	align-items: center;
 	gap: 1rem;
 	padding: 1rem 0;
-}
-
-.player-wrapper audio {
-	width: 100%;
-	min-width: 350px;
 }
 
 .player-wrapper button {
@@ -30,6 +25,10 @@
 }
 
 @media screen and (min-width: 600px) {
+	#workspace {
+		width: fit-content;
+	}
+
 	.player-wrapper {
 		display: flex;
 	}
