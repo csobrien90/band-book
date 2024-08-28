@@ -1,0 +1,30 @@
+.notification {
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	z-index: 1000;
+	padding: 1rem 2rem;
+	color: white;
+	border-radius: 25px;
+	transition: right .4s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+
+	&.off-screen {
+		right: -500px;
+	}
+
+	&.success {
+		background: var(--success);
+	}
+
+	&.info {
+		background: var(--info);
+	}
+
+	&.warning {
+		background: var(--warning);
+	}
+
+	&.error {
+		background: var(--danger);
+	}
+}

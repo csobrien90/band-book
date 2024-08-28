@@ -11,3 +11,50 @@
 	width: 1px !important;
 	white-space: nowrap !important;
 }
+
+#bandbook-loading-overlay {
+	display: none;
+}
+
+body:has(.bandbook-loading) {
+	background-color: rgba(0, 0, 0, 0.5);
+
+	*:not(#bandbook-loading-overlay, #bandbook-loading-overlay *) {
+		display: none;
+	}
+
+	#bandbook-loading-overlay {
+		position: absolute;
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 100%;
+
+		.spinner {
+			transform-origin: center;
+			animation: spin 1.2s linear infinite;
+		}
+		.spinner circle {
+			stroke-linecap: round;
+			animation: woop .8s ease-in-out infinite;
+		}
+	}
+}
+
+@keyframes spin {
+	100% {transform: rotate(360deg)}
+}
+@keyframes woop {
+	0% {
+		stroke-dasharray: 0 150;
+		stroke-dashoffset: 0
+	}
+	47.5% {
+		stroke-dasharray: 42 150;
+		stroke-dashoffset: -16
+	}
+	95%, 100% {
+		stroke-dasharray: 42 150;
+		stroke-dashoffset: -59
+	}
+}
