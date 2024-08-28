@@ -2,26 +2,26 @@
 	max-width: 1000px;
 	width: 100%;
 	align-content: flex-start;
-}
-
-.player-wrapper {
-	display: grid;
-	align-items: center;
-	gap: 1rem;
-	padding: 1rem 0;
-}
-
-.player-wrapper button {
-	min-width: 200px;
-	height: 100%;
-}
-
-.loop-checkbox {
-	display: none;
-}
-
-.loop-proxy.active {
-	background-color: var(--warning);
+	
+	.player-wrapper {
+		display: grid;
+		align-items: center;
+		gap: 1rem;
+		padding: 1rem 0;
+	
+		button {
+			min-width: 200px;
+			height: 100%;
+		}
+	}
+	
+	.loop-checkbox {
+		display: none;
+	}
+	
+	.loop-proxy.active {
+		background-color: var(--warning);
+	}
 }
 
 @media screen and (min-width: 600px) {

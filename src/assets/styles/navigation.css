@@ -2,13 +2,13 @@
 	display: grid;
 	background: var(--primary);
 	height: fit-content;
-}
 
-.song-navigation button {
-	text-align: left;
-}
+	button {
+		text-align: left;
+	}
 
-.song-navigation hr {
-	border: 1px solid var(--secondary);
-	margin: 1rem;
+	hr {
+		border: 1px solid var(--secondary);
+		margin: 1rem;
+	}
 }

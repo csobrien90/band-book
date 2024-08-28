@@ -19,12 +19,12 @@
 	--danger: var(--red);
 	--background-neutral: var(--white);
 	--text-neutral: var(--black);
-}
 
-:root:has(#bandbook.dark) {
-	--background-neutral: var(--black);
-	--text-neutral: var(--white);
-	--primary: var(--cyan);
+	&:has(#bandbook.dark) {
+		--background-neutral: var(--black);
+		--text-neutral: var(--white);
+		--primary: var(--cyan);
+	}
 }
 
 * {
@@ -64,10 +64,10 @@ p, a, button, input, label, select, textarea {
 a {
 	color: var(--primary);
 	text-decoration: none;
-}
 
-a:hover {
-	text-decoration: underline;
+	&:hover {
+		text-decoration: underline;
+	}
 }
 
 img {
@@ -81,14 +81,14 @@ button {
 	color: var(--background-neutral);
 	padding: .5rem 1rem;
 	cursor: pointer;
-}
 
-button:hover, button:focus {
-	background-color: var(--secondary);
-}
+	&:hover, &:focus {
+		background-color: var(--secondary);
+	}
 
-button.active {
-	background-color: var(--secondary);
+	&.active {
+		background-color: var(--secondary);
+	}
 }
 
 input {
