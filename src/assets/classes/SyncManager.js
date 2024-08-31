@@ -505,7 +505,9 @@ export class SyncManager {
 				const record = e.target.result
 				if (record) {
 					this.bandbook.wrapper.classList.toggle('dark', record.data === 'dark')
+					setTimeout(() => {
 					this.bandbook.wrapper.classList.remove('bandbook-loading')
+					}, 1000)
 				}
 			}
 		})

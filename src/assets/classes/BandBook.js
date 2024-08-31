@@ -15,7 +15,6 @@ export class BandBook {
 	constructor(wrapperElement) {
 		wrapperElement.id = 'bandbook'
 		this.wrapper = wrapperElement
-		this.wrapper.parentElement.appendChild(this.getLoading())
 		this.wrapper.classList.add('bandbook-loading')
 		this.workspace = new Workspace(wrapperElement)
 		this.syncManager = new SyncManager(this)
@@ -43,21 +42,6 @@ export class BandBook {
 		// Set the active song
 		this.setActiveSong(this.songs[0])
     }
-
-	/**
-	 * Returns a loading element
-	 * @returns {HTMLDivElement} - A div element
-	*/
-	getLoading() {
-		const loading = document.createElement('div')
-		loading.id = 'bandbook-loading-overlay'
-		loading.innerHTML = `
-			<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" stroke="white" viewBox="0 0 24 24">
-				<g class="spinner"><circle cx="12" cy="12" r="9.5" fill="none" stroke-width="2"/></g>
-			</svg>
-		`
-		return loading
-	}
 
 	/**
 	 * Adds a song to the BandBook instance
