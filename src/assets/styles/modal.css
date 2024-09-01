@@ -10,17 +10,38 @@
     background: rgba(0,0,0,0.5);
 	padding: 2rem;
 	z-index: 1000;
-}
 
-.modal-content {
-	display: grid;
-	position: relative;
-	width: 100%;
-	height: 100%;
-	max-width: 500px;
-	max-height: 500px;
-	padding: 1rem;
-	background: white;
-	border-radius: 5px;
-	box-shadow: 0 0 10px rgba(0,0,0,0.5);
+	.modal-content {
+		display: grid;
+		grid-template-rows: auto 1fr;
+		position: relative;
+		width: 100%;
+		height: 100%;
+		max-width: 500px;
+		max-height: 500px;
+		padding: 1rem;
+		background: white;
+		border-radius: 5px;
+		box-shadow: 0 0 10px rgba(0,0,0,0.5);
+
+		header {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			align-items: flex-start;
+
+			h2 {
+				margin-top: .5rem;
+			}
+
+			.close {
+				background: transparent;
+				padding: 0;
+
+				&:hover {
+					cursor: pointer;
+					font-weight: bold;
+				}
+			}
+		}
+	}
 }

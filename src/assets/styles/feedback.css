@@ -1,0 +1,38 @@
+button.feedback {
+	display: grid;
+	place-items: center;
+	position: fixed;
+	bottom: 1rem;
+	right: 1rem;
+	width: 4rem;
+	height: 4rem;
+	border-radius: 50%;
+	z-index: 1000;
+
+	svg {
+		scale: 1.5;
+	}
+}
+
+.feedback-form {
+	display: grid;
+	grid-template-rows: 1fr auto;
+	gap: 1rem;
+
+	label {
+		display: grid;
+		position: relative;
+		padding: 1rem 0 0;
+
+		span {
+			position: absolute;
+			background-color: white;
+			margin-left: 1rem;
+			padding: 0 .5rem;
+		}
+
+		textarea {
+			padding: 1.5rem 1rem 1rem;
+		}
+	}
+}

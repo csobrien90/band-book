@@ -1,12 +1,14 @@
 export class Modal {
 	/**
 	 * Creates a new modal
-	 * @param {string} title - The title of the modal
+	 * @param {HTMLElement} title - The title of the modal
 	 * @param {HTMLElement} content - The content of the modal
+	 * @param {Object} options - An object containing options for the modal
 	*/
-	constructor(title, content) {
+	constructor(title, content, options = {}) {
 		this.title = title
 		this.content = content
+		this.options = options
 		
 		this.init()
 	}
@@ -16,7 +18,6 @@ export class Modal {
 	*/
 	init() {
 		this.element = this.getModalElement()
-		console.log('Modal init', {el:this.element})
 		document.body.appendChild(this.element)
 	}
 
@@ -28,6 +29,12 @@ export class Modal {
 		const dialog = document.createElement('dialog')
 		dialog.classList.add('modal')
 		dialog.appendChild(this.getModalContent())
+
+		// If user clicks outside of the modal, close it
+		dialog.addEventListener('click', e => {
+			if (e.target === dialog) this.remove()
+		})
+
 		return dialog
 	}
 
@@ -36,11 +43,12 @@ export class Modal {
 	 * @returns {HTMLDivElement} - A div element
 	*/
 	getModalContent() {
-		const div = document.createElement('div')
-		div.classList.add('modal-content')
-		div.appendChild(this.getModalHeader())
-		div.appendChild(this.content)
-		return div
+		const contentWrapper = this.options?.useForm ?
+			document.createElement('form') : document.createElement('div')
+		contentWrapper.classList.add('modal-content')
+		contentWrapper.appendChild(this.getModalHeader())
+		contentWrapper.appendChild(this.content)
+		return contentWrapper
 	}
 
 	/**
@@ -50,19 +58,9 @@ export class Modal {
 	getModalHeader() {
 		const header = document.createElement('header')
 		header.classList.add('modal-header')
-		header.appendChild(this.getTitle())
+		header.appendChild(this.title)
 		header.appendChild(this.getCloseButton())
 		return header
-	}
-
-	/**
-	 * Returns the title element
-	 * @returns {HTMLHeadingElement} - A heading element
-	*/
-	getTitle() {
-		const title = document.createElement('h2')
-		title.textContent = this.title
-		return title
 	}
 
 	/**

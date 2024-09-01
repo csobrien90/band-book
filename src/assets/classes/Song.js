@@ -53,28 +53,59 @@ export class Song {
 	}
 
 	/**
+	 * Returns an edit song button
+	 * @returns {HTMLButtonElement} - A button element
+	*/
+	getEditSongButton() {
+		const button = document.createElement('button')
+		button.textContent = 'Edit Song'
+		button.addEventListener('click', () => {
+			const modalHeader = document.createElement('h2')
+			modalHeader.textContent = this.title
+
+			modalHeader.appendChild(this.getEditTitleButton())
+
+			const modalContent = this.getEditForm()
+			const modal = new Modal(modalHeader, modalContent, { useForm: true })
+		})
+		return button
+	}
+
+	/**
 	 * Returns an edit title button
 	 * @returns {HTMLButtonElement} - A button element
 	*/
 	getEditTitleButton() {
 		const button = document.createElement('button')
-		button.textContent = 'Edit Title'
+		button.classList.add('edit-song-title')
+		button.innerHTML = '&#9998;'
+		button.ariaLabel = 'Edit title'
 		button.addEventListener('click', () => {
-			const modalContent = document.createElement('p')
-			modalContent.textContent = 'Song modal content!!!'
-			const modal = new Modal('Edit Song Title', modalContent)
-
-
-
-			// const newTitle = prompt('Enter a new title:', this.title)
-			// if (newTitle) {
-			// 	this.setTitle(newTitle)
-			// 	this.bandbook.syncManager.updateSongTitle(this, newTitle)
-			// 	this.bandbook.refresh()
-			// 	this.bandbook.workspace.setSongWorkspace(this)
-			// }
+			const newTitle = prompt('Enter a new title:', this.title)
+			if (newTitle) {
+				this.setTitle(newTitle)
+				this.bandbook.syncManager.updateSongTitle(this, newTitle)
+				this.bandbook.refresh()
+				this.bandbook.workspace.setSongWorkspace(this)
+			}
 		})
 		return button
+	}
+
+	/**
+	 * Returns an edit form for the song
+	 * @returns {HTMLFormElement} - A form element
+	*/
+	getEditForm() {
+		const div = document.createElement('div')
+		div.classList.add('edit-song')
+		
+		// PLACEHOLDER: Add form fields
+		const titleInput = document.createElement('p')
+		titleInput.textContent = 'Title'
+		div.appendChild(titleInput)
+
+		return div
 	}
 
 	/**
@@ -101,7 +132,7 @@ export class Song {
 	*/
 	getActionButtons() {
 		const wrapper = document.createElement('div')
-		wrapper.appendChild(this.getEditTitleButton())
+		wrapper.appendChild(this.getEditSongButton())
 		wrapper.appendChild(this.getDeleteSongButton())
 		return wrapper
 	}

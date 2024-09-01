@@ -35,12 +35,14 @@ input[type="text"] {
 }
 
 .song-header {
-	display: grid;
+	display: flex;
+	flex-wrap: wrap;
 	justify-content: flex-start;
 	align-items: center;
+	gap: 0 1rem;
 }
 
-@media (min-width: 600px) {
+@media (min-width: 800px) {
 	body {
 		grid-template-columns: 300px 1fr;
 	}
@@ -60,10 +62,5 @@ input[type="text"] {
 
 	input[type="text"] {
 		grid-column: unset;
-	}
-
-	.song-header {
-		grid-template-columns: auto auto;
-		gap: 1rem;
 	}
 }

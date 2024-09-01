@@ -1,0 +1,19 @@
+h2:has(.edit-song-title) {
+	display: flex;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+	gap: .5rem;
+}
+
+.edit-song-title {
+	background: transparent;
+	padding: 0;
+	rotate: 80deg;
+	translate: 0 -2px;
+
+	&:hover, &:focus, &:active {
+		cursor: pointer;
+		background: transparent;
+		scale: 1.15;
+	}
+}

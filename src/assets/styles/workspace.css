@@ -13,6 +13,10 @@
 			min-width: 200px;
 			height: 100%;
 		}
+
+		audio {
+			width: 100%;
+		}
 	}
 	
 	.loop-checkbox {
@@ -24,17 +28,13 @@
 	}
 }
 
-@media screen and (min-width: 600px) {
+@media screen and (min-width: 800px) {
 	#workspace {
 		width: fit-content;
 	}
 
 	.player-wrapper {
 		display: flex;
-	}
-
-	.player-wrapper audio {
-		min-width: 450px;
 	}
 }
 
