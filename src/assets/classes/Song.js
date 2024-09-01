@@ -1,6 +1,7 @@
 import { Marker } from './Marker.js'
 import { MarkerList } from './MarkerList.js'
 import { Player } from './Player.js'
+import { Modal } from './Modal.js'
 
 /**
  * Represents a song
@@ -59,13 +60,19 @@ export class Song {
 		const button = document.createElement('button')
 		button.textContent = 'Edit Title'
 		button.addEventListener('click', () => {
-			const newTitle = prompt('Enter a new title:', this.title)
-			if (newTitle) {
-				this.setTitle(newTitle)
-				this.bandbook.syncManager.updateSongTitle(this, newTitle)
-				this.bandbook.refresh()
-				this.bandbook.workspace.setSongWorkspace(this)
-			}
+			const modalContent = document.createElement('p')
+			modalContent.textContent = 'Song modal content!!!'
+			const modal = new Modal('Edit Song Title', modalContent)
+
+
+
+			// const newTitle = prompt('Enter a new title:', this.title)
+			// if (newTitle) {
+			// 	this.setTitle(newTitle)
+			// 	this.bandbook.syncManager.updateSongTitle(this, newTitle)
+			// 	this.bandbook.refresh()
+			// 	this.bandbook.workspace.setSongWorkspace(this)
+			// }
 		})
 		return button
 	}
