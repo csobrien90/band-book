@@ -72,6 +72,7 @@ export class Song {
 			modalHeader.textContent = this.title
 
 			modalHeader.appendChild(this.getEditTitleButton())
+			modalHeader.appendChild(this.getDeleteSongButton())
 
 			const modalContent = this.getEditForm()
 			const modal = new Modal(modalHeader, modalContent, { useForm: true })
@@ -186,7 +187,6 @@ export class Song {
 		notesLabel.appendChild(notesInput)
 		div.appendChild(notesLabel)
 
-		div.appendChild(this.getDeleteSongButton())
 		return div
 	}
 
@@ -202,9 +202,14 @@ export class Song {
 	 */
 	getDeleteSongButton() {
 		const button = document.createElement('button')
-		button.textContent = 'Delete Song'
+		button.classList.add('delete-song')
+		button.innerHTML = '&#128465;'
 		button.addEventListener('click', () => {
-			this.bandbook.removeSong(this)
+			if (confirm(`Are you sure you want to delete ${this.title}?`)) {
+				this.bandbook.removeSong(this)
+			} else {
+				return
+			}
 		})
 		return button
 	}

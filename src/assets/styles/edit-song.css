@@ -5,18 +5,23 @@ h2:has(.edit-song-title) {
 	gap: .5rem;
 }
 
-.edit-song-title {
+.edit-song-title, .delete-song {
 	background: transparent;
 	padding: 0;
-	rotate: 80deg;
-	translate: 0 -2px;
 	color: black;
+	font-weight: bold;
+	line-height: 1;
+	translate: 0 -2px;
 
 	&:hover, &:focus, &:active {
 		cursor: pointer;
 		background: transparent;
 		scale: 1.15;
 	}
+}
+
+.edit-song-title {
+	rotate: 80deg;
 }
 
 .edit-song {
