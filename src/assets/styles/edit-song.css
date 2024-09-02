@@ -10,10 +10,16 @@ h2:has(.edit-song-title) {
 	padding: 0;
 	rotate: 80deg;
 	translate: 0 -2px;
+	color: black;
 
 	&:hover, &:focus, &:active {
 		cursor: pointer;
 		background: transparent;
 		scale: 1.15;
 	}
+}
+
+.edit-song {
+	display: grid;
+	gap: 1rem;
 }

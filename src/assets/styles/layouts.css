@@ -31,7 +31,6 @@ li {
 
 input[type="text"] {
 	grid-column: 1 / -1;
-	max-width: 400px;
 }
 
 .song-header {

@@ -44,6 +44,8 @@ export class BandBook {
 
 		// Set the active song
 		this.setActiveSong(this.songs[0])
+
+		this.wrapper.classList.remove('bandbook-loading')
     }
 
 	/**

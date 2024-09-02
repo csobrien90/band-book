@@ -1,0 +1,20 @@
+textarea {
+	resize: none;
+}
+
+label {
+	display: grid;
+	position: relative;
+	padding: 1rem 0 0;
+
+	span {
+		position: absolute;
+		background-color: white;
+		margin-left: 1rem;
+		padding: 0 .5rem;
+	}
+
+	textarea, input {
+		padding: 1.5rem 1rem 1rem;
+	}
+}

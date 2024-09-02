@@ -99,12 +99,91 @@ export class Song {
 	getEditForm() {
 		const div = document.createElement('div')
 		div.classList.add('edit-song')
-		
-		// PLACEHOLDER: Add form fields
-		const titleInput = document.createElement('p')
-		titleInput.textContent = 'Title'
-		div.appendChild(titleInput)
 
+		// composer
+		const composerLabel = document.createElement('label')
+		const composerSpan = document.createElement('span')
+		composerSpan.textContent = 'Composer'
+		const composerInput = document.createElement('input')
+		composerInput.type = 'text'
+		composerInput.value = this.composer
+		composerInput.addEventListener('change', () => {
+			this.composer = composerInput.value
+			console.log(this.composer)
+			// this.bandbook.syncManager.updateSongComposer(this, composerInput.value)
+		})
+		composerLabel.appendChild(composerSpan)
+		composerLabel.appendChild(composerInput)
+		div.appendChild(composerLabel)
+
+		// tempo
+		const tempoLabel = document.createElement('label')
+		const tempoSpan = document.createElement('span')
+		tempoSpan.textContent = 'Tempo'
+		const tempoInput = document.createElement('input')
+		tempoInput.type = 'number'
+		tempoInput.value = this.tempo
+		tempoInput.addEventListener('change', () => {
+			this.tempo = tempoInput.value
+			console.log(this.tempo)
+			// this.bandbook.syncManager.updateSongTempo(this, tempoInput.value)
+		})
+		tempoLabel.appendChild(tempoSpan)
+		tempoLabel.appendChild(tempoInput)
+		div.appendChild(tempoLabel)
+
+		// key
+		const keyLabel = document.createElement('label')
+		const keySpan = document.createElement('span')
+		keySpan.textContent = 'Key'
+		const keyInput = document.createElement('input')
+		keyInput.type = 'text'
+		keyInput.value = this.key
+		keyInput.addEventListener('change', () => {
+			this.key = keyInput.value
+			console.log(this.key)
+			// this.bandbook.syncManager.updateSongKey(this, keyInput.value)
+		})
+		keyLabel.appendChild(keySpan)
+		keyLabel.appendChild(keyInput)
+		div.appendChild(keyLabel)
+
+		// time signature
+		const timeSignatureLabel = document.createElement('label')
+		const timeSignatureSpan = document.createElement('span')
+		timeSignatureSpan.textContent = 'Time Signature'
+		const timeSignatureInput = document.createElement('input')
+		timeSignatureInput.type = 'text'
+		timeSignatureInput.value = this.timeSignature
+		timeSignatureInput.addEventListener('change', () => {
+			this.timeSignature = timeSignatureInput.value
+			console.log(this.timeSignature)
+			// this.bandbook.syncManager.updateSongTimeSignature(this, timeSignatureInput.value)
+		})
+		timeSignatureLabel.appendChild(timeSignatureSpan)
+		timeSignatureLabel.appendChild(timeSignatureInput)
+		div.appendChild(timeSignatureLabel)
+
+		// notes (text area)
+		const notesLabel = document.createElement('label')
+		notesLabel.htmlFor = 'song-notes'
+		const notesSpan = document.createElement('span')
+		notesSpan.textContent = 'Notes'
+		const notesInput = document.createElement('textarea')
+		notesInput.value = this.notes
+		notesInput.id = 'song-notes'
+		notesInput.name = 'song-notes'
+		notesInput.rows = 4
+		notesInput.addEventListener('change', () => {
+			this.notes = notesInput.value
+			console.log(this.notes)
+			// this.bandbook.syncManager.updateSongNotes(this, notesInput.value)
+		})
+		notesLabel.appendChild(notesSpan)
+		notesLabel.appendChild(notesInput)
+		div.appendChild(notesLabel)
+
+		div.appendChild(this.getDeleteSongButton())
 		return div
 	}
 
@@ -133,7 +212,6 @@ export class Song {
 	getActionButtons() {
 		const wrapper = document.createElement('div')
 		wrapper.appendChild(this.getEditSongButton())
-		wrapper.appendChild(this.getDeleteSongButton())
 		return wrapper
 	}
 
