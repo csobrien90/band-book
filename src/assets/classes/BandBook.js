@@ -17,13 +17,15 @@ export class BandBook {
 		wrapperElement.id = 'bandbook'
 		this.wrapper = wrapperElement
 		this.wrapper.classList.add('bandbook-loading')
-
 		this.addFeedbackButton()
 		this.workspace = new Workspace(wrapperElement)
 		this.syncManager = new SyncManager(this)
 		this.navElement = null
 		this.syncManager.loadBandBook().then((data) => {
 			this.init(data)
+		}).catch((error) => {
+			this.wrapper.classList.remove('bandbook-loading')
+			console.error('Error loading BandBook:', error)
 		})
 	}
 
@@ -44,8 +46,6 @@ export class BandBook {
 
 		// Set the active song
 		this.setActiveSong(this.songs[0])
-
-		this.wrapper.classList.remove('bandbook-loading')
     }
 
 	/**
@@ -148,7 +148,11 @@ export class BandBook {
 					src: base64,
 					title: name,
 					slug: name.replace(/\s/g, '-').toLowerCase(),
-					composer: 'Unknown'
+					composer: 'Unknown',
+					tempo: 120,
+					key: 'C',
+					timeSignature: '4/4',
+					notes: ''
 				}
 
 				const song = new Song(songData, this)

@@ -17,7 +17,7 @@ export class SyncManager {
 	 * @returns {void}
 	*/
 	init() {
-		this.loadBandBook()
+		// console.log('SyncManager initialized')
 	}
 
 	/**
@@ -73,9 +73,9 @@ export class SyncManager {
 			this.connectToBandbookDB((db) => {
 				const transaction = db.transaction(['books'], 'readwrite')
 				const store = transaction.objectStore('books')
-
+				
 				const all = store.getAll()
-
+				
 				all.onsuccess = async (e) => {
 					try {
 						const { id, songs } = e.target.result[0]
@@ -236,17 +236,35 @@ export class SyncManager {
 		return new Promise((resolve, reject) => {
 			this.connectToBandbookDB((db) => {
 				try {
+
 					const transaction = db.transaction(['songs'], 'readwrite')
 					const store = transaction.objectStore('songs')
-		
+					
 					const existing = store.get(songId)
-
+					
 					let songData
 					existing.onsuccess = (e) => {
 						const record = e.target.result
 
-						if (!record) return undefined
-						
+						if (!record) {
+							// Remove the song from the BandBook record
+							const booksTransaction = db.transaction(['books'], 'readwrite')
+							const booksStore = booksTransaction.objectStore('books')
+
+							const existing = booksStore.get(this.bandbook.id)
+							existing.onsuccess = (e) => {
+								const record = e.target.result
+								if (record) {
+									const songs = JSON.parse(record.songs)
+									const updatedSongs = songs.filter(s => s !== songId)
+									record.songs = JSON.stringify(updatedSongs)
+									booksStore.put(record)
+								}
+							}
+
+							resolve(undefined)
+						}
+
 						songData = JSON.parse(record.data)
 
 						// Get src data
@@ -366,6 +384,116 @@ export class SyncManager {
 				if (record) {
 					const data = JSON.parse(record.data)
 					data.title = title
+					store.put({ id: song.slug, data: JSON.stringify(data) })
+				}
+			}
+		})
+	}
+
+	/**
+	 * Update a song composer in indexedDB
+	 * @param {Song} song - A Song instance
+	 * @param {string} composer - A new composer
+	*/
+	updateSongComposer(song, composer) {
+		this.connectToBandbookDB((db) => {
+			const transaction = db.transaction(['songs'], 'readwrite')
+			const store = transaction.objectStore('songs')
+
+			const existing = store.get(song.slug)
+			existing.onsuccess = () => {
+				const record = existing.result
+				if (record) {
+					const data = JSON.parse(record.data)
+					data.composer = composer
+					store.put({ id: song.slug, data: JSON.stringify(data) })
+				}
+			}
+		})
+	}
+
+	/**
+	 * Update a song tempo in indexedDB
+	 * @param {Song} song - A Song instance
+	 * @param {number} tempo - A new tempo
+	*/
+	updateSongTempo(song, tempo) {
+		this.connectToBandbookDB((db) => {
+			const transaction = db.transaction(['songs'], 'readwrite')
+			const store = transaction.objectStore('songs')
+
+			const existing = store.get(song.slug)
+			existing.onsuccess = () => {
+				const record = existing.result
+				if (record) {
+					const data = JSON.parse(record.data)
+					data.tempo = tempo
+					store.put({ id: song.slug, data: JSON.stringify(data) })
+				}
+			}
+		})
+	}
+
+	/**
+	 * Update a song key in indexedDB
+	 * @param {Song} song - A Song instance
+	 * @param {string} key - A new key
+	*/
+	updateSongKey(song, key) {
+		this.connectToBandbookDB((db) => {
+			const transaction = db.transaction(['songs'], 'readwrite')
+			const store = transaction.objectStore('songs')
+
+			const existing = store.get(song.slug)
+			existing.onsuccess = () => {
+				const record = existing.result
+				if (record) {
+					const data = JSON.parse(record.data)
+					data.key = key
+					store.put({ id: song.slug, data: JSON.stringify(data) })
+				}
+			}
+		})
+	}
+
+	/**
+	 * Update a song time signature in indexedDB
+	 * @param {Song} song - A Song instance
+	 * @param {string} timeSignature - A new time signature
+	*/
+	updateSongTimeSignature(song, timeSignature) {
+		this.connectToBandbookDB((db) => {
+			const transaction = db.transaction(['songs'], 'readwrite')
+			const store = transaction.objectStore('songs')
+
+			const existing = store.get(song.slug)
+			existing.onsuccess = () => {
+				const record = existing.result
+				if (record) {
+					const data = JSON.parse(record.data)
+					data.timeSignature = timeSignature
+					store.put({ id: song.slug, data: JSON.stringify(data) })
+				}
+			}
+		})
+	}
+
+	/**
+	 * Update a song notes in indexedDB
+	 * @param {Song} song - A Song instance
+	 * @param {string} notes - New notes
+	*/
+	updateSongNotes(song, notes) {
+		this.connectToBandbookDB((db) => {
+			const transaction = db.transaction(['songs'], 'readwrite')
+			const store = transaction.objectStore('songs')
+
+			const existing = store.get(song.slug)
+			existing.onsuccess = () => {
+				const record = existing.result
+				if (record) {
+					const data = JSON.parse(record.data)
+					data.notes = notes
 					store.put({ id: song.slug, data: JSON.stringify(data) })
 				}
 			}
@@ -505,6 +633,7 @@ export class SyncManager {
 				const record = e.target.result
 				if (record) {
 					this.bandbook.wrapper.classList.toggle('dark', record.data === 'dark')
+					this.bandbook.wrapper.classList.remove('bandbook-loading')
 				}
 			}
 		})

@@ -13,17 +13,25 @@ export class Song {
 	 * @param {string} src - The URL to the song audio file
 	 * @param {string} title - The title for the song
 	 * @param {string} composer - The composer for the song
+	 * @param {number} tempo - The tempo for the song
+	 * @param {string} key - The key for the song
+	 * @param {string} timeSignature - The time signature for the song
+	 * @param {string} notes - The notes for the song
 	 * @param {Array} markers - An array of markers for the song
 	 * @param {Bandbook} bandbook - A Bandbook instance
 	 * @returns {Song} - A new Song instance
 	*/
-	constructor({slug, src, title, composer, markers = []}, bandbook) {
+	constructor({slug, src, title, composer, tempo, key, timeSignature, notes, markers = []}, bandbook) {
 		// Assign properties
 		this.slug = slug
 		this.src = src
 		this.player = new Player(src)
 		this.title = title
 		this.composer = composer
+		this.tempo = tempo
+		this.key = key
+		this.timeSignature = timeSignature
+		this.notes = notes
 		this.markerData = markers
 		this.bandbook = bandbook
 
@@ -109,8 +117,7 @@ export class Song {
 		composerInput.value = this.composer
 		composerInput.addEventListener('change', () => {
 			this.composer = composerInput.value
-			console.log(this.composer)
-			// this.bandbook.syncManager.updateSongComposer(this, composerInput.value)
+			this.bandbook.syncManager.updateSongComposer(this, composerInput.value)
 		})
 		composerLabel.appendChild(composerSpan)
 		composerLabel.appendChild(composerInput)
@@ -125,8 +132,7 @@ export class Song {
 		tempoInput.value = this.tempo
 		tempoInput.addEventListener('change', () => {
 			this.tempo = tempoInput.value
-			console.log(this.tempo)
-			// this.bandbook.syncManager.updateSongTempo(this, tempoInput.value)
+			this.bandbook.syncManager.updateSongTempo(this, tempoInput.value)
 		})
 		tempoLabel.appendChild(tempoSpan)
 		tempoLabel.appendChild(tempoInput)
@@ -141,8 +147,7 @@ export class Song {
 		keyInput.value = this.key
 		keyInput.addEventListener('change', () => {
 			this.key = keyInput.value
-			console.log(this.key)
-			// this.bandbook.syncManager.updateSongKey(this, keyInput.value)
+			this.bandbook.syncManager.updateSongKey(this, keyInput.value)
 		})
 		keyLabel.appendChild(keySpan)
 		keyLabel.appendChild(keyInput)
@@ -157,8 +162,7 @@ export class Song {
 		timeSignatureInput.value = this.timeSignature
 		timeSignatureInput.addEventListener('change', () => {
 			this.timeSignature = timeSignatureInput.value
-			console.log(this.timeSignature)
-			// this.bandbook.syncManager.updateSongTimeSignature(this, timeSignatureInput.value)
+			this.bandbook.syncManager.updateSongTimeSignature(this, timeSignatureInput.value)
 		})
 		timeSignatureLabel.appendChild(timeSignatureSpan)
 		timeSignatureLabel.appendChild(timeSignatureInput)
@@ -176,8 +180,7 @@ export class Song {
 		notesInput.rows = 4
 		notesInput.addEventListener('change', () => {
 			this.notes = notesInput.value
-			console.log(this.notes)
-			// this.bandbook.syncManager.updateSongNotes(this, notesInput.value)
+			this.bandbook.syncManager.updateSongNotes(this, notesInput.value)
 		})
 		notesLabel.appendChild(notesSpan)
 		notesLabel.appendChild(notesInput)
@@ -231,9 +234,7 @@ export class Song {
 	*/
 	getData() {
 		return {
-			slug: this.slug,
-			title: this.title,
-			composer: this.composer,
+			...this.getMetadata(),
 			src: this.src,
 			markers: this.getMarkerData()
 		}
@@ -247,6 +248,10 @@ export class Song {
 			slug: this.slug,
 			title: this.title,
 			composer: this.composer,
+			tempo: this.tempo,
+			key: this.key,
+			timeSignature: this.timeSignature,
+			notes: this.notes,
 			markers: this.getMarkerData().map(marker => marker.id)
 		}
 	}
