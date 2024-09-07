@@ -19,18 +19,22 @@ export class Notification {
 	 * Initializes the notification
 	*/
 	init() {
+		// Create notification element and add classes
 		this.element = document.createElement('div')
 		this.element.classList.add('notification', this.type, 'off-screen')
 
+		// Create paragraph element, add message, and append to notification element
 		const p = document.createElement('p')
 		p.textContent = this.message
 		this.element.appendChild(p)
-		
+
+		// If the notification is timed, remove it after the duration
 		if (this.isTimed) {
 			setTimeout(() => {
 				this.remove()
 			}, this.duration)
 		} else {
+			// If the notification is not timed, add a close button
 			const close = document.createElement('button')
 			close.classList.add('close')
 			close.textContent = '✖'
@@ -38,7 +42,10 @@ export class Notification {
 			this.element.appendChild(close)
 		}
 
+		// Append the notification to the body
 		document.body.appendChild(this.element)
+
+		// Remove the off-screen class after a short delay to animate the notification on screen
 		setTimeout(() => {
 			this.element.classList.remove('off-screen')
 		}, 100)

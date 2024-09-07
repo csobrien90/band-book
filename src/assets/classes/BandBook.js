@@ -34,14 +34,14 @@ export class BandBook {
 	 * @param {Object} songData - An object containing song data
 	 * @returns {void}
 	*/
-    init(songData) {
+    async init(songData) {
 		if (!this.id) this.id = this.createId
 
 		// Create an array of Song instances from the song data
         this.songs = songData ? songData.map(song => new Song(song, this)) : []
 
 		// Get the theme from the sync manager
-		const theme = this.syncManager.loadTheme()
+		const theme = await this.syncManager.loadTheme()
 		if (theme) this.wrapper.classList.add(theme)
 
 		// Set the active song
