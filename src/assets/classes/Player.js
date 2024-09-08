@@ -4,11 +4,13 @@ export class Player {
 	/**
 	 * @constructor
 	 * @param {ArrayBuffer} src - The URL to the audio file
+	 * @param {string} srcType - The type of the audio file
 	 * @param {Song} song - The song instance
 	 * @returns {Player} - A new Player
 	*/
-	constructor(src, song) {
+	constructor(src, srcType, song) {
 		this.src = src
+		this.srcType = srcType
 		this.song = song
 		this.init()
 	}
@@ -27,7 +29,7 @@ export class Player {
 	*/
 	createAudioElement(src) {
 		const audio = document.createElement('audio')
-		const songBlob = new Blob([src], { type: "audio/mp3" });
+		const songBlob = new Blob([src], { type: this.srcType });
 		const songUrl = URL.createObjectURL(songBlob);
 		audio.src = songUrl
 		audio.controls = true
@@ -237,7 +239,7 @@ export class Player {
 		button.className = 'btn'
 		button.textContent = 'Download'
 	
-		const srcBlob = new Blob([this.src], { type: "audio/mp3" });
+		const srcBlob = new Blob([this.src], { type: this.srcType });
 		const srcUrl = URL.createObjectURL(srcBlob);
 
 		button.href = srcUrl

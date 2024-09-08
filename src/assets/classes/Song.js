@@ -30,7 +30,8 @@ export class Song {
 	/**
 	 * @constructor
 	 * @param {string} slug - The song slug
-	 * @param {ArrayBuffer} src - The URL to the song audio file
+	 * @param {{ArrayBuffer}} src - The URL to the song audio file
+	 * @param {string} srcType - The type of the song audio file
 	 * @param {string} title - The title for the song
 	 * @param {string} composer - The composer for the song
 	 * @param {number} tempo - The tempo for the song
@@ -38,14 +39,15 @@ export class Song {
 	 * @param {string} timeSignature - The time signature for the song
 	 * @param {string} notes - The notes for the song
 	 * @param {Array<MarkerData>} markers - An array of markers for the song
-	 * @param {Bandbook} bandbook - A Bandbook instance
+	 * @param {BandBook} bandbook - A Bandbook instance
 	 * @returns {Song} - A new Song instance
 	*/
-	constructor({slug, src, title, composer, tempo, key, timeSignature, notes, markers = []}, bandbook) {
+	constructor({slug, src, srcType, title, composer, tempo, key, timeSignature, notes, markers = []}, bandbook) {
 		// Assign properties
 		this.slug = slug
 		this.src = src
-		this.player = new Player(src, this)
+		this.srcType = srcType
+		this.player = new Player(src, srcType, this)
 		this.title = title
 		this.composer = composer
 		this.tempo = tempo

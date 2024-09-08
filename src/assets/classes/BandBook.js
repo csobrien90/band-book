@@ -163,6 +163,7 @@ export class BandBook {
 				// Create song data
 				const songData = {
 					src: arrayBuffer,
+					srcType: fileType,
 					title: name,
 					slug: name.replace(/\s/g, '-').toLowerCase(),
 					composer: 'Unknown',

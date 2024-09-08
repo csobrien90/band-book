@@ -5,7 +5,7 @@
 ## Setup
 
 - `git clone`
-- open `src/demo.html` in your browser
+- open `src/index.html` in your browser
 
 ## Usage and Features
 
