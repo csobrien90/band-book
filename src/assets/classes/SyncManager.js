@@ -1,3 +1,4 @@
+import { BandBook } from './BandBook.js'
 import { Song } from './Song.js'
 import { Marker } from './Marker.js'
 
@@ -22,7 +23,7 @@ export class SyncManager {
 
 	/**
 	 * Create all records when a BandBook is imported
-	 * @param {object} bandBookJSON - A BandBook JSON object
+	 * @param {string} bandBookJSON - A stringified BandBook JSON object
 	*/
 	importBandBook(bandBookJSON) {
 		let bandBookObj
@@ -54,8 +55,6 @@ export class SyncManager {
 
 				this.bandbook.addSong(newSong)
 			})
-			
-
 
 			this.bandbook.id = bandBookObj.id
 			this.bandbook.init(bandBookObj.songs)
@@ -66,7 +65,7 @@ export class SyncManager {
 
 	/**
 	 * Load the data and reinitialize the BandBook instance
-	 * @returns {void}
+	 * @returns {Promise} - A promise that resolves with the song data (or an empty array)
 	*/
 	loadBandBook() {
 		return new Promise((resolve, reject) => {
@@ -115,6 +114,7 @@ export class SyncManager {
 
 	/**
 	 * Runs on upgradeneeded event
+	 * @param {Event} e - The event object
 	*/
 	onUpgradeNeeded(e) {
 		const db = e.target.result
@@ -135,6 +135,12 @@ export class SyncManager {
 		theme.createIndex('id', 'id', { unique: true })
 	}
 
+	/**
+	 * Connect to the BandBook indexedDB
+	 * @param {function} onSuccess - A callback function to run on success
+	 * @param {function} onError - A callback function to run on error
+	 * @returns {void}
+	*/
 	connectToBandbookDB(onSuccess, onError = null) {
 		const request = indexedDB.open('bandbook', 1)
 
@@ -153,6 +159,8 @@ export class SyncManager {
 
 	/**
 	 * Create a new BandBook record in indexedDB
+	 * @returns {Promise} - A promise that resolves when the record is created
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	createNewBandBookRecord() {
 		return new Promise((resolve, reject) => {
@@ -169,6 +177,8 @@ export class SyncManager {
 
 	/**
 	 * Delete the BandBook record from indexedDB
+	 * @returns {Promise} - A promise that resolves when the record is deleted
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	deleteBandBookRecord() {
 		return new Promise((resolve, reject) => {
@@ -187,6 +197,8 @@ export class SyncManager {
 	/**
 	 * Create a new song in indexedDB
 	 * @param {Song} song - A Song instance
+	 * @returns {Promise} - A promise that resolves when the song is created
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	createSong(song) {
 		return new Promise((resolve, reject) => {
@@ -232,8 +244,9 @@ export class SyncManager {
 	/**
 	 * Get song data from indexedDB
 	 * @param {string} songId - A song ID
-	 * @returns {object} - The song data
-	 * @returns {undefined} - If no song is found
+	 * @returns {Promise} - A promise that resolves with the song data
+	 * @returns {Promise} - A promise that resolves with undefined if no song is found
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	getSongData(songId) {
 		return new Promise((resolve, reject) => {
@@ -316,6 +329,8 @@ export class SyncManager {
 	/**
 	 * Delete a song from indexedDB
 	 * @param {Song} song - A Song instance
+	 * @returns {Promise} - A promise that resolves when the song is deleted
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	deleteSong(song) {
 		return new Promise((resolve, reject) => {
@@ -371,6 +386,8 @@ export class SyncManager {
 	 * Update a song title in indexedDB
 	 * @param {Song} song - A Song instance
 	 * @param {string} title - A new title
+	 * @returns {Promise} - A promise that resolves when the title is updated
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	updateSongTitle(song, title) {
 		return new Promise((resolve, reject) => {
@@ -396,6 +413,8 @@ export class SyncManager {
 	 * Update a song composer in indexedDB
 	 * @param {Song} song - A Song instance
 	 * @param {string} composer - A new composer
+	 * @returns {Promise} - A promise that resolves when the composer is updated
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	updateSongComposer(song, composer) {
 		return new Promise((resolve, reject) => {
@@ -421,6 +440,8 @@ export class SyncManager {
 	 * Update a song tempo in indexedDB
 	 * @param {Song} song - A Song instance
 	 * @param {number} tempo - A new tempo
+	 * @returns {Promise} - A promise that resolves when the tempo is updated
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	updateSongTempo(song, tempo) {
 		return new Promise((resolve, reject) => {
@@ -446,6 +467,8 @@ export class SyncManager {
 	 * Update a song key in indexedDB
 	 * @param {Song} song - A Song instance
 	 * @param {string} key - A new key
+	 * @returns {Promise} - A promise that resolves when the key is updated
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	updateSongKey(song, key) {
 		return new Promise((resolve, reject) => {
@@ -471,6 +494,8 @@ export class SyncManager {
 	 * Update a song time signature in indexedDB
 	 * @param {Song} song - A Song instance
 	 * @param {string} timeSignature - A new time signature
+	 * @returns {Promise} - A promise that resolves when the time signature is updated
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	updateSongTimeSignature(song, timeSignature) {
 		return new Promise((resolve, reject) => {
@@ -496,6 +521,8 @@ export class SyncManager {
 	 * Update a song notes in indexedDB
 	 * @param {Song} song - A Song instance
 	 * @param {string} notes - New notes
+	 * @returns {Promise} - A promise that resolves when the notes are updated
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	updateSongNotes(song, notes) {
 		return new Promise((resolve, reject) => {
@@ -520,6 +547,8 @@ export class SyncManager {
 	/**
 	 * Create a new marker in indexedDB
 	 * @param {Marker} marker - A Marker instance
+	 * @returns {Promise} - A promise that resolves when the marker is created
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	createMarker(marker) {
 		return new Promise((resolve, reject) => {
@@ -556,8 +585,9 @@ export class SyncManager {
 	/**
 	 * Get marker data from indexedDB
 	 * @param {string} markerId - A marker ID
-	 * @returns {object} - The marker data
-	 * @returns {undefined} - If no marker is found
+	 * @returns {Promise} - A promise that resolves with the marker data
+	 * @returns {Promise} - A promise that resolves with undefined if no marker is found
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	getMarkerData(markerId) {
 		return new Promise((resolve, reject) => {
@@ -581,6 +611,8 @@ export class SyncManager {
 	/**
 	 * Delete a marker from indexedDB
 	 * @param {Marker} marker - A Marker instance
+	 * @returns {Promise} - A promise that resolves when the marker is deleted
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	deleteMarker(marker) {
 		return new Promise((resolve, reject) => {
@@ -616,6 +648,8 @@ export class SyncManager {
 	 * Update a marker title in indexedDB
 	 * @param {Marker} marker - A Marker instance
 	 * @param {string} title - A new title
+	 * @returns {Promise} - A promise that resolves when the title is updated
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	updateMarkerTitle(marker, title) {
 		return new Promise((resolve, reject) => {
@@ -640,6 +674,8 @@ export class SyncManager {
 	/**
 	 * Save the theme to indexedDB
 	 * @param {string} theme - The theme to save
+	 * @returns {Promise} - A promise that resolves when the theme is saved
+	 * @returns {Promise} - A promise that rejects with an error
 	*/
 	saveTheme(theme) {
 		return new Promise((resolve, reject) => {

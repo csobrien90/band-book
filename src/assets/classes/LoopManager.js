@@ -1,7 +1,9 @@
+import { Song } from './Song.js'
+
 export class LoopManager {
 	/**
 	 * @constructor
-	 * @param {Object} loopBounds - An object containing start and end times (optional)
+	 * @param {{start: number, end: number}} loopBounds - An object containing start and end times (optional)
 	 * @returns {LoopManager} - A new LoopManager instance
 	*/
 	constructor(loopBounds) {
@@ -40,6 +42,7 @@ export class LoopManager {
 
 	/**
 	 * Set the song
+	 * @param {Song} song - The song
 	*/
 	setSong(song) {
 		this.song = song

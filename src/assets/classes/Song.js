@@ -1,3 +1,4 @@
+import { Bandbook } from './BandBook.js'
 import { Marker } from './Marker.js'
 import { MarkerList } from './MarkerList.js'
 import { Player } from './Player.js'
@@ -8,6 +9,25 @@ import { Modal } from './Modal.js'
 */
 export class Song {
 	/**
+	 * @param {Player} player - The player for the song
+	 * @default null
+	*/
+	player = null
+
+	/**
+	 * @typedef {Object} MarkerData
+	 * @property {number} time - The time for the marker
+	 * @property {string} title - The title for the marker
+	 * @property {string} id - The marker ID
+	*/
+
+	/**
+	 * @param {Array<MarkerData>} markerData - An array of markers for the song
+	 * @default []
+	*/
+	markerData = []
+
+	/**
 	 * @constructor
 	 * @param {string} slug - The song slug
 	 * @param {string} src - The URL to the song audio file
@@ -17,7 +37,7 @@ export class Song {
 	 * @param {string} key - The key for the song
 	 * @param {string} timeSignature - The time signature for the song
 	 * @param {string} notes - The notes for the song
-	 * @param {Array} markers - An array of markers for the song
+	 * @param {Array<MarkerData>} markers - An array of markers for the song
 	 * @param {Bandbook} bandbook - A Bandbook instance
 	 * @returns {Song} - A new Song instance
 	*/
@@ -71,10 +91,12 @@ export class Song {
 			const modalHeader = document.createElement('h2')
 			modalHeader.textContent = this.title
 
+			// Append buttons to modal header and get edit form content
 			modalHeader.appendChild(this.getEditTitleButton())
 			modalHeader.appendChild(this.getDeleteSongButton())
-
 			const modalContent = this.getEditForm()
+
+			// Open modal
 			const modal = new Modal(modalHeader, modalContent, { useForm: true })
 		})
 		return button
@@ -103,7 +125,7 @@ export class Song {
 
 	/**
 	 * Returns an edit form for the song
-	 * @returns {HTMLFormElement} - A form element
+	 * @returns {HTMLDivElement} - A div wrapper around the form element
 	*/
 	getEditForm() {
 		const div = document.createElement('div')
@@ -199,6 +221,7 @@ export class Song {
 
 	/**
 	 * Returns a delete song button
+	 * @returns {HTMLButtonElement} - A button element
 	 */
 	getDeleteSongButton() {
 		const button = document.createElement('button')
@@ -216,6 +239,7 @@ export class Song {
 
 	/**
 	 * Gets the wrapper element with the song action buttons
+	 * @returns {HTMLDivElement} - A div element
 	*/
 	getActionButtons() {
 		const wrapper = document.createElement('div')
@@ -225,6 +249,7 @@ export class Song {
 
 	/**
 	 * Get workspace header
+	 * @returns {HTMLElement} - A header element
 	*/
 	getHeader() {
 		const header = document.createElement('header')
@@ -235,7 +260,23 @@ export class Song {
 	}
 
 	/**
+	 * @typedef {Object} SongMeta
+	 * @property {string} slug - The song slug
+	 * @property {string} title - The title for the song
+	 * @property {string} composer - The composer for the song
+	 * @property {number} tempo - The tempo for the song
+	 * @property {string} key - The key for the song
+	 * @property {string} timeSignature - The time signature for the song
+	 * @property {string} notes - The notes for the song
+	 * @property {Array<string>} markers - An array of marker IDs for the song
+	*/
+
+	/**
 	 * Get song data for serialization
+	 * @returns {Object} - A song object
+	 * @extends {SongMeta}
+	 * @property {string} src - The URL to the song audio file
+	 * @property {Array<MarkerData>} markers - An array of markers for the song
 	*/
 	getData() {
 		return {
@@ -247,6 +288,7 @@ export class Song {
 
 	/**
 	 * Get song metadata for serialization
+	 * @returns {SongMeta} - A song metadata object
 	*/
 	getMetadata() {
 		return {
@@ -263,6 +305,10 @@ export class Song {
 
 	/**
 	 * Get marker data for serialization
+	 * @returns {Array<Object>} - An array of marker data
+	 * @property {number} time - The time for the marker
+	 * @property {string} title - The title for the marker
+	 * @property {string} id - The marker ID
 	*/
 	getMarkerData() {
 		return this.markerList.markers.map(marker => {
@@ -272,6 +318,9 @@ export class Song {
 
 	/**
 	 * Get song src data for serialization
+	 * @returns {Object} - A song src object
+	 * @property {string} id - The song slug
+	 * @property {string} src - The URL to the song audio file
 	*/
 	getSrcData() {
 		return {

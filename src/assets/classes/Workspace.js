@@ -1,3 +1,5 @@
+import { Song } from './Song.js'
+
 export class Workspace {
 	/**
 	 * @constructor

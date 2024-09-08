@@ -6,7 +6,6 @@ export class Player {
 	*/
 	constructor(src) {
 		this.src = src
-		this.audioElement = null
 		this.init()
 	}
 

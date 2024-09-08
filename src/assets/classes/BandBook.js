@@ -9,6 +9,24 @@ import { Modal } from './Modal.js'
 */
 export class BandBook {
 	/**
+	 * @param {Workspace} workspace - The workspace for the BandBook instance
+	 * @default null
+	*/
+	workspace = null
+
+	/**
+	 * @param {SyncManager} syncManager - The sync manager for the BandBook instance
+	 * @default null
+	*/
+	syncManager = null
+
+	/**
+	 * @param {HTMLElement} navElement - The navigation element for the BandBook instance
+	 * @default null
+	*/
+	navElement = null
+
+	/**
 	 * @constructor
 	 * @param {HTMLElement} wrapperElement - An HTML element to render the workspace
 	 * @returns {BandBook} - A new BandBook instance
@@ -20,7 +38,6 @@ export class BandBook {
 		this.addFeedbackButton()
 		this.workspace = new Workspace(wrapperElement)
 		this.syncManager = new SyncManager(this)
-		this.navElement = null
 		this.syncManager.loadBandBook().then((data) => {
 			this.init(data)
 		}).catch((error) => {
@@ -111,6 +128,7 @@ export class BandBook {
 
 	/**
 	 * Sets the active song
+	 * @param {Song} song - A Song instance
 	*/
 	setActiveSong(song) {
 		this.activeSong = song
@@ -221,6 +239,7 @@ export class BandBook {
 
 	/**
 	 * Returns the theme toggle button
+	 * @returns {HTMLButtonElement} - A button element
 	*/
 	getThemeToggle() {
 		const button = document.createElement('button')
