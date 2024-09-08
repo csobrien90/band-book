@@ -296,6 +296,7 @@ export class Song {
 		return {
 			slug: this.slug,
 			title: this.title,
+			srcType: this.srcType,
 			composer: this.composer,
 			tempo: this.tempo,
 			key: this.key,
@@ -327,7 +328,8 @@ export class Song {
 	getSrcData() {
 		return {
 			id: this.slug,
-			src: this.src
+			src: this.src,
+			srcType: this.srcType
 		}
 	}
 }

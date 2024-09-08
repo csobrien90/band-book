@@ -238,12 +238,26 @@ export class Player {
 		const button = document.createElement('a')
 		button.className = 'btn'
 		button.textContent = 'Download'
-	
+
+		// Create a blob from the source and set the href attribute
 		const srcBlob = new Blob([this.src], { type: this.srcType });
 		const srcUrl = URL.createObjectURL(srcBlob);
-
 		button.href = srcUrl
-		button.download = `${this.song.title}.mp3`
+
+		// Set the download attribute based on the file type
+		let type = this.srcType.split('/')[1]
+		switch (type) {
+			case 'x-m4a':
+				type = 'm4a'
+				break
+			case 'mpeg':
+				type = 'mp3'
+				break
+			default:
+				break
+		}
+
+		button.download = `${this.song.title}.${type}`
 
 		return button
 	}
