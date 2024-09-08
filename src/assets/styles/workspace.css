@@ -9,13 +9,45 @@
 		gap: 1rem;
 		padding: 1rem 0;
 	
-		button {
+		button, .btn {
 			min-width: 200px;
 			height: 100%;
 		}
+	}
 
-		audio {
+	.player {
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		align-items: center;
+		gap: .5rem 1rem;
+
+		@media screen and (min-width: 800px) {
+			min-width: 600px;
+		}
+
+		button, .btn {
+			min-width: 0;
+			justify-self: flex-start;
+			height: auto;
+		}
+
+		a.btn:hover, a.btn:focus {
+			text-decoration: none;
+		}
+
+		label {
+			padding: 0;
+		}
+
+		.seeking input {
 			width: 100%;
+		}
+
+		.volume-control, .speed-control {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			grid-column: 1 / -1;
 		}
 	}
 	
@@ -39,7 +71,5 @@
 }
 
 @media screen and (min-width: 900px) {
-	.player-wrapper audio {
-		min-width: 600px;
-	}
+
 }

@@ -1,4 +1,4 @@
-import { Bandbook } from './BandBook.js'
+import { BandBook } from './BandBook.js'
 import { Marker } from './Marker.js'
 import { MarkerList } from './MarkerList.js'
 import { Player } from './Player.js'
@@ -30,7 +30,7 @@ export class Song {
 	/**
 	 * @constructor
 	 * @param {string} slug - The song slug
-	 * @param {string} src - The URL to the song audio file
+	 * @param {ArrayBuffer} src - The URL to the song audio file
 	 * @param {string} title - The title for the song
 	 * @param {string} composer - The composer for the song
 	 * @param {number} tempo - The tempo for the song
@@ -45,7 +45,7 @@ export class Song {
 		// Assign properties
 		this.slug = slug
 		this.src = src
-		this.player = new Player(src)
+		this.player = new Player(src, this)
 		this.title = title
 		this.composer = composer
 		this.tempo = tempo

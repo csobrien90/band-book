@@ -45,7 +45,7 @@ export class BandBook {
 			console.error('Error loading BandBook:', error)
 		})
 	}
-
+	
 	/**
 	 * Initializes the BandBook instance
 	 * @param {Object} songData - An object containing song data
@@ -53,10 +53,10 @@ export class BandBook {
 	*/
     async init(songData) {
 		if (!this.id) this.id = this.createId
-
+		
 		// Create an array of Song instances from the song data
         this.songs = songData ? songData.map(song => new Song(song, this)) : []
-
+		
 		// Get the theme from the sync manager
 		const theme = await this.syncManager.loadTheme()
 		if (theme) this.wrapper.classList.add(theme)
@@ -146,24 +146,23 @@ export class BandBook {
 		upload.accept = '*'
 		upload.classList.add('btn')
 		upload.addEventListener('change', (e) => {
-			// Validate the file type
-			const { target: { files } } = e
-			const { type: fileType, name } = files[0]
+			const { target: { files } } = e;
+			const { type: fileType, name } = files[0];
+		
 			if (!fileType.includes('audio')) {
-				// Alert the user if the file type is invalid
-				alert('Please upload a valid file type (e.g. mp3, wav, etc.)')
-
-				// Reset the input and return
-				upload.value = ''
-				return
+				const notification = new Notification('Please upload a valid file type (e.g. mp3, wav, etc.)', 'error', true);
+				upload.value = '';
+				return;
 			}
-
-			// base64 encode the file
-			const reader = new FileReader()
+		
+			const reader = new FileReader();
 			reader.onload = (readerEvent) => {
-				const base64 = readerEvent.target.result
+				// Read the file as an ArrayBuffer
+				const arrayBuffer = readerEvent.target.result;
+		
+				// Create song data
 				const songData = {
-					src: base64,
+					src: arrayBuffer,
 					title: name,
 					slug: name.replace(/\s/g, '-').toLowerCase(),
 					composer: 'Unknown',
@@ -171,15 +170,15 @@ export class BandBook {
 					key: 'C',
 					timeSignature: '4/4',
 					notes: ''
-				}
-
-				const song = new Song(songData, this)
-				this.addSong(song)
-				this.renderSongNavigation()
-				this.syncManager.createSong(song)
-			}
-			reader.readAsDataURL(e.target.files[0])
-		})
+				};
+		
+				const song = new Song(songData, this);
+				this.addSong(song);
+				this.renderSongNavigation();
+				this.syncManager.createSong(song);
+			};
+			reader.readAsArrayBuffer(files[0]); // Read file as ArrayBuffer
+		});
 
 		// Create a button element
 		const button = document.createElement('button')

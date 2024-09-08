@@ -34,7 +34,7 @@ export class Workspace {
 		// Create player wrapper
 		const playerWrapper = document.createElement('div')
 		playerWrapper.className = 'player-wrapper'
-		playerWrapper.appendChild(song.player.getAudioElement())
+		playerWrapper.appendChild(song.player.getPlayerElement())
 		playerWrapper.appendChild(song.markerList.getAddMarkerButton())
 
 		// Append player wrapper and marker list to workspace

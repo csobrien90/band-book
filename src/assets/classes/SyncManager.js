@@ -707,6 +707,8 @@ export class SyncManager {
 					if (record) {
 						this.bandbook.wrapper.classList.toggle('dark', record.data === 'dark')
 						resolve(record.data)
+					} else {
+						resolve('light')
 					}
 					this.bandbook.wrapper.classList.remove('bandbook-loading')
 				}
