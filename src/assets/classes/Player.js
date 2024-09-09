@@ -74,10 +74,11 @@ export class Player {
 
 		const currentTime = document.createElement('span')
 		currentTime.className = 'current-time'
-		currentTime.textContent = format(this.audioElement.currentTime) || 0
+		currentTime.textContent = format(this.audioElement.currentTime) || format(0)
 
 		const durationElement = document.createElement('span')
 		durationElement.className = 'duration'
+		durationElement.textContent = format(this.audioElement.duration) || format(0)
 
 		this.audioElement.addEventListener('loadedmetadata', () => {
 			durationElement.textContent = format(this.audioElement.duration)

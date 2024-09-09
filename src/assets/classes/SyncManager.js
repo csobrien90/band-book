@@ -88,7 +88,9 @@ export class SyncManager {
 									return song
 								}))
 
-								resolve(songData)
+								const filteredSongData = songData.filter(song => song !== undefined)
+
+								resolve(filteredSongData)
 							} else {
 								resolve([])
 							}
@@ -252,7 +254,6 @@ export class SyncManager {
 		return new Promise((resolve, reject) => {
 			this.connectToBandbookDB((db) => {
 				try {
-
 					const transaction = db.transaction(['songs'], 'readwrite')
 					const store = transaction.objectStore('songs')
 					
@@ -261,12 +262,11 @@ export class SyncManager {
 					let songData
 					existing.onsuccess = (e) => {
 						const record = e.target.result
-
 						if (!record) {
 							// Remove the song from the BandBook record
 							const booksTransaction = db.transaction(['books'], 'readwrite')
 							const booksStore = booksTransaction.objectStore('books')
-
+							
 							const existing = booksStore.get(this.bandbook.id)
 							existing.onsuccess = (e) => {
 								const record = e.target.result
@@ -277,11 +277,10 @@ export class SyncManager {
 									booksStore.put(record)
 								}
 							}
-
-							resolve(undefined)
 						}
 
-						songData = JSON.parse(record.data)
+						songData = record ? JSON.parse(record.data) : undefined
+						if (!songData) resolve(undefined)
 
 						// Get src data
 						const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
@@ -291,7 +290,7 @@ export class SyncManager {
 							if (srcRecord) songData.src = srcRecord.src
 
 							// Get marker data
-							if (songData.markers) {
+							if (songData?.markers) {
 								const markerStore = db.transaction(['markers'], 'readwrite').objectStore('markers')
 								const markerData = songData.markers.map((markerId) => {
 									return new Promise((resolve, reject) => {

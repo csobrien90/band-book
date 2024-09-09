@@ -220,12 +220,22 @@ export class BandBook {
 	getExportButton() {
 		const button = document.createElement('button')
 		button.textContent = 'Export'
-		button.addEventListener('click', () => {
-			const data = JSON.stringify({
+		button.addEventListener('click', async () => {
+			let songData = []
+			for (let i = 0; i < this.songs.length; i++) {
+				const song = this.songs[i]
+				const songDataItem = await song.getData()
+				songData.push(songDataItem)
+			}
+
+			const data = {
 				id: this.id,
-				songs: this.songs.map(song => song.getData())
-			})
-			const blob = new Blob([data], { type: 'application/json' })
+				songs: songData
+			}
+
+			const stringifiedData = JSON.stringify(data, null, 2)
+
+			const blob = new Blob([stringifiedData], { type: 'application/json' })
 			const url = URL.createObjectURL(blob)
 			const a = document.createElement('a')
 			a.href = url

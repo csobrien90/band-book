@@ -280,12 +280,43 @@ export class Song {
 	 * @property {string} src - The URL to the song audio file
 	 * @property {Array<MarkerData>} markers - An array of markers for the song
 	*/
-	getData() {
-		return {
-			...this.getMetadata(),
-			src: this.src,
-			markers: this.getMarkerData()
-		}
+	async getData() {
+		return new Promise(async (resolve, reject) => {
+			try {
+				const stringifiedSrc = await this.getStringifiedSrc()
+				const data = {
+					...this.getMetadata(),
+					src: stringifiedSrc,
+					markers: this.getMarkerData()
+				}
+
+				resolve(data)
+			} catch (error) {
+				reject(error)
+			}
+		})
+	}
+
+	/**
+	 * Get the stringified song src
+	 * @returns {Promise<string>} - A base64 string of the song src
+	 * @throws {Error} - An error if the song src cannot be stringified
+	 * @async
+	*/
+	getStringifiedSrc() {
+		return new Promise((resolve, reject) => {
+			// Convert ArrayBuffer to audio file and then to base64 string
+			const blob = new Blob([this.src], { type: this.srcType })
+			const reader = new FileReader()
+			reader.readAsDataURL(blob)
+			reader.onloadend = () => {
+				resolve(reader.result)
+			}
+
+			reader.onerror = () => {
+				reject(new Error('Failed to convert song src to base64 string'))
+			}
+		})
 	}
 
 	/**
