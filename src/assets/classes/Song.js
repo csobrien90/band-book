@@ -94,7 +94,7 @@ export class Song {
 			modalHeader.textContent = this.title
 
 			// Append buttons to modal header and get edit form content
-			modalHeader.appendChild(this.getEditTitleButton())
+			modalHeader.appendChild(this.getEditTitleButton(modalHeader))
 			modalHeader.appendChild(this.getDeleteSongButton())
 			const modalContent = this.getEditForm()
 
@@ -108,19 +108,28 @@ export class Song {
 	 * Returns an edit title button
 	 * @returns {HTMLButtonElement} - A button element
 	*/
-	getEditTitleButton() {
+	getEditTitleButton(modalHeader) {
 		const button = document.createElement('button')
 		button.classList.add('edit-song-title')
 		button.innerHTML = '&#9998;'
 		button.ariaLabel = 'Edit title'
 		button.addEventListener('click', () => {
-			const newTitle = prompt('Enter a new title:', this.title)
-			if (newTitle) {
-				this.setTitle(newTitle)
-				this.bandbook.syncManager.updateSongTitle(this, newTitle)
+			modalHeader.innerHTML = ''
+			const titleInput = document.createElement('input')
+			titleInput.type = 'text'
+			titleInput.value = this.title
+
+			const saveButton = document.createElement('button')
+			saveButton.textContent = 'Save'
+			saveButton.addEventListener('click', (e) => {
+				e.preventDefault()
+				this.setTitle(titleInput.value)
+				this.bandbook.syncManager.updateSongTitle(this, titleInput.value)
 				this.bandbook.refresh()
-				this.bandbook.workspace.setSongWorkspace(this)
-			}
+			})
+
+			modalHeader.appendChild(titleInput)
+			modalHeader.appendChild(saveButton)
 		})
 		return button
 	}
