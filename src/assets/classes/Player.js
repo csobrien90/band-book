@@ -57,6 +57,8 @@ export class Player {
 		playerElement.appendChild(this.getTimeElement())
 		playerElement.appendChild(this.getSeekingElement())
 		playerElement.appendChild(this.getPlayPauseButton())
+
+		playerElement.appendChild(this.getJump10SecondsButtons())
 		playerElement.appendChild(this.getVolumeControl())
 		playerElement.appendChild(this.getSpeedControl())
 		playerElement.appendChild(this.getDowloadButton())
@@ -154,6 +156,34 @@ export class Player {
 		})
 
 		return button
+	}
+
+	/**
+	 * Returns the jump 10 seconds buttons
+	 * @returns {HTMLDivElement} - A div element
+	*/
+	getJump10SecondsButtons() {
+		const jump10Seconds = document.createElement('div')
+		jump10Seconds.className = 'jump-10-seconds'
+
+		const jumpBackward = document.createElement('button')
+		jumpBackward.className = 'jump-backward'
+		jumpBackward.textContent = '<< 10s'
+		jumpBackward.addEventListener('click', () => {
+			this.audioElement.currentTime -= 10
+		})
+
+		const jumpForward = document.createElement('button')
+		jumpForward.className = 'jump-forward'
+		jumpForward.textContent = '10s >>'
+		jumpForward.addEventListener('click', () => {
+			this.audioElement.currentTime += 10
+		})
+
+		jump10Seconds.appendChild(jumpBackward)
+		jump10Seconds.appendChild(jumpForward)
+
+		return jump10Seconds
 	}
 
 	/**

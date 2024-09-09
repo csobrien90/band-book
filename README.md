@@ -37,33 +37,33 @@ aws s3 cp favicon.ico s3://bandbook --acl public-read
 
 **Persist everything locally**
 
-- sync/load to indexedDB ✅
-- import/export to JSON ✅
-- save only the changes for improved performance ✅
+- sync/load to indexedDB
+- import/export to JSON
+- save only the changes for improved performance
 
 **Audio file management**
 
-- upload ✅
-- save ✅
-- delete ✅
-- local storage ✅
-- rename ✅
+- upload
+- save
+- delete
+- local storage
+- rename
 
 **Player controls/features**
 
-- loop ✅
-- abstract player controls to Player class ✅
+- loop
+- abstract player controls to Player class
 
 **UX/UI design**
 
-- basic design (colors, fonts, primitive components, etc.) ✅
-- basic layout (spacing, responsive, etc.) ✅
+- basic design (colors, fonts, primitive components, etc.)
+- basic layout (spacing, responsive, etc.)
 
 **Miscellaneous**
 
-- build out README to include usage and contribution guidelines ✅
-- modularize the code and make classes more reusable ✅
-	- SyncManager ✅
-	- Workspace ✅
-	- MarkerList ✅
-- Deployment to S3 ✅
+- build out README to include usage and contribution guidelines
+- modularize the code and make classes more reusable
+	- SyncManager
+	- Workspace
+	- MarkerList
+- Deployment to S3

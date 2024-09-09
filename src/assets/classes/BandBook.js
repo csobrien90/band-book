@@ -27,17 +27,28 @@ export class BandBook {
 	navElement = null
 
 	/**
+	 * @param {Song[]} songs - An array of Song instances
+	 * @default []
+	*/
+	songs = []
+
+	/**
 	 * @constructor
 	 * @param {HTMLElement} wrapperElement - An HTML element to render the workspace
 	 * @returns {BandBook} - A new BandBook instance
 	*/
 	constructor(wrapperElement) {
+		// DOM management
 		wrapperElement.id = 'bandbook'
 		this.wrapper = wrapperElement
 		this.wrapper.classList.add('bandbook-loading')
 		this.addFeedbackButton()
+
+		// Initialize dependencies
 		this.workspace = new Workspace(wrapperElement)
 		this.syncManager = new SyncManager(this)
+
+		// Load the BandBook
 		this.syncManager.loadBandBook().then((data) => {
 			this.init(data)
 		}).catch((error) => {
@@ -62,7 +73,7 @@ export class BandBook {
 		if (theme) this.wrapper.classList.add(theme)
 
 		// Set the active song
-		this.setActiveSong(this.songs[0])
+		this.setActiveSong(this.activeSong || this.songs[0])
     }
 
 	/**
@@ -102,28 +113,40 @@ export class BandBook {
 	 * @returns {void}
 	*/
 	renderSongNavigation() {
+		// Set/reset the navigation element
 		if (this.navElement) this.navElement.remove()
 		const navigation = document.createElement('nav')
 		navigation.classList.add('song-navigation')
 
-		this.songs.forEach(song => {
-			const button = document.createElement('button')
-			button.textContent = song.title
-			if (song === this.activeSong) button.classList.add('active')
-			button.addEventListener('click', () => this.setActiveSong(song))
-			navigation.appendChild(button)
-		})
+		// Create a button for each song
+		this.songs.forEach(song => this.makeSongButton(song, navigation))
 
-		navigation.appendChild(document.createElement('hr'))
+		// Add a separator if there are songs
+		if (this.songs?.length > 0) navigation.appendChild(document.createElement('hr'))
 
-		navigation.appendChild(this.getAddSongButton())
+		// Add the BandBook controls
+		navigation.appendChild(this.getCreateSongButton())
 		navigation.appendChild(this.getImportButton())
 		navigation.appendChild(this.getExportButton())
 		navigation.appendChild(this.getThemeToggle())
 
+		// Deploy the new navigation element
 		this.navElement = navigation
-
 		this.wrapper.parentElement.insertBefore(navigation, this.wrapper)
+	}
+
+	/**
+	 * Creates a song button
+	 * @param {Song} song - A Song instance
+	 * @param {HTMLElement} navigation - A navigation element
+	 * @returns {void}
+	*/
+	makeSongButton(song, navigation) {
+		const button = document.createElement('button')
+		button.textContent = song.title
+		if (song === this.activeSong) button.classList.add('active')
+		button.addEventListener('click', () => this.setActiveSong(song))
+		navigation.appendChild(button)
 	}
 
 	/**
@@ -139,7 +162,7 @@ export class BandBook {
 	 * Returns the add song button
 	 * @returns {HTMLButtonElement} - A button element
 	*/
-	getAddSongButton() {
+	getCreateSongButton() {
 		// Create an upload input element
 		const upload = document.createElement('input')
 		upload.type = 'file'
@@ -148,45 +171,57 @@ export class BandBook {
 		upload.addEventListener('change', (e) => {
 			const { target: { files } } = e;
 			const { type: fileType, name } = files[0];
-		
+
+			// Confirm the file type is audio before proceeding
 			if (!fileType.includes('audio')) {
-				const notification = new Notification('Please upload a valid file type (e.g. mp3, wav, etc.)', 'error', true);
+				new Notification('Please upload a valid file type (e.g. mp3, wav, etc.)', 'error', true);
 				upload.value = '';
 				return;
 			}
-		
-			const reader = new FileReader();
-			reader.onload = (readerEvent) => {
-				// Read the file as an ArrayBuffer
-				const arrayBuffer = readerEvent.target.result;
-		
-				// Create song data
-				const songData = {
-					src: arrayBuffer,
-					srcType: fileType,
-					title: name,
-					slug: name.replace(/\s/g, '-').toLowerCase(),
-					composer: 'Unknown',
-					tempo: 120,
-					key: 'C',
-					timeSignature: '4/4',
-					notes: ''
-				};
-		
-				const song = new Song(songData, this);
-				this.addSong(song);
-				this.renderSongNavigation();
-				this.syncManager.createSong(song);
-			};
-			reader.readAsArrayBuffer(files[0]); // Read file as ArrayBuffer
+
+			this.createSong(files[0], fileType, name);
 		});
 
-		// Create a button element
+		// Return a button element to trigger the hidden upload input
 		const button = document.createElement('button')
 		button.textContent = 'Add Song'
 		button.addEventListener('click', () => upload.click())
-
 		return button
+	}
+
+	/**
+	 * Creates a song
+	 * @param {File} file - A file object
+	 * @param {string} fileType - The file type
+	 * @param {string} name - The file name
+	 * @returns {void}
+	*/
+	createSong(file, fileType, name) {
+		const reader = new FileReader();
+		reader.onload = (readerEvent) => {
+			// Read the file as an ArrayBuffer
+			const arrayBuffer = readerEvent.target.result;
+
+			// Create song data
+			const songData = {
+				src: arrayBuffer,
+				srcType: fileType,
+				title: name,
+				slug: name.replace(/\s/g, '-').toLowerCase(),
+				composer: 'Unknown',
+				tempo: 120,
+				key: 'C',
+				timeSignature: '4/4',
+				notes: ''
+			};
+
+			// Create a new Song instance, add it to BandBook, and sync
+			const song = new Song(songData, this);
+			this.addSong(song);
+			this.renderSongNavigation();
+			this.syncManager.createSong(song);
+		};
+		reader.readAsArrayBuffer(file);
 	}
 
 	/**
@@ -197,6 +232,7 @@ export class BandBook {
 		const button = document.createElement('button')
 		button.textContent = 'Import'
 		button.addEventListener('click', () => {
+			// Create a temporary input to accept JSON files (never appended to the DOM)
 			const input = document.createElement('input')
 			input.type = 'file'
 			input.accept = 'application/json'
@@ -208,8 +244,11 @@ export class BandBook {
 				}
 				reader.readAsText(file)
 			})
+
+			// Immediately trigger the hidden input on button click
 			input.click()
 		})
+
 		return button
 	}
 
@@ -220,31 +259,39 @@ export class BandBook {
 	getExportButton() {
 		const button = document.createElement('button')
 		button.textContent = 'Export'
-		button.addEventListener('click', async () => {
-			let songData = []
-			for (let i = 0; i < this.songs.length; i++) {
-				const song = this.songs[i]
-				const songDataItem = await song.getData()
-				songData.push(songDataItem)
-			}
-
-			const data = {
-				id: this.id,
-				songs: songData
-			}
-
-			const stringifiedData = JSON.stringify(data, null, 2)
-
-			const blob = new Blob([stringifiedData], { type: 'application/json' })
-			const url = URL.createObjectURL(blob)
-			const a = document.createElement('a')
-			a.href = url
-			a.download = 'bandbook.json'
-			document.body.appendChild(a)
-			a.click()
-			a.remove()
-		})
+		button.addEventListener('click', () => this.export())
 		return button
+	}
+
+	/**
+	 * Export the BandBook instance as a JSON object
+	 * @returns {Object} - A JSON object representing the BandBook instance
+	*/
+	async export() {
+		// Get the data for each song
+		let songData = []
+		for (let i = 0; i < this.songs.length; i++) {
+			const song = this.songs[i]
+			const songDataItem = await song.getData()
+			songData.push(songDataItem)
+		}
+
+		// Create an object and stringify it for download
+		const data = {
+			id: this.id,
+			songs: songData
+		}
+		const stringifiedData = JSON.stringify(data, null, 2)
+
+		// Create a Blob to download the JSON file
+		const blob = new Blob([stringifiedData], { type: 'application/json' })
+		const url = URL.createObjectURL(blob)
+
+		// Create a temporary anchor element to download the JSON file
+		const a = document.createElement('a')
+		a.href = url
+		a.download = 'bandbook.json'
+		a.click()
 	}
 
 	/**
@@ -317,7 +364,7 @@ export class BandBook {
 			})
 			modalContent.appendChild(submit)
 
-			const modal = new Modal(modalHeader, modalContent, { useForm: true })
+			new Modal(modalHeader, modalContent, { useForm: true })
 		})
 		this.wrapper.parentElement.appendChild(button)
 	}

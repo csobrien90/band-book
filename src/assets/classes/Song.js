@@ -99,7 +99,7 @@ export class Song {
 			const modalContent = this.getEditForm()
 
 			// Open modal
-			const modal = new Modal(modalHeader, modalContent, { useForm: true })
+			new Modal(modalHeader, modalContent, { useForm: true })
 		})
 		return button
 	}
