@@ -18,11 +18,7 @@
 
 ## Contributing
 
-- open or claim an issue
-- fork and clone the repo
-- create a branch
-- make your changes
-- submit a pull request
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Deployment
 
