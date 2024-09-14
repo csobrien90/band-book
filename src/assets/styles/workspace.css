@@ -55,7 +55,7 @@
 		display: none;
 	}
 	
-	.loop-proxy.active {
+	:has(> .loop-checkbox:checked) .loop-proxy {
 		background-color: var(--warning);
 	}
 }

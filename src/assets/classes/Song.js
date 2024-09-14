@@ -126,6 +126,11 @@ export class Song {
 				this.setTitle(titleInput.value)
 				this.bandbook.syncManager.updateSongTitle(this, titleInput.value)
 				this.bandbook.refresh()
+
+				// Update modal header
+				modalHeader.textContent = this.title
+				modalHeader.appendChild(this.getEditTitleButton(modalHeader))
+				modalHeader.appendChild(this.getDeleteSongButton())
 			})
 
 			modalHeader.appendChild(titleInput)
@@ -238,9 +243,13 @@ export class Song {
 		const button = document.createElement('button')
 		button.classList.add('delete-song')
 		button.innerHTML = '&#128465;'
-		button.addEventListener('click', () => {
+		button.addEventListener('click', (e) => {
+			e.preventDefault()
 			if (confirm(`Are you sure you want to delete ${this.title}?`)) {
 				this.bandbook.removeSong(this)
+				this.bandbook.syncManager.deleteSong(this)
+				this.bandbook.refresh()
+				document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
 			} else {
 				return
 			}

@@ -37,7 +37,7 @@ export class Modal {
 
 		// If user presses the escape key, close the modal
 		document.addEventListener('keydown', e => {
-			if (e.key === 'Escape') this.remove
+			if (e.key === 'Escape') this.remove()
 		})
 
 		return dialog

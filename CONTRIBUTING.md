@@ -34,3 +34,8 @@ Pull requests should be submitted to the `main` branch. Fork the repository, mak
 ### Tests
 
 There are no tests yet. Adding some would be a great place to start contributing!
+
+
+## Hacktoberfest
+
+This project is participating in Hacktoberfest! We've tagged qualifying issues as "hacktoberfest" to help you locate tasks. New issues within the above guidelines are also welcome; they will be reviewed and tagged by maintainers after creation. Once your pull request is merged, it will get the "hacktoberfest-accepted" label. For more information, check out the [Hacktoberfest website](https://hacktoberfest.com/).

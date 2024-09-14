@@ -113,8 +113,9 @@ export class MarkerList {
 			const item = document.createElement('li')
 
 			// Append all elements to the item
-			item.appendChild(this.getLoopCheckbox())
-			item.appendChild(this.getLoopProxy())
+			const loopCheckbox = this.getLoopCheckbox(marker)
+			item.appendChild(loopCheckbox)
+			item.appendChild(this.getLoopProxy(loopCheckbox, marker))
 			item.appendChild(this.getDeleteButton(marker))
 			item.appendChild(this.getButton(marker))
 			item.appendChild(this.getInput(marker))
@@ -130,30 +131,12 @@ export class MarkerList {
 	 * Returns a loop checkbox for the marker
 	 * @returns {HTMLInputElement} - An input element
 	*/
-	getLoopCheckbox() {
+	getLoopCheckbox(marker) {
 		const loopCheckbox = document.createElement('input')
 		loopCheckbox.type = 'checkbox'
 		loopCheckbox.classList.add('loop-checkbox')
 		loopCheckbox.checked = this.loopManager.active && this.loopManager.start === marker.time
-		loopCheckbox.addEventListener('change', () => {
-			if (!loopCheckbox.checked && this.loopManager.active) {
-				this.loopManager.toggleLoop()
-			} else if (loopCheckbox.checked) {
-				if (!this.loopManager.active) {
-					this.loopManager.toggleLoop()
-				} else {
-					// Uncheck all other loop checkboxes
-					const checkboxes = document.querySelectorAll('.loop-checkbox')
-					checkboxes.forEach(checkbox => {
-						if (checkbox !== loopCheckbox) checkbox.checked = false
-					})
-				}
-
-				const nextMarkerTime = this.markers.find(m => m.time > marker.time)?.time
-				const endTime = nextMarkerTime || this.song.player.getAudioElement().duration
-				this.loopManager.setLoopBounds(marker.time, endTime)
-			}
-		})
+		loopCheckbox.dataset.time = marker.time
 		return loopCheckbox
 	}
 
@@ -161,15 +144,25 @@ export class MarkerList {
 	 * Returns a loop proxy button for the marker
 	 * @returns {HTMLButtonElement} - A button element
 	*/
-	getLoopProxy() {
+	getLoopProxy(loopCheckbox, marker) {
 		const loopProxy = document.createElement('button')
 		loopProxy.classList.add('loop-proxy')
 		loopProxy.textContent = 'Loop'
 		loopProxy.addEventListener('click', () => {
 			loopCheckbox.checked = !loopCheckbox.checked
-			if (loopCheckbox.checked) loopProxy.classList.add('active')
-			else loopProxy.classList.remove('active')
-			loopCheckbox.dispatchEvent(new Event('change'))
+
+			// Uncheck all other loop checkboxes
+			document.querySelectorAll('.loop-checkbox').forEach(checkbox => {
+				if (checkbox !== loopCheckbox) {
+					checkbox.checked = false
+				}
+			})
+
+			this.loopManager.toggleLoop()
+			const nextMarkerTime = this.markers.find(m => m.time > marker.time)?.time
+			const endTime = nextMarkerTime || this.song.player.getAudioElement().duration
+			this.loopManager.setLoopBounds(marker.time, endTime)
+
 			loopProxy.blur()
 		})
 		return loopProxy

@@ -20,6 +20,10 @@
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
+### Contributors
+
+- (Chad O'Brien)[http://github.com/csobrien90]
+
 ## Deployment
 
 ```bash
