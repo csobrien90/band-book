@@ -22,7 +22,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ### Contributors
 
-- (Chad O'Brien)[http://github.com/csobrien90]
+- [Chad O'Brien](http://github.com/csobrien90)
 
 ## Deployment
 
