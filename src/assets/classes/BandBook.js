@@ -329,6 +329,19 @@ export class BandBook {
 			const modalContent = document.createElement('div')
 			modalContent.classList.add('feedback-form')
 
+			const emailLabel = document.createElement('label')
+			emailLabel.htmlFor = 'email'
+
+			const emailSpan = document.createElement('span')
+			emailSpan.textContent = 'Email (optional)'
+			emailLabel.appendChild(emailSpan)
+
+			const emailInput = document.createElement('input')
+			emailInput.id = 'email'
+			emailInput.type = 'email'
+			emailInput.name = 'email'
+			emailLabel.appendChild(emailInput)
+
 			const label = document.createElement('label')
 			label.htmlFor = 'feedback'
 			
@@ -339,32 +352,55 @@ export class BandBook {
 			const textarea = document.createElement('textarea')
 			textarea.id = 'feedback'
 			textarea.name = 'feedback'
-			textarea.rows = 4
+			textarea.rows = 6
 			textarea.required = true
 			label.appendChild(textarea)
 
+			modalContent.appendChild(emailLabel)
 			modalContent.appendChild(label)
 			
 			const submit = document.createElement('button')
 			submit.type = 'submit'
 			submit.textContent = 'Send'
-			submit.addEventListener('click', (e) => {
+			modalContent.appendChild(submit)
+
+			const modal = new Modal(modalHeader, modalContent, { useForm: true })
+
+			submit.addEventListener('click', async (e) => {
 				e.preventDefault()
-				const feedback = textarea.value
-				if (feedback) {
-					const data = {
-						feedback,
-						date: new Date()
+				document.body.classList.add('active-loading')
+				const email = emailInput.value
+				const message = textarea.value
+
+				if (message) {
+					const data = { message, email }
+					
+					// Send feedback to the serverless function
+					const submitFeedbackResponse = await fetch('https://bb-feedback-function.deno.dev/', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify(data)
+					})
+
+					document.body.classList.remove('active-loading')
+
+					if (!submitFeedbackResponse.ok) {
+						new Notification(
+							'There was an error submitting your feedback. Refresh the page and try again.',
+							'error'
+						)
+						return
+					} else {
+						new Notification('Thank you for your feedback!', 'success')
+						modal.remove()
 					}
-					console.log('Feedback:', {data})
-					new Notification('Feedback sent successfully', 'success')
 				} else {
 					new Notification('Please enter some feedback', 'error')
 				}
 			})
-			modalContent.appendChild(submit)
 
-			new Modal(modalHeader, modalContent, { useForm: true })
 		})
 		this.wrapper.parentElement.appendChild(button)
 	}

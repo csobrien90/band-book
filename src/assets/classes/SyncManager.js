@@ -72,9 +72,9 @@ export class SyncManager {
 			this.connectToBandbookDB((db) => {
 				const transaction = db.transaction(['books'], 'readwrite')
 				const store = transaction.objectStore('books')
-				
+
 				const all = store.getAll()
-				
+
 				all.onsuccess = async (e) => {
 					try {
 						const { id, songs } = e.target.result[0]

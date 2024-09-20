@@ -12,6 +12,10 @@
 	white-space: nowrap !important;
 }
 
+html:has(.active-loading) * {
+	cursor: wait;
+}
+
 #bandbook-loading-overlay {
 	display: none;
 }
