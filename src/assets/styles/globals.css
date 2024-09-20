@@ -20,7 +20,7 @@
 	--background-neutral: var(--white);
 	--text-neutral: var(--black);
 
-	&:has(#bandbook.dark) {
+	&:has(main.dark) {
 		--background-neutral: var(--black);
 		--text-neutral: var(--white);
 		--primary: var(--cyan);
