@@ -30,7 +30,7 @@ export class Song {
 	/**
 	 * @constructor
 	 * @param {string} slug - The song slug
-	 * @param {{ArrayBuffer}} src - The URL to the song audio file
+	 * @param {ArrayBuffer | string} src - The URL to the song audio file
 	 * @param {string} srcType - The type of the song audio file
 	 * @param {string} title - The title for the song
 	 * @param {string} composer - The composer for the song
@@ -45,6 +45,29 @@ export class Song {
 	constructor({slug, src, srcType, title, composer, tempo, key, timeSignature, notes, markers = []}, bandbook) {
 		// Assign properties
 		this.slug = slug
+		
+		// If the src is a string, convert it to an ArrayBuffer
+		if (typeof src === 'string') {
+			try {
+				const binary = atob(src.split(',')[1])
+				const array = []
+
+				if (binary.length <= 112800000) {
+					for (let i = 0; i < binary.length; i++) {
+						array.push(binary.charCodeAt(i))
+					}
+					src = new Uint8Array(array).buffer
+				} else {
+					// console.warn('Song src is too large. Converting to ArrayBuffer in chunks:', title)
+					throw new Error(`${title} src is too large`)
+					// fix large src conversion!
+				}
+			} catch (error) {
+				console.error('Failed to convert song src to ArrayBuffer', error)
+				src = new ArrayBuffer()
+			}
+		}
+
 		this.src = src
 		this.srcType = srcType
 		this.player = new Player(src, srcType, this)
