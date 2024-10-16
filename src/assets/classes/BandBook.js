@@ -145,7 +145,10 @@ export class BandBook {
 		const button = document.createElement('button')
 		button.textContent = song.title
 		if (song === this.activeSong) button.classList.add('active')
-		button.addEventListener('click', () => this.setActiveSong(song))
+		button.addEventListener('click', () => {
+			this.activeSong.player.getAudioElement().pause()
+			this.setActiveSong(song)
+		})
 		navigation.appendChild(button)
 	}
 
