@@ -307,7 +307,12 @@ export class SyncManager {
 								})
 
 								Promise.all(markerData).then((markers) => {
-									songData.markers = markers
+									// Remove duplicate markers (by id)
+									const uniqueMarkers = markers.filter(
+										(marker, index, self) => self.findIndex(m => m.id === marker.id) === index
+									)
+
+									songData.markers = uniqueMarkers
 									resolve(songData)
 								})
 
