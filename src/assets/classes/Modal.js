@@ -19,6 +19,7 @@ export class Modal {
 	init() {
 		this.element = this.getModalElement()
 		document.body.appendChild(this.element)
+		this.element.showModal()
 	}
 
 	/**
@@ -84,6 +85,7 @@ export class Modal {
 	 * Removes the modal
 	*/
 	remove() {
+		this.element.close()
 		this.element.remove()
 		delete this
 	}
