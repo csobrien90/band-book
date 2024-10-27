@@ -1,11 +1,11 @@
-h2:has(.edit-song-title) {
+h2:has(.edit-asset-title) {
 	display: flex;
 	grid-template-columns: auto 1fr;
 	align-items: center;
 	gap: .5rem;
 }
 
-.edit-song-title, .delete-song {
+.edit-asset-title, .delete-asset {
 	background: transparent;
 	padding: 0;
 	color: black;
@@ -20,11 +20,11 @@ h2:has(.edit-song-title) {
 	}
 }
 
-.edit-song-title {
+.edit-asset-title {
 	rotate: 80deg;
 }
 
-.edit-song {
+.edit-asset {
 	display: grid;
 	gap: 1rem;
 }

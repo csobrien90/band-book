@@ -681,6 +681,34 @@ export class SyncManager {
 	}
 
 	/**
+	 * Update a marker time in indexedDB
+	 * @param {Marker} marker - A Marker instance
+	 * @param {number} time - A new time
+	 * @returns {Promise<Boolean>} - A promise that resolves when the time is updated
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	updateMarkerTime(marker, time) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['markers'], 'readwrite')
+				const store = transaction.objectStore('markers')
+
+				const existing = store.get(marker.id)
+				existing.onsuccess = () => {
+					const record = existing.result
+					if (record) {
+						const data = JSON.parse(record.data)
+						data.time = time
+						store.put({ id: marker.id, data: JSON.stringify(data) })
+						resolve(true)
+					}
+				}
+				existing.onerror = (e) => reject(e)
+			})
+		})
+	}
+
+	/**
 	 * Save the theme to indexedDB
 	 * @param {string} theme - The theme to save
 	 * @returns {Promise<Boolean>} - A promise that resolves when the theme is saved

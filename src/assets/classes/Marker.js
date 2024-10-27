@@ -1,3 +1,4 @@
+import {Song} from './Song.js'
 import { secondsToFormattedTime } from '../utils.js'
 
 /**
@@ -7,6 +8,25 @@ export class Marker {
 	/**
 	 * @typedef {import('./Song.js').MarkerData} MarkerData
 	*/
+
+	/**
+	 * The time of the marker in seconds
+	 * @type {number}
+	*/
+	time
+
+	/**
+	 * The song instance
+	 * @type {Song}
+	*/
+	song
+
+	/**
+	 * The title of the marker
+	 * @type {string}
+	 * @default ""
+	*/
+	title = ""
 
 	/**
 	 * @constructor
@@ -43,11 +63,15 @@ export class Marker {
 	}
 
 	/**
-	 * Returns a formatted time string for the marker
-	 * @returns {string} - A formatted time string (HH:MM:SS)
+	 * Sets the time of the marker
+	 * @param {number} time - A time in seconds
+	 * @returns {void}
+	 * @throws {Error} - Throws an error if the time is less than 0 or greater than the song duration
 	*/
-	getFormattedTime() {
-		return secondsToFormattedTime(this.time)
+	setTime(time) {
+		if (time < 0 || time > this.song.getDuration()) throw new Error("Invalid time")
+		this.time = time
+		this.song.bandbook.syncManager.updateMarkerTime(this, time)
 	}
 
 	/**
@@ -56,6 +80,14 @@ export class Marker {
 	*/
 	getTime() {
 		return this.time
+	}
+
+	/**
+	 * Returns a formatted time string for the marker
+	 * @returns {string} - A formatted time string (HH:MM:SS)
+	*/
+	getFormattedTime() {
+		return secondsToFormattedTime(this.time)
 	}
 
 	/**

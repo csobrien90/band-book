@@ -1,4 +1,5 @@
 import { Marker } from './Marker.js'
+import { Modal } from './Modal.js'
 import { LoopManager } from './LoopManager.js'
 import { Song } from './Song.js'
 
@@ -113,9 +114,9 @@ export class MarkerList {
 			const loopCheckbox = this.getLoopCheckbox(marker)
 			item.appendChild(loopCheckbox)
 			item.appendChild(this.getLoopProxy(loopCheckbox, marker))
-			item.appendChild(this.getDeleteButton(marker))
 			item.appendChild(this.getButton(marker))
 			item.appendChild(this.getInput(marker))
+			item.appendChild(this.getEditMarkerButton(marker))
 
 			// Append the item to the list
 			list.appendChild(item)
@@ -169,6 +170,94 @@ export class MarkerList {
 	}
 
 	/**
+	 * Returns an edit marker button
+	 * @param {Marker} marker - A Marker instance
+	 * @returns {HTMLButtonElement} - A button element
+	*/
+	getEditMarkerButton(marker) {
+		const button = document.createElement('button')
+		button.textContent = 'Edit Marker'
+		button.addEventListener('click', () => {
+			const modalHeader = document.createElement('h2')
+			modalHeader.textContent = marker.title
+
+			// Append buttons to modal header and get edit form content
+			modalHeader.appendChild(this.getEditTitleButton(marker, modalHeader))
+			modalHeader.appendChild(this.getDeleteButton(marker))
+			const modalContent = this.getEditMarkerForm(marker)
+
+			// Open modal
+			new Modal(modalHeader, modalContent, { useForm: true })
+		})
+		return button
+	}
+
+	/**
+	 * Returns an edit title button for the marker
+	 * @param {Marker} marker - A Marker instance
+	 * @param {HTMLHeadingElement} modalHeader - A heading element
+	 * @returns {HTMLButtonElement} - A button element
+	*/
+	getEditTitleButton(marker, modalHeader) {
+		const button = document.createElement('button')
+		button.classList.add('edit-asset-title')
+		button.innerHTML = '&#9998;'
+		button.ariaLabel = 'Edit title'
+		button.addEventListener('click', () => {
+			modalHeader.innerHTML = ''
+			const titleInput = document.createElement('input')
+			titleInput.type = 'text'
+			titleInput.value = marker.getTitle()
+
+			const saveButton = document.createElement('button')
+			saveButton.textContent = 'Save'
+			saveButton.addEventListener('click', (e) => {
+				e.preventDefault()
+				marker.setTitle(titleInput.value)
+				marker.song.bandbook.syncManager.updateMarkerTitle(marker, titleInput.value)
+				marker.song.bandbook.refresh()
+
+				// Update modal header
+				modalHeader.textContent = marker.title
+				modalHeader.appendChild(this.getEditTitleButton(marker, modalHeader))
+				modalHeader.appendChild(this.getDeleteButton(marker))
+			})
+
+			modalHeader.appendChild(titleInput)
+			modalHeader.appendChild(saveButton)
+		})
+		return button
+	}
+		
+
+	/**
+	 * Returns an edit form for the marker
+	 * @returns {HTMLDivElement} - A div wrapper around the form element
+	*/
+	getEditMarkerForm(marker) {
+		const div = document.createElement('div')
+		div.classList.add('edit-asset')
+
+		// time
+		const timeLabel = document.createElement('label')
+		const timeSpan = document.createElement('span')
+		timeSpan.textContent = 'Time'
+		const timeInput = document.createElement('input')
+		timeInput.type = 'number'
+		timeInput.step = "any"
+		timeInput.value = marker.time
+		timeInput.addEventListener('change', () => {
+			marker.time = timeInput.value
+			marker.song.bandbook.syncManager.updateMarkerTime(marker, timeInput.value)
+		})
+		timeLabel.appendChild(timeSpan)
+		timeLabel.appendChild(timeInput)
+		div.appendChild(timeLabel)
+
+		return div
+	}
+
+	/**
 	 * Returns a delete button for the marker
 	 * @param {Marker} marker - A Marker instance
 	 * @returns {HTMLButtonElement} - A button element
@@ -177,9 +266,14 @@ export class MarkerList {
 		const deleteButton = document.createElement('button')
 		deleteButton.textContent = 'Delete'
 		deleteButton.addEventListener('click', () => {
-			this.removeMarker(marker)
-			this.renderMarkersList()
-			this.song.bandbook.syncManager.deleteMarker(marker)
+			if (confirm(`Are you sure you want to delete ${marker.title}?`)) {
+				this.removeMarker(marker)
+				this.song.bandbook.syncManager.deleteMarker(marker)
+				this.song.bandbook.refresh()
+				document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+			} else {
+				return
+			}
 		})
 		return deleteButton
 	}

@@ -108,6 +108,15 @@ export class Song {
 	}
 
 	/**
+	 * Gets the song duration
+	 * @returns {number} - The duration of the song in seconds
+	 * @returns {null} - Returns null if the player is not available or the audio does not have a duration
+	*/
+	getDuration() {
+		return this.player?.getAudioElement()?.duration
+	}
+
+	/**
 	 * Returns a title element for the song
 	 * @returns {HTMLHeadingElement} - A heading element
 	*/
@@ -146,7 +155,7 @@ export class Song {
 	*/
 	getEditTitleButton(modalHeader) {
 		const button = document.createElement('button')
-		button.classList.add('edit-song-title')
+		button.classList.add('edit-asset-title')
 		button.innerHTML = '&#9998;'
 		button.ariaLabel = 'Edit title'
 		button.addEventListener('click', () => {
@@ -181,7 +190,7 @@ export class Song {
 	*/
 	getEditForm() {
 		const div = document.createElement('div')
-		div.classList.add('edit-song')
+		div.classList.add('edit-asset')
 
 		// composer
 		const composerLabel = document.createElement('label')
