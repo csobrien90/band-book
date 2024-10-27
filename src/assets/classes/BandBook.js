@@ -9,25 +9,33 @@ import { Modal } from './Modal.js'
 */
 export class BandBook {
 	/**
-	 * @param {Workspace} workspace - The workspace for the BandBook instance
+	 * @typedef {import('./Song.js').SongData} SongData
+	*/
+
+	/**
+	 * The workspace for the BandBook instance
+	 * @type {Workspace}
 	 * @default null
 	*/
 	workspace = null
 
 	/**
-	 * @param {SyncManager} syncManager - The sync manager for the BandBook instance
+	 * The sync manager for the BandBook instance
+	 * @type {SyncManager}
 	 * @default null
 	*/
 	syncManager = null
 
 	/**
-	 * @param {HTMLElement} navElement - The navigation element for the BandBook instance
+	 * The navigation element for the BandBook instance
+	 * @type {HTMLElement}
 	 * @default null
 	*/
 	navElement = null
 
 	/**
-	 * @param {Song[]} songs - An array of Song instances
+	 * An array of Song instances
+	 * @type {Song[]}
 	 * @default []
 	*/
 	songs = []
@@ -35,7 +43,6 @@ export class BandBook {
 	/**
 	 * @constructor
 	 * @param {HTMLElement} wrapperElement - An HTML element to render the workspace
-	 * @returns {BandBook} - A new BandBook instance
 	*/
 	constructor(wrapperElement) {
 		// DOM management
@@ -59,7 +66,7 @@ export class BandBook {
 	
 	/**
 	 * Initializes the BandBook instance
-	 * @param {Object} songData - An object containing song data
+	 * @param {SongData} songData - An object containing song data
 	 * @returns {void}
 	*/
     async init(songData) {
@@ -90,6 +97,7 @@ export class BandBook {
 	/**
 	 * Removes a song from the BandBook instance
 	 * @param {Song} song - A Song instance
+	 * @returns {void}
 	 */
 	removeSong(song) {
 		this.songs = this.songs.filter(s => s.title !== song.title)
@@ -101,8 +109,7 @@ export class BandBook {
 	/**
 	 * Returns a Song instance given a slug
 	 * @param {string} slug - A song slug
-	 * @returns {Song} - A Song instance
-	 * @returns {undefined} - If no song is found
+	 * @returns {Song|undefined} - A Song instance or undefined if no song is found
 	*/
 	getSongBySlug(slug) {
 		return this.songs.find(song => song.slug === slug)
@@ -137,8 +144,8 @@ export class BandBook {
 
 	/**
 	 * Creates a song button
-	 * @param {Song} song - A Song instance
-	 * @param {HTMLElement} navigation - A navigation element
+	 * @param {Song} song - A Song instance to create a button for
+	 * @param {HTMLElement} navigation - The navigation element to append the button to
 	 * @returns {void}
 	*/
 	makeSongButton(song, navigation) {
@@ -155,6 +162,7 @@ export class BandBook {
 	/**
 	 * Sets the active song
 	 * @param {Song} song - A Song instance
+	 * @returns {void}
 	*/
 	setActiveSong(song) {
 		this.activeSong = song
@@ -268,7 +276,7 @@ export class BandBook {
 
 	/**
 	 * Export the BandBook instance as a JSON object
-	 * @returns {Object} - A JSON object representing the BandBook instance
+	 * @returns {Promise<Object>} - A JSON object representing the BandBook instance
 	*/
 	async export() {
 		// Get the data for each song
@@ -418,6 +426,7 @@ export class BandBook {
 
 	/**
 	 * Refreshes the DOM
+	 * @returns {void}
 	*/
 	refresh() {
 		this.renderSongNavigation()

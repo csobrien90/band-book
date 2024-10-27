@@ -3,7 +3,9 @@ export class Modal {
 	 * Creates a new modal
 	 * @param {HTMLElement} title - The title of the modal
 	 * @param {HTMLElement} content - The content of the modal
-	 * @param {Object} options - An object containing options for the modal
+	 * @param {Object} [options={}] - The options for the modal
+	 * @param {boolean} [options.useForm=false] - Whether or not to use a form element
+	 * @returns {Modal} - A new Modal instance
 	*/
 	constructor(title, content, options = {}) {
 		this.title = title
@@ -15,6 +17,7 @@ export class Modal {
 
 	/**
 	 * Initializes the modal
+	 * @returns {void}
 	*/
 	init() {
 		this.element = this.getModalElement()
@@ -46,7 +49,7 @@ export class Modal {
 
 	/**
 	 * Gets the modal content
-	 * @returns {HTMLDivElement} - A div element
+	 * @returns {HTMLDivElement|HTMLFormElement} - A div element
 	*/
 	getModalContent() {
 		const contentWrapper = this.options?.useForm ?
@@ -83,6 +86,7 @@ export class Modal {
 
 	/**
 	 * Removes the modal
+	 * @returns {void}
 	*/
 	remove() {
 		this.element.close()

@@ -1,14 +1,19 @@
 import { secondsToFormattedTime } from '../utils.js'
 
 /**
- * Represents a marker
+ * Represents a specific point in time in a song
 */
 export class Marker {
+	/**
+	 * @typedef {import('./Song.js').MarkerData} MarkerData
+	*/
+
 	/**
 	 * @constructor
 	 * @param {number} time - A time in seconds
 	 * @param {Song} song - A Song instance
-	 * @param {string} title - A title for the marker
+	 * @param {string} [title=""] - A title for the marker
+	 * @param {string} [id] - An optional id for the marker
 	 * @returns {Marker} - A new Marker instance
 	*/
 	constructor(time, song, title = "", id) {
@@ -22,6 +27,7 @@ export class Marker {
 	/**
 	 * Sets the title of the marker
 	 * @param {string} title - A title for the marker
+	 * @returns {void}
 	*/
 	setTitle(title) {
 		this.title = title
@@ -54,7 +60,7 @@ export class Marker {
 
 	/**
 	 * Returns the data of the marker
-	 * @returns {object} - The data of the marker for serialization
+	 * @returns {MarkerData} - The data of the marker for serialization
 	*/
 	getData() {
 		return {
