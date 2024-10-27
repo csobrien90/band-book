@@ -17,6 +17,7 @@ export class Player {
 
 	/**
 	 * Initializes the Player instance
+	 * @returns {void}
 	*/
 	init() {
 		this.createAudioElement(this.src)
@@ -24,7 +25,7 @@ export class Player {
 
 	/**
 	 * Creates an audio element
-	 * @param {string} src - The URL to the audio file
+	 * @param {ArrayBuffer} src - The URL to the audio file
 	 * @returns {void}
 	*/
 	createAudioElement(src) {
@@ -43,7 +44,7 @@ export class Player {
 	 * @returns {HTMLAudioElement} - An audio element
 	*/
 	getAudioElement() {
-		return this.audioElement
+		return this?.audioElement
 	}
 
 	/**
@@ -76,19 +77,19 @@ export class Player {
 
 		const currentTime = document.createElement('span')
 		currentTime.className = 'current-time'
-		currentTime.textContent = format(this.audioElement.currentTime) || format(0)
+		currentTime.textContent = format(this?.audioElement.currentTime) || format(0)
 
 		const durationElement = document.createElement('span')
 		durationElement.className = 'duration'
-		durationElement.textContent = format(this.audioElement.duration) || format(0)
+		durationElement.textContent = format(this?.audioElement.duration) || format(0)
 
-		this.audioElement.addEventListener('loadedmetadata', () => {
-			durationElement.textContent = format(this.audioElement.duration)
+		this?.audioElement.addEventListener('loadedmetadata', () => {
+			durationElement.textContent = format(this?.audioElement.duration)
 		})
 
-		this.audioElement.addEventListener('timeupdate', () => {
-			currentTime.textContent = format(this.audioElement.currentTime)
-			durationElement.textContent = format(this.audioElement.duration)
+		this?.audioElement.addEventListener('timeupdate', () => {
+			currentTime.textContent = format(this?.audioElement.currentTime)
+			durationElement.textContent = format(this?.audioElement.duration)
 		})
 
 		timeElement.appendChild(currentTime)
@@ -100,7 +101,7 @@ export class Player {
 
 	/**
 	 * Returns the progress bar element
-	 * @returns {HTMLProgressElement} - A progress element
+	 * @returns {HTMLDivElement} - A progress element
 	*/
 	getSeekingElement() {
 		const seekingElement = document.createElement('div')
@@ -109,20 +110,20 @@ export class Player {
 		const seekingInput = document.createElement('input')
 		seekingInput.type = 'range'
 		seekingInput.min = 0
-		seekingInput.max = this.audioElement.duration || 0
-		seekingInput.value = this.audioElement.currentTime || 0
+		seekingInput.max = this?.audioElement.duration || 0
+		seekingInput.value = this?.audioElement.currentTime || 0
 		seekingInput.step = 1
 		seekingInput.className = 'seeking-input'
 		seekingInput.addEventListener('input', () => {
-			this.audioElement.currentTime = seekingInput.value
+			this?.audioElement.currentTime = seekingInput.value
 		})
 
-		this.audioElement.addEventListener('loadedmetadata', () => {
-			seekingInput.max = this.audioElement.duration
+		this?.audioElement.addEventListener('loadedmetadata', () => {
+			seekingInput.max = this?.audioElement.duration
 		})
 
-		this.audioElement.addEventListener('timeupdate', () => {
-			seekingInput.value = this.audioElement.currentTime
+		this?.audioElement.addEventListener('timeupdate', () => {
+			seekingInput.value = this?.audioElement.currentTime
 		})
 
 		seekingElement.appendChild(seekingInput)
@@ -139,19 +140,19 @@ export class Player {
 		button.className = 'play-pause'
 		button.textContent = 'Play'
 
-		this.audioElement.addEventListener('play', () => {
+		this?.audioElement.addEventListener('play', () => {
 			button.textContent = 'Pause'
 		})
 
-		this.audioElement.addEventListener('pause', () => {
+		this?.audioElement.addEventListener('pause', () => {
 			button.textContent = 'Play'
 		})
 
 		button.addEventListener('click', () => {
-			if (this.audioElement.paused) {
-				this.audioElement.play()
+			if (this?.audioElement.paused) {
+				this?.audioElement.play()
 			} else {
-				this.audioElement.pause()
+				this?.audioElement.pause()
 			}
 		})
 
@@ -170,14 +171,14 @@ export class Player {
 		jumpBackward.className = 'jump-backward'
 		jumpBackward.textContent = '<< 10s'
 		jumpBackward.addEventListener('click', () => {
-			this.audioElement.currentTime -= 10
+			this?.audioElement.currentTime -= 10
 		})
 
 		const jumpForward = document.createElement('button')
 		jumpForward.className = 'jump-forward'
 		jumpForward.textContent = '10s >>'
 		jumpForward.addEventListener('click', () => {
-			this.audioElement.currentTime += 10
+			this?.audioElement.currentTime += 10
 		})
 
 		jump10Seconds.appendChild(jumpBackward)
@@ -203,22 +204,22 @@ export class Player {
 		volumeInput.min = 0
 		volumeInput.max = 1
 		volumeInput.step = 0.01
-		volumeInput.value = this.audioElement.volume || 1
+		volumeInput.value = this?.audioElement.volume || 1
 
 		const volumeLabel = document.createElement('label')
 		volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
 
 		muteButton.addEventListener('click', () => {
-			this.audioElement.muted = !this.audioElement.muted
-			muteButton.textContent = this.audioElement.muted ? 'Unmute' : 'Mute'
-			volumeInput.value = this.audioElement.muted ? 0 : this.audioElement.volume
+			this?.audioElement.muted = !this?.audioElement.muted
+			muteButton.textContent = this?.audioElement.muted ? 'Unmute' : 'Mute'
+			volumeInput.value = this?.audioElement.muted ? 0 : this?.audioElement.volume
 			volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
 		})
 
 		volumeInput.addEventListener('input', () => {
-			this.audioElement.volume = volumeInput.value
+			this?.audioElement.volume = volumeInput.value
 			volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
-			if (volumeInput.value === '0' || this.audioElement.muted) {
+			if (volumeInput.value === '0' || this?.audioElement.muted) {
 				muteButton.textContent = 'Unmute'
 			} else {
 				muteButton.textContent = 'Mute'
@@ -245,13 +246,13 @@ export class Player {
 		speedInput.min = 0.5
 		speedInput.max = 2
 		speedInput.step = 0.01
-		speedInput.value = this.audioElement.playbackRate || 1
+		speedInput.value = this?.audioElement.playbackRate || 1
 
 		const speedLabel = document.createElement('label')
 		speedLabel.textContent = `Speed: ${speedInput.value}x`
 
 		speedInput.addEventListener('input', () => {
-			this.audioElement.playbackRate = speedInput.value
+			this?.audioElement.playbackRate = speedInput.value
 			speedLabel.textContent = `Speed: ${speedInput.value}x`
 		})
 
@@ -298,6 +299,6 @@ export class Player {
 	 * @returns {number} - The current time of the audio element
 	*/
 	getCurrentTime() {
-		return this.audioElement.currentTime
+		return this?.audioElement.currentTime
 	}
 }

@@ -3,8 +3,8 @@ export class Notification {
 	 * Creates a new notification
 	 * @param {string} message - The message to display
 	 * @param {'success' | 'error' | 'info' | 'warning'} type - The type of notification
-	 * @param {boolean} isTimed - Whether the notification should disappear after a certain amount of time
-	 * @param {number} duration - The duration in milliseconds (default: 5000)
+	 * @param {boolean} [isTimed = true] - Whether the notification should disappear after a certain amount of time
+	 * @param {number} [duration = 5000] - The duration in milliseconds (default: 5000)
 	*/
 	constructor(message, type, isTimed = true, duration = 5000) {
 		this.message = message
@@ -17,6 +17,7 @@ export class Notification {
 
 	/**
 	 * Initializes the notification
+	 * @returns {void}
 	*/
 	init() {
 		// Create notification element and add classes
@@ -53,6 +54,7 @@ export class Notification {
 
 	/**
 	 * Removes the notification
+	 * @returns {void}
 	*/
 	remove() {
 		this.element.classList.add('off-screen')

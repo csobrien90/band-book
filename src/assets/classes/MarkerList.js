@@ -10,17 +10,14 @@ export class MarkerList {
 	 * @property {string} title - A title for the marker
 	*/
 
-	/**
-	 * @typedef {Object} MarkerList
-	 * @property {Song} song - A Song instance
-	 * @property {Marker[]} markers - An array of Marker instances
-	 * @property {HTMLDivElement} markersListWrapper - A div element containing a list of markers
-	 * @property {LoopManager} loopManager - A LoopManager instance
-	*/
-	song
-	markers = []
-	markersListWrapper = null
-	loopManager = new LoopManager()
+	/** @type {Song} */
+	song;
+	/** @type {Marker[]} */
+	markers = [];
+	/** @type {HTMLDivElement} */
+	markersListWrapper = null;
+	/** @type {LoopManager} */
+	loopManager = new LoopManager();
 
 	/**
 	 * @constructor
@@ -129,6 +126,7 @@ export class MarkerList {
 
 	/**
 	 * Returns a loop checkbox for the marker
+	 * @param {Marker} marker - A Marker instance
 	 * @returns {HTMLInputElement} - An input element
 	*/
 	getLoopCheckbox(marker) {
@@ -142,6 +140,8 @@ export class MarkerList {
 
 	/**
 	 * Returns a loop proxy button for the marker
+	 * @param {HTMLInputElement} loopCheckbox - An input element
+	 * @param {Marker} marker - A Marker instance
 	 * @returns {HTMLButtonElement} - A button element
 	*/
 	getLoopProxy(loopCheckbox, marker) {

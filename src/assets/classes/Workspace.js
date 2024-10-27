@@ -2,6 +2,20 @@ import { Song } from './Song.js'
 
 export class Workspace {
 	/**
+	 * The parent element for the workspace
+	 * @type {HTMLElement}
+	 * @default null
+	*/
+	parentElement = null
+
+	/**
+	 * The workspace wrapper element
+	 * @type {HTMLElement}
+	 * @default null
+	*/
+	wrapper = null
+
+	/**
 	 * @constructor
 	 * @param {HTMLElement} parentElement - The parent element for the workspace
 	 * @returns {Workspace} - A new Workspace instance
@@ -24,7 +38,7 @@ export class Workspace {
 
 	/**
 	 * Appends song components to workspace
-	 * @param {Song} song - A Song instance
+	 * @param {Song} song - A Song instance to be rendered in the workspace
 	*/
 	setSongWorkspace(song) {
 		// Reset workspace

@@ -5,6 +5,30 @@ import { Player } from './Player.js'
 import { Modal } from './Modal.js'
 
 /**
+ * @typedef {Object} MarkerData
+ * @property {number} time - The time for the marker
+ * @property {string} title - The title for the marker
+ * @property {string} id - The marker ID
+*/
+
+/**
+ * @typedef {Object} SongMeta
+ * @property {string} slug - The unique slug identifier for the song.
+ * @property {string} title - The title of the song.
+ * @property {string} composer - The name of the composer for the song.
+ * @property {number} tempo - The tempo of the song in beats per minute (BPM).
+ * @property {string} key - The musical key of the song.
+ * @property {string} timeSignature - The time signature of the song (e.g., "4/4").
+ * @property {string} notes - Additional notes or lyrics related to the song.
+ * @property {Array<string>} markers - An array of marker IDs associated with the song.
+*/
+
+/**
+ * @typedef {string} src - The URL or binary data for the song audio file.
+ * @typedef {SongMeta & src} SongData 
+*/
+
+/**
  * Represents a song
 */
 export class Song {
@@ -15,32 +39,20 @@ export class Song {
 	player = null
 
 	/**
-	 * @typedef {Object} MarkerData
-	 * @property {number} time - The time for the marker
-	 * @property {string} title - The title for the marker
-	 * @property {string} id - The marker ID
-	*/
-
-	/**
-	 * @param {Array<MarkerData>} markerData - An array of markers for the song
-	 * @default []
-	*/
-	markerData = []
-
-	/**
 	 * @constructor
-	 * @param {string} slug - The song slug
-	 * @param {ArrayBuffer | string} src - The URL to the song audio file
-	 * @param {string} srcType - The type of the song audio file
-	 * @param {string} title - The title for the song
-	 * @param {string} composer - The composer for the song
-	 * @param {number} tempo - The tempo for the song
-	 * @param {string} key - The key for the song
-	 * @param {string} timeSignature - The time signature for the song
-	 * @param {string} notes - The notes for the song
-	 * @param {Array<MarkerData>} markers - An array of markers for the song
-	 * @param {BandBook} bandbook - A Bandbook instance
-	 * @returns {Song} - A new Song instance
+	 * @param {Object} params - The parameters for the song.
+	 * @param {string} params.slug - The unique slug identifier for the song.
+	 * @param {ArrayBuffer | string} params.src - The URL or binary data for the song audio file.
+	 * @param {string} params.srcType - The MIME type of the audio file.
+	 * @param {string} params.title - The title of the song.
+	 * @param {string} params.composer - The name of the composer for the song.
+	 * @param {number} params.tempo - The tempo of the song in BPM.
+	 * @param {string} params.key - The musical key of the song.
+	 * @param {string} params.timeSignature - The time signature of the song.
+	 * @param {string} params.notes - Additional notes or lyrics related to the song.
+	 * @param {Array<MarkerData>} [params.markers=[]] - An optional array of markers for the song.
+	 * @param {BandBook} bandbook - An instance of the BandBook class.
+	 * @returns {Song} - A new Song instance.
 	*/
 	constructor({slug, src, srcType, title, composer, tempo, key, timeSignature, notes, markers = []}, bandbook) {
 		// Assign properties
@@ -91,7 +103,7 @@ export class Song {
 	init() {
 		this.markerList = new MarkerList(this)
 		this.markerData.forEach(marker => {
-			this.markerList.addMarker(new Marker(marker.time, this, marker.title, marker.id))
+			this.markerList?.addMarker(new Marker(marker.time, this, marker.title, marker.id))
 		})
 	}
 
@@ -129,6 +141,7 @@ export class Song {
 
 	/**
 	 * Returns an edit title button
+	 * @param {HTMLHeadingElement} modalHeader - The modal header element
 	 * @returns {HTMLButtonElement} - A button element
 	*/
 	getEditTitleButton(modalHeader) {
@@ -253,6 +266,8 @@ export class Song {
 
 	/**
 	 * Sets the title of the song
+	 * @param {string} title - The title of the song
+	 * @returns {void}
 	*/
 	setTitle(title) {
 		this.title = title
@@ -303,23 +318,10 @@ export class Song {
 	}
 
 	/**
-	 * @typedef {Object} SongMeta
-	 * @property {string} slug - The song slug
-	 * @property {string} title - The title for the song
-	 * @property {string} composer - The composer for the song
-	 * @property {number} tempo - The tempo for the song
-	 * @property {string} key - The key for the song
-	 * @property {string} timeSignature - The time signature for the song
-	 * @property {string} notes - The notes for the song
-	 * @property {Array<string>} markers - An array of marker IDs for the song
-	*/
-
-	/**
 	 * Get song data for serialization
-	 * @returns {Object} - A song object
-	 * @extends {SongMeta}
-	 * @property {string} src - The URL to the song audio file
-	 * @property {Array<MarkerData>} markers - An array of markers for the song
+	 * @returns {Promise<SongData>} - A promise that resolves with the song data
+	 * @throws {Error} - An error if the song data cannot be retrieved
+	 * @async
 	*/
 	async getData() {
 		return new Promise(async (resolve, reject) => {
@@ -380,28 +382,11 @@ export class Song {
 
 	/**
 	 * Get marker data for serialization
-	 * @returns {Array<Object>} - An array of marker data
-	 * @property {number} time - The time for the marker
-	 * @property {string} title - The title for the marker
-	 * @property {string} id - The marker ID
+	 * @returns {Array<MarkerData>} - An array of marker data objects
 	*/
 	getMarkerData() {
-		return this.markerList.markers.map(marker => {
+		return this.markerList?.markers.map(marker => {
 			return marker.getData()
 		})
-	}
-
-	/**
-	 * Get song src data for serialization
-	 * @returns {Object} - A song src object
-	 * @property {string} id - The song slug
-	 * @property {string} src - The URL to the song audio file
-	*/
-	getSrcData() {
-		return {
-			id: this.slug,
-			src: this.src,
-			srcType: this.srcType
-		}
 	}
 }
