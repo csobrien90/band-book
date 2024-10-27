@@ -115,7 +115,7 @@ export class Player {
 		seekingInput.step = 1
 		seekingInput.className = 'seeking-input'
 		seekingInput.addEventListener('input', () => {
-			this?.audioElement.currentTime = seekingInput.value
+			this.audioElement.currentTime = seekingInput.value
 		})
 
 		this?.audioElement.addEventListener('loadedmetadata', () => {
@@ -171,14 +171,14 @@ export class Player {
 		jumpBackward.className = 'jump-backward'
 		jumpBackward.textContent = '<< 10s'
 		jumpBackward.addEventListener('click', () => {
-			this?.audioElement.currentTime -= 10
+			this.audioElement.currentTime -= 10
 		})
 
 		const jumpForward = document.createElement('button')
 		jumpForward.className = 'jump-forward'
 		jumpForward.textContent = '10s >>'
 		jumpForward.addEventListener('click', () => {
-			this?.audioElement.currentTime += 10
+			this.audioElement.currentTime += 10
 		})
 
 		jump10Seconds.appendChild(jumpBackward)
@@ -210,14 +210,14 @@ export class Player {
 		volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
 
 		muteButton.addEventListener('click', () => {
-			this?.audioElement.muted = !this?.audioElement.muted
+			this.audioElement.muted = !this?.audioElement.muted
 			muteButton.textContent = this?.audioElement.muted ? 'Unmute' : 'Mute'
 			volumeInput.value = this?.audioElement.muted ? 0 : this?.audioElement.volume
 			volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
 		})
 
 		volumeInput.addEventListener('input', () => {
-			this?.audioElement.volume = volumeInput.value
+			this.audioElement.volume = volumeInput.value
 			volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
 			if (volumeInput.value === '0' || this?.audioElement.muted) {
 				muteButton.textContent = 'Unmute'
@@ -252,7 +252,7 @@ export class Player {
 		speedLabel.textContent = `Speed: ${speedInput.value}x`
 
 		speedInput.addEventListener('input', () => {
-			this?.audioElement.playbackRate = speedInput.value
+			this.audioElement.playbackRate = speedInput.value
 			speedLabel.textContent = `Speed: ${speedInput.value}x`
 		})
 
