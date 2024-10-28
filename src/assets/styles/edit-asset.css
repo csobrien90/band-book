@@ -1,0 +1,59 @@
+h2:has(.edit-asset-title) {
+	display: flex;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+	gap: .5rem;
+}
+
+.edit-asset-title, .delete-asset {
+	background: transparent;
+	padding: 0;
+	color: black;
+	font-weight: bold;
+	line-height: 1;
+	translate: 0 -2px;
+
+	&:hover, &:focus, &:active {
+		cursor: pointer;
+		background: transparent;
+		scale: 1.15;
+	}
+}
+
+.edit-asset-title {
+	rotate: 80deg;
+}
+
+.edit-asset {
+	display: grid;
+	gap: 1rem;
+}
+
+.time-proxy-wrapper {
+	display: grid;
+	justify-content: start;
+	grid-template-areas: 
+		"input increment"
+		"input decrement";
+
+	input {
+		grid-area: input;
+	}
+
+	button {
+		font-size: 10px;
+		width: 42px;
+	}
+
+	button:nth-of-type(1) {
+		grid-area: increment;
+	}
+
+	button:nth-of-type(2) {
+		grid-area: decrement;
+	}
+
+	.error {
+		grid-area: error;
+	}
+}

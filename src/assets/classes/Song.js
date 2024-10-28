@@ -8,6 +8,7 @@ import { Modal } from './Modal.js'
  * @typedef {Object} MarkerData
  * @property {number} time - The time for the marker
  * @property {string} title - The title for the marker
+ * @property {string} notes - Additional notes for the marker
  * @property {string} id - The marker ID
 */
 
@@ -103,8 +104,17 @@ export class Song {
 	init() {
 		this.markerList = new MarkerList(this)
 		this.markerData.forEach(marker => {
-			this.markerList?.addMarker(new Marker(marker.time, this, marker.title, marker.id))
+			this.markerList?.addMarker(new Marker(marker.time, this, marker.title, marker.notes, marker.id))
 		})
+	}
+
+	/**
+	 * Gets the song duration
+	 * @returns {number} - The duration of the song in seconds
+	 * @returns {null} - Returns null if the player is not available or the audio does not have a duration
+	*/
+	getDuration() {
+		return this.player?.getAudioElement()?.duration
 	}
 
 	/**
@@ -146,7 +156,7 @@ export class Song {
 	*/
 	getEditTitleButton(modalHeader) {
 		const button = document.createElement('button')
-		button.classList.add('edit-song-title')
+		button.classList.add('edit-asset-title')
 		button.innerHTML = '&#9998;'
 		button.ariaLabel = 'Edit title'
 		button.addEventListener('click', () => {
@@ -181,7 +191,7 @@ export class Song {
 	*/
 	getEditForm() {
 		const div = document.createElement('div')
-		div.classList.add('edit-song')
+		div.classList.add('edit-asset')
 
 		// composer
 		const composerLabel = document.createElement('label')

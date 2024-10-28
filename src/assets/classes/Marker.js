@@ -1,3 +1,4 @@
+import {Song} from './Song.js'
 import { secondsToFormattedTime } from '../utils.js'
 
 /**
@@ -9,19 +10,47 @@ export class Marker {
 	*/
 
 	/**
+	 * The time of the marker in seconds
+	 * @type {number}
+	*/
+	time
+
+	/**
+	 * The song instance
+	 * @type {Song}
+	*/
+	song
+
+	/**
+	 * The title of the marker
+	 * @type {string}
+	 * @default ""
+	*/
+	title = ""
+
+	/**
+	 * The notes for the marker
+	 * @type {string}
+	 * @default ""
+	*/
+	notes = ""
+
+	/**
 	 * @constructor
 	 * @param {number} time - A time in seconds
 	 * @param {Song} song - A Song instance
 	 * @param {string} [title=""] - A title for the marker
+	 * @param {string} [notes=""] - Notes for the marker
 	 * @param {string} [id] - An optional id for the marker
 	 * @returns {Marker} - A new Marker instance
 	*/
-	constructor(time, song, title = "", id) {
+	constructor(time, song, title = "", notes, id) {
 		this.id = id ?? crypto.randomUUID()
 		this.time = time
 		this.song = song
 
 		this.setTitle(title)
+		this.setNotes(notes)
 	}
 
 	/**
@@ -31,7 +60,7 @@ export class Marker {
 	*/
 	setTitle(title) {
 		this.title = title
-		if (this.title.length > 0) this.song.bandbook.syncManager.updateMarkerTitle(this, title)
+		this.song.bandbook.syncManager.updateMarkerTitle(this, title)
 	}
 
 	/**
@@ -43,11 +72,33 @@ export class Marker {
 	}
 
 	/**
-	 * Returns a formatted time string for the marker
-	 * @returns {string} - A formatted time string (HH:MM:SS)
+	 * Sets the notes for the marker
+	 * @param {string} notes - Notes for the marker
+	 * @returns {void}
 	*/
-	getFormattedTime() {
-		return secondsToFormattedTime(this.time)
+	setNotes(notes) {
+		this.notes = notes
+		this.song.bandbook.syncManager.updateMarkerNotes(this, notes)
+	}
+
+	/**
+	 * Returns the notes for the marker
+	 * @returns {string} - The notes for the marker
+	*/
+	getNotes() {
+		return this.notes ?? ""
+	}
+
+	/**
+	 * Sets the time of the marker
+	 * @param {number} time - A time in seconds
+	 * @returns {void}
+	 * @throws {Error} - Throws an error if the time is less than 0 or greater than the song duration
+	*/
+	setTime(time) {
+		if (time < 0 || time > this.song.getDuration()) throw new Error("Invalid time")
+		this.time = time
+		this.song.bandbook.syncManager.updateMarkerTime(this, time)
 	}
 
 	/**
@@ -59,6 +110,14 @@ export class Marker {
 	}
 
 	/**
+	 * Returns a formatted time string for the marker
+	 * @returns {string} - A formatted time string (HH:MM:SS)
+	*/
+	getFormattedTime() {
+		return secondsToFormattedTime(this.time)
+	}
+
+	/**
 	 * Returns the data of the marker
 	 * @returns {MarkerData} - The data of the marker for serialization
 	*/
@@ -66,6 +125,7 @@ export class Marker {
 		return {
 			id: this.id,
 			time: this.time,
+			notes: this.notes,
 			title: this.title
 		}
 	}

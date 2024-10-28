@@ -58,7 +58,7 @@ export class SyncManager {
 
 				// Create marker records
 				song.markers.forEach(marker => {
-					const newMarker = new Marker(marker.time, newSong, marker.title, marker.id)
+					const newMarker = new Marker(marker.time, newSong, marker.title, marker.notes, marker.id)
 					this.createMarker(newMarker)
 				})
 
@@ -676,6 +676,62 @@ export class SyncManager {
 						resolve(true)
 					}
 				}
+			})
+		})
+	}
+
+	/**
+	 * Update a marker notes in indexedDB
+	 * @param {Marker} marker - A Marker instance
+	 * @param {string} notes - New notes
+	 * @returns {Promise<Boolean>} - A promise that resolves when the notes are updated
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	updateMarkerNotes(marker, notes) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['markers'], 'readwrite')
+				const store = transaction.objectStore('markers')
+
+				const existing = store.get(marker.id)
+				existing.onsuccess = () => {
+					const record = existing.result
+					if (record) {
+						const data = JSON.parse(record.data)
+						data.notes = notes
+						store.put({ id: marker.id, data: JSON.stringify(data) })
+						resolve(true)
+					}
+				}
+				existing.onerror = (e) => reject(e)
+			})
+		})
+	}
+
+	/**
+	 * Update a marker time in indexedDB
+	 * @param {Marker} marker - A Marker instance
+	 * @param {number} time - A new time
+	 * @returns {Promise<Boolean>} - A promise that resolves when the time is updated
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	updateMarkerTime(marker, time) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['markers'], 'readwrite')
+				const store = transaction.objectStore('markers')
+
+				const existing = store.get(marker.id)
+				existing.onsuccess = () => {
+					const record = existing.result
+					if (record) {
+						const data = JSON.parse(record.data)
+						data.time = time
+						store.put({ id: marker.id, data: JSON.stringify(data) })
+						resolve(true)
+					}
+				}
+				existing.onerror = (e) => reject(e)
 			})
 		})
 	}
