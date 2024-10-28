@@ -33,6 +33,7 @@ export class Marker {
 	 * @type {string}
 	 * @default ""
 	*/
+	notes = ""
 
 	/**
 	 * @constructor
