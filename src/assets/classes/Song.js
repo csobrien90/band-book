@@ -8,6 +8,7 @@ import { Modal } from './Modal.js'
  * @typedef {Object} MarkerData
  * @property {number} time - The time for the marker
  * @property {string} title - The title for the marker
+ * @property {string} notes - Additional notes for the marker
  * @property {string} id - The marker ID
 */
 
@@ -103,7 +104,7 @@ export class Song {
 	init() {
 		this.markerList = new MarkerList(this)
 		this.markerData.forEach(marker => {
-			this.markerList?.addMarker(new Marker(marker.time, this, marker.title, marker.id))
+			this.markerList?.addMarker(new Marker(marker.time, this, marker.title, marker.notes, marker.id))
 		})
 	}
 

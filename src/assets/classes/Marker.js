@@ -29,19 +29,27 @@ export class Marker {
 	title = ""
 
 	/**
+	 * The notes for the marker
+	 * @type {string}
+	 * @default ""
+	*/
+
+	/**
 	 * @constructor
 	 * @param {number} time - A time in seconds
 	 * @param {Song} song - A Song instance
 	 * @param {string} [title=""] - A title for the marker
+	 * @param {string} [notes=""] - Notes for the marker
 	 * @param {string} [id] - An optional id for the marker
 	 * @returns {Marker} - A new Marker instance
 	*/
-	constructor(time, song, title = "", id) {
+	constructor(time, song, title = "", notes, id) {
 		this.id = id ?? crypto.randomUUID()
 		this.time = time
 		this.song = song
 
 		this.setTitle(title)
+		this.setNotes(notes)
 	}
 
 	/**
@@ -51,7 +59,7 @@ export class Marker {
 	*/
 	setTitle(title) {
 		this.title = title
-		if (this.title.length > 0) this.song.bandbook.syncManager.updateMarkerTitle(this, title)
+		this.song.bandbook.syncManager.updateMarkerTitle(this, title)
 	}
 
 	/**
@@ -60,6 +68,24 @@ export class Marker {
 	*/
 	getTitle() {
 		return this.title
+	}
+
+	/**
+	 * Sets the notes for the marker
+	 * @param {string} notes - Notes for the marker
+	 * @returns {void}
+	*/
+	setNotes(notes) {
+		this.notes = notes
+		this.song.bandbook.syncManager.updateMarkerNotes(this, notes)
+	}
+
+	/**
+	 * Returns the notes for the marker
+	 * @returns {string} - The notes for the marker
+	*/
+	getNotes() {
+		return this.notes ?? ""
 	}
 
 	/**
@@ -98,6 +124,7 @@ export class Marker {
 		return {
 			id: this.id,
 			time: this.time,
+			notes: this.notes,
 			title: this.title
 		}
 	}

@@ -2,6 +2,8 @@ import { Marker } from './Marker.js'
 import { Modal } from './Modal.js'
 import { LoopManager } from './LoopManager.js'
 import { Song } from './Song.js'
+import { Notification } from './Notification.js'
+import { formattedTimeToSeconds, secondsToFormattedTime } from '../utils.js'
 
 export class MarkerList {
 	/**
@@ -187,7 +189,7 @@ export class MarkerList {
 			const modalContent = this.getEditMarkerForm(marker)
 
 			// Open modal
-			new Modal(modalHeader, modalContent, { useForm: true })
+			this.activeModal = new Modal(modalHeader, modalContent, { useForm: true })
 		})
 		return button
 	}
@@ -235,24 +237,94 @@ export class MarkerList {
 	 * @returns {HTMLDivElement} - A div wrapper around the form element
 	*/
 	getEditMarkerForm(marker) {
+		const hiddenInputChange = (e) => {
+			const time = e.target.value
+			marker.setTime(time)
+			marker.song.bandbook.refresh()
+		}
+
 		const div = document.createElement('div')
 		div.classList.add('edit-asset')
 
-		// time
-		const timeLabel = document.createElement('label')
-		const timeSpan = document.createElement('span')
-		timeSpan.textContent = 'Time'
+		// time input
 		const timeInput = document.createElement('input')
 		timeInput.type = 'number'
-		timeInput.step = "any"
-		timeInput.value = marker.time
-		timeInput.addEventListener('change', () => {
-			marker.time = timeInput.value
-			marker.song.bandbook.syncManager.updateMarkerTime(marker, timeInput.value)
+		timeInput.step = "1"
+		timeInput.value = Math.floor(marker.time)
+		timeInput.hidden = true
+		timeInput.addEventListener('change', hiddenInputChange)
+		div.appendChild(timeInput)
+
+		// time proxy
+		const timeProxyWrapper = document.createElement('div')
+		timeProxyWrapper.classList.add('time-proxy-wrapper')
+		const timeProxy = document.createElement('input')
+		timeProxy.type = 'text'
+		// Smart HH:MM:SS format
+		timeProxy.pattern = "^(?:(?:1[0-1]|[1-9]):)?(?:[0-5][0-9]:)?[0-5][0-9]$"
+		timeProxy.value = marker.getFormattedTime()
+		timeProxy.addEventListener('change', () => {
+			const previousTime = marker.getFormattedTime()
+
+			// Validate
+			if (!timeProxy.value.match(timeProxy.pattern)) {
+				const error = new Notification('Time must be in valid format: SS, MM:SS, or HH:MM:SS', 'error', true, 5000, true)
+				timeProxyWrapper.insertAdjacentElement('afterend', error.element)
+				timeProxy.value = previousTime
+				return
+			}
+			
+			const time = formattedTimeToSeconds(timeProxy.value)
+
+			if (time < 0 || time > marker.song.getDuration()) {
+				const error = new Notification('That is not a valid time for this song', 'error', true, 5000, true)
+				timeProxyWrapper.insertAdjacentElement('afterend', error.element)
+				timeProxy.value = previousTime
+				return
+			}
+
+			hiddenInputChange({ target: { value: time } })
 		})
-		timeLabel.appendChild(timeSpan)
-		timeLabel.appendChild(timeInput)
-		div.appendChild(timeLabel)
+
+		const upOneSecond = document.createElement('button')
+		upOneSecond.innerHTML = '&#9650;'
+		upOneSecond.addEventListener('click', (e) => {
+			e.preventDefault()
+			const time = formattedTimeToSeconds(timeProxy.value) + 1
+			hiddenInputChange({ target: { value: time } })
+			timeProxy.value = secondsToFormattedTime(time)
+		})
+		const downOneSecond = document.createElement('button')
+		downOneSecond.innerHTML = '&#9660;'
+		downOneSecond.addEventListener('click', (e) => {
+			e.preventDefault()
+			const time = formattedTimeToSeconds(timeProxy.value) - 1
+			hiddenInputChange({ target: { value: time } })
+			timeProxy.value = secondsToFormattedTime(time)
+		})
+		
+		timeProxyWrapper.appendChild(timeProxy)
+		timeProxyWrapper.appendChild(upOneSecond)
+		timeProxyWrapper.appendChild(downOneSecond)
+		div.appendChild(timeProxyWrapper)
+
+		// notes input
+		const notesLabel = document.createElement('label')
+		notesLabel.htmlFor = 'marker-notes'
+		const notesSpan = document.createElement('span')
+		notesSpan.textContent = 'Notes'
+		const notesInput = document.createElement('textarea')
+		notesInput.value = marker.getNotes()
+		notesInput.id = 'marker-notes'
+		notesInput.name = 'marker-notes'
+		notesInput.rows = 4
+		notesInput.addEventListener('change', () => {
+			marker.setNotes(notesInput.value)
+		})
+		notesLabel.appendChild(notesSpan)
+		notesLabel.appendChild(notesInput)
+
+		div.appendChild(notesLabel)
 
 		return div
 	}

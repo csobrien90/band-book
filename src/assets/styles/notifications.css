@@ -15,16 +15,48 @@
 	&.success {
 		background: var(--success);
 	}
-
+	
 	&.info {
 		background: var(--info);
 	}
-
+	
 	&.warning {
 		background: var(--warning);
 	}
-
+	
 	&.error {
 		background: var(--danger);
+	}
+}
+
+.inline-notification {
+	display: flex;
+	align-items: center;
+	padding: .5rem 0;
+	gap: 1rem;
+	transition: opacity .3s ease-in-out;
+
+	&.off-screen {
+		opacity: 0;
+	}
+
+	&.success::before {
+		content: '✔';
+		color: var(--success);
+	}
+
+	&.info::before {
+		content: 'ℹ';
+		color: var(--info);
+	}
+
+	&.warning::before {
+		content: '⚠';
+		color: var(--warning);
+	}
+
+	&.error::before {
+		content: '✖';
+		color: var(--danger);
 	}
 }
