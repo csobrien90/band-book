@@ -27,9 +27,9 @@ export class Marker {
 	/**
 	 * The title of the marker
 	 * @type {string}
-	 * @default ""
+	 * @default "New Marker"
 	*/
-	title = ""
+	title = "New Marker"
 
 	/**
 	 * The notes for the marker
@@ -142,6 +142,7 @@ export class Marker {
 		item.appendChild(this.getButton())
 		item.appendChild(this.getInput())
 		item.appendChild(this.getEditMarkerButton(markerList))
+		item.appendChild(this.getDeleteButton(markerList))
 
 		return item
 	}

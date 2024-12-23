@@ -57,6 +57,7 @@ export class MarkerList {
 	getAddMarkerButton() {
 		const button = document.createElement('button')
 		button.textContent = 'Add Marker'
+		button.classList.add('add-marker-button')
 		button.addEventListener('click', this.createMarker.bind(this))
 		return button
 	}
