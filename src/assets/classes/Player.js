@@ -59,7 +59,7 @@ export class Player {
 		playerElement.appendChild(this.getSeekingElement())
 		playerElement.appendChild(this.getPlayPauseButton())
 
-		playerElement.appendChild(this.getJump10SecondsButtons())
+		playerElement.appendChild(this.getJumpButtons())
 		playerElement.appendChild(this.getVolumeControl())
 		playerElement.appendChild(this.getSpeedControl())
 		playerElement.appendChild(this.getDowloadButton())
@@ -163,28 +163,44 @@ export class Player {
 	 * Returns the jump 10 seconds buttons
 	 * @returns {HTMLDivElement} - A div element
 	*/
-	getJump10SecondsButtons() {
-		const jump10Seconds = document.createElement('div')
-		jump10Seconds.className = 'jump-10-seconds'
+	getJumpButtons() {
+		const jumpButtonsWrapper = document.createElement('div')
+		jumpButtonsWrapper.className = 'jump-button-wrapper'
 
-		const jumpBackward = document.createElement('button')
-		jumpBackward.className = 'jump-backward'
-		jumpBackward.textContent = '<< 10s'
-		jumpBackward.addEventListener('click', () => {
+		const jumpTenSecondsBackward = document.createElement('button')
+		jumpTenSecondsBackward.className = 'jump-backward'
+		jumpTenSecondsBackward.textContent = '<< 10s'
+		jumpTenSecondsBackward.addEventListener('click', () => {
 			this.audioElement.currentTime -= 10
 		})
 
-		const jumpForward = document.createElement('button')
-		jumpForward.className = 'jump-forward'
-		jumpForward.textContent = '10s >>'
-		jumpForward.addEventListener('click', () => {
+		const jumpTwoSecondsBackward = document.createElement('button')
+		jumpTwoSecondsBackward.className = 'jump-backward'
+		jumpTwoSecondsBackward.textContent = '<< 2s'
+		jumpTwoSecondsBackward.addEventListener('click', () => {
+			this.audioElement.currentTime -= 2
+		})
+
+		const jumpTwoSecondsForward = document.createElement('button')
+		jumpTwoSecondsForward.className = 'jump-forward'
+		jumpTwoSecondsForward.textContent = '2s >>'
+		jumpTwoSecondsForward.addEventListener('click', () => {
+			this.audioElement.currentTime += 2
+		})
+
+		const jumpTenSecondsForward = document.createElement('button')
+		jumpTenSecondsForward.className = 'jump-forward'
+		jumpTenSecondsForward.textContent = '10s >>'
+		jumpTenSecondsForward.addEventListener('click', () => {
 			this.audioElement.currentTime += 10
 		})
 
-		jump10Seconds.appendChild(jumpBackward)
-		jump10Seconds.appendChild(jumpForward)
+		jumpButtonsWrapper.appendChild(jumpTenSecondsBackward)
+		jumpButtonsWrapper.appendChild(jumpTwoSecondsBackward)
+		jumpButtonsWrapper.appendChild(jumpTwoSecondsForward)
+		jumpButtonsWrapper.appendChild(jumpTenSecondsForward)
 
-		return jump10Seconds
+		return jumpButtonsWrapper
 	}
 
 	/**
