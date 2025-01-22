@@ -15,22 +15,23 @@ section {
 	gap: 1rem;
 }
 
-ul {
+.markers-list {
 	display: grid;
 	gap: 2rem;
 	padding: 0;
 	margin: 0;
 	list-style: none;
-}
+	
+	li {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: .5rem;
+		justify-content: flex-start;
+	}
 
-li {
-	display: grid;
-	grid-template-columns: auto 1fr 1fr;
-	gap: .5rem;
-}
-
-input[type="text"] {
-	grid-column: 1 / -1;
+	button:last-child {
+		justify-self: flex-start;
+	}
 }
 
 .song-header {
@@ -50,16 +51,17 @@ input[type="text"] {
 		padding: 2rem;
 	}
 
-	ul {
-		gap: .5rem;
-	}
-
-	li {
-		grid-template-columns: auto 1fr 2fr 1fr 1fr;
-		gap: 1rem;
-	}
-
-	input[type="text"] {
-		grid-column: unset;
+	.markers-list {
+		ul {
+			gap: .5rem;
+		}
+	
+		li {
+			grid-template-columns: 20px auto 1fr auto auto;
+		}
+	
+		input[type="text"] {
+			grid-column: unset;
+		}
 	}
 }

@@ -8,11 +8,11 @@ export class LoopManager {
 	*/
 
 	/** @type {boolean} */
-	active = false;
+	active = false
 	/** @type {LoopBounds|null} */
-	loopBounds = null;
+	loopBounds = null
 	/** @type {Song|null} */
-	song = null;
+	song = null
 
 	/**
 	 * @constructor
@@ -26,22 +26,34 @@ export class LoopManager {
 	}
 
 	/**
+	 * Updates the loop listener
+	*/
+	updateLoopListener() {
+		this.song.player.getAudioElement().removeEventListener('timeupdate', this.eventCallback)
+
+		this.eventCallback = () => {
+			if (this.active && this.song.player.getAudioElement().currentTime >= this.end) {
+				this.song.player.getAudioElement().currentTime = this.start
+			}
+		}
+
+		if (this.active) {
+			this.song.player.getAudioElement().addEventListener('timeupdate', this.eventCallback)
+		}
+	}
+
+	/**
 	 * Toggles the loop on or off
 	 * Note: If the loop is toggled off, the loop bounds are reset
-	 * @returns {void}
+	 * @returns {boolean} - The active state of the loop
 	*/
 	toggleLoop() {
 		this.active = !this.active
 
-		if (!this.active) {
-			this.setLoopBounds(null, null)
-		} else {
-			this.song.player.getAudioElement().addEventListener('timeupdate', () => {
-				if (this.active && this.song.player.getAudioElement().currentTime >= this.end) {
-					this.song.player.getAudioElement().currentTime = this.start
-				}
-			})
-		}
+		if (!this.active) this.setLoopBounds(null, null)
+		
+		this.updateLoopListener()
+		return this.active
 	}
 
 	/**

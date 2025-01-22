@@ -11,13 +11,15 @@ export class MarkerList {
 	*/
 
 	/** @type {Song} */
-	song;
+	song
 	/** @type {Marker[]} */
-	markers = [];
+	markers = []
 	/** @type {HTMLDivElement} */
-	markersListWrapper = null;
+	markersListWrapper = null
 	/** @type {LoopManager} */
-	loopManager = new LoopManager();
+	loopManager = new LoopManager()
+	/** @type {Set<Marker>} */
+	selectedMarkers = new Set()
 
 	/**
 	 * @constructor
@@ -39,6 +41,85 @@ export class MarkerList {
 			this.loopManager.setSong(marker.song)
 		}
 		this.markers.push(marker)
+	}
+
+	/**
+	 * Selects a marker
+	 * @param {Marker} marker - A Marker instance
+	 * @returns {Set<Marker>} - A set of selected markers
+	 */
+	handleSelectMarker(marker) {
+		// If the marker is not already selected, add it to the set
+		if (!this.selectedMarkers.has(marker)) {
+			// If no markers are selected, add the marker
+			if (this.selectedMarkers.size === 0) {
+				this.selectedMarkers.add(marker)
+			} else {
+				// If the selected markers are contiguous, add the current marker
+				const selectedMarkersArray = Array.from(this.selectedMarkers)
+				const firstSelectedMarkerIndex = this.markers.indexOf(selectedMarkersArray[0])
+				const lastSelectedMarkerIndex = this.markers.indexOf(selectedMarkersArray[selectedMarkersArray.length - 1])
+				const currentMarkerIndex = this.markers.indexOf(marker)
+
+				if (currentMarkerIndex - lastSelectedMarkerIndex === 1 || currentMarkerIndex - firstSelectedMarkerIndex === -1) {
+					this.selectedMarkers.add(marker)
+				} else {
+					// Otherwise, clear the set and add the current marker
+					this.selectedMarkers.clear()
+					this.selectedMarkers.add(marker)
+				}
+			}
+		} else {
+			// If the marker is at the beginning or end of the selected markers, remove it
+			const selectedMarkersArray = Array.from(this.selectedMarkers)
+			const firstSelectedMarker = selectedMarkersArray[0]
+			const lastSelectedMarker = selectedMarkersArray[selectedMarkersArray.length - 1]
+			if (marker === firstSelectedMarker || marker === lastSelectedMarker) {
+				this.selectedMarkers.delete(marker)
+			} else {
+				// If the marker is in the middle of the selected markers, clear the set and add the current marker
+				this.selectedMarkers.clear()
+				this.selectedMarkers.add(marker)
+			}
+
+		}
+
+		// Sort the selected markers by time
+		this.selectedMarkers = new Set([...this.selectedMarkers].sort((a, b) => a.time - b.time))
+
+		// Update the loop event listener
+		this.loopManager.setLoopBounds(...this.getSegmentTimeBounds())
+		this.loopManager.updateLoopListener()
+
+		// Return the set of selected markers
+		return this.selectedMarkers
+	}
+
+	/**
+	 * Get segment time bounds
+	 * @returns {Array<number>} - An array of segment time bounds
+	*/
+	getSegmentTimeBounds() {
+		let start, end
+		const selectedMarkersArray = Array.from(this.selectedMarkers)
+
+		// If no markers are selected, return the start and end times of the song
+		if (selectedMarkersArray.length === 0) {
+			return [0, this.song.getDuration()]
+		}
+			
+		// If one marker is selected, the start time is the time of the marker
+		start = selectedMarkersArray[0].time
+
+		// If only one marker is selected, the end time is the end of the song
+		if (selectedMarkersArray.length === 1) {
+			end = this.song.getDuration()
+		} else {
+			// If multiple markers are selected, the end time is the time of the last marker
+			end = selectedMarkersArray[selectedMarkersArray.length - 1].time
+		}
+
+		return [start, end]
 	}
 
 	/**
@@ -93,8 +174,35 @@ export class MarkerList {
 	renderMarkersList() {
 		this.setOrResetMarkersListWrapper()
 		const list = this.createMarkersList()
+		this.markersListWrapper.appendChild(this.addLoopControls())
 		this.markersListWrapper.appendChild(list)
 		return this.markersListWrapper
+	}
+
+	/**
+	 * Creates loop controls for the song
+	 * @returns {HTMLDivElement} - A div element containing loop controls
+	*/
+	addLoopControls() {
+		const loopControls = document.createElement('div')
+		loopControls.classList.add('loop-controls')
+
+		const loopCheckbox = document.createElement('input')
+		loopCheckbox.type = 'checkbox'
+		loopCheckbox.id = 'loop-checkbox'
+		loopCheckbox.addEventListener('change', () => {
+			const bounds = this.getSegmentTimeBounds()
+			this.loopManager.setLoopBounds(...bounds)
+			const active = this.loopManager.toggleLoop()
+
+			loopCheckbox.checked = active
+		})
+		loopControls.appendChild(loopCheckbox)
+
+		const instructions = document.createElement('p')
+		instructions.textContent = 'Loop function currently under construction - until complete, select one marker to loop from there to end of song, multiple markers to define loop bounds'
+		loopControls.appendChild(instructions) 
+		return loopControls
 	}
 
 	/**

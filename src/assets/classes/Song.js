@@ -157,7 +157,7 @@ export class Song {
 	getEditTitleButton(modalHeader) {
 		const button = document.createElement('button')
 		button.classList.add('edit-asset-title')
-		button.innerHTML = '&#9998;'
+		button.innerHTML = '&#9998'
 		button.ariaLabel = 'Edit title'
 		button.addEventListener('click', () => {
 			modalHeader.innerHTML = ''
@@ -290,7 +290,7 @@ export class Song {
 	getDeleteSongButton() {
 		const button = document.createElement('button')
 		button.classList.add('delete-song')
-		button.innerHTML = '&#128465;'
+		button.innerHTML = '&#128465'
 		button.addEventListener('click', (e) => {
 			e.preventDefault()
 			if (confirm(`Are you sure you want to delete ${this.title}?`)) {

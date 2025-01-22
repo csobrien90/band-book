@@ -30,8 +30,8 @@ export class Player {
 	*/
 	createAudioElement(src) {
 		const audio = document.createElement('audio')
-		const songBlob = new Blob([src], { type: this.srcType });
-		const songUrl = URL.createObjectURL(songBlob);
+		const songBlob = new Blob([src], { type: this.srcType })
+		const songUrl = URL.createObjectURL(songBlob)
 		audio.src = songUrl
 		audio.controls = true
 		audio.preload = 'metadata'
@@ -288,8 +288,8 @@ export class Player {
 		button.textContent = 'Download'
 
 		// Create a blob from the source and set the href attribute
-		const srcBlob = new Blob([this.src], { type: this.srcType });
-		const srcUrl = URL.createObjectURL(srcBlob);
+		const srcBlob = new Blob([this.src], { type: this.srcType })
+		const srcUrl = URL.createObjectURL(srcBlob)
 		button.href = srcUrl
 
 		// Set the download attribute based on the file type

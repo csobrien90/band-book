@@ -25,6 +25,20 @@
 			min-width: 600px;
 		}
 
+		.jump-button-wrapper {
+			width: 100%;
+			grid-column: -1/1;
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 1rem;
+
+			button {
+				width: 100%;
+				display: grid;
+				place-items: center;
+			}
+		}
+
 		button, .btn {
 			min-width: 0;
 			justify-self: flex-start;
