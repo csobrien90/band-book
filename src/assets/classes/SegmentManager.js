@@ -1,28 +1,28 @@
 import { Song } from './Song.js'
 
-export class LoopManager {
+export class SegmentManager {
 	/**
-	 * @typedef {Object} LoopBounds
+	 * @typedef {Object} Bounds
 	 * @property {number} start - The start time in seconds
 	 * @property {number} end - The end time in seconds
 	*/
 
 	/** @type {boolean} */
 	active = false
-	/** @type {LoopBounds|null} */
-	loopBounds = null
+	/** @type {Bounds|null} */
+	bounds = null
 	/** @type {Song|null} */
 	song = null
 
 	/**
 	 * @constructor
-	 * @param {LoopBounds} loopBounds - The loop bounds
-	 * @returns {LoopManager} - A new LoopManager instance
+	 * @param {Bounds} bounds - The segment's time bounds
+	 * @returns {SegmentManager} - A new SegmentManager instance
 	*/
-	constructor(loopBounds) {
+	constructor(bounds) {
 		this.active = false
-		this.start = loopBounds?.start
-		this.end = loopBounds?.end
+		this.start = bounds?.start
+		this.end = bounds?.end
 	}
 
 	/**
@@ -48,10 +48,7 @@ export class LoopManager {
 	 * @returns {boolean} - The active state of the loop
 	*/
 	toggleLoop() {
-		this.active = !this.active
-
-		if (!this.active) this.setLoopBounds(null, null)
-		
+		this.active = !this.active		
 		this.updateLoopListener()
 		return this.active
 	}
@@ -62,7 +59,7 @@ export class LoopManager {
 	 * @param {number|null} end - The end time in seconds
 	 * @returns {void}
 	*/
-	setLoopBounds(start, end) {
+	setBounds(start, end) {
 		this.start = start
 		this.end = end
 	}

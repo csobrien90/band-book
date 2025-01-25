@@ -65,12 +65,22 @@
 		}
 	}
 	
-	.loop-checkbox {
-		display: none;
-	}
-	
-	:has(> .loop-checkbox:checked) .loop-proxy {
-		background-color: var(--warning);
+	label[for="loop-checkbox"] {
+		display: grid;
+		gap: 1rem;
+		cursor: pointer;
+		
+		svg {
+			width: 50px;
+		}
+		
+		#loop-checkbox {
+			display: none;
+		}
+
+		&:has(#loop-checkbox:checked) {
+			fill: var(--warning);
+		}
 	}
 }
 

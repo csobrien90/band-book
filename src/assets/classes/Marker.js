@@ -135,10 +135,6 @@ export class Marker {
   renderAsListItem(markerList) {
     const item = document.createElement("li")
 
-		// Append all elements to the item
-		// const loopCheckbox = this.getLoopCheckbox(markerList)
-		// item.appendChild(loopCheckbox)
-		// item.appendChild(this.getLoopProxy(loopCheckbox, markerList))
 		item.appendChild(this.getSegmentCheckbox(markerList))
 		item.appendChild(this.getButton())
 		item.appendChild(this.getInput())
