@@ -1,4 +1,4 @@
-import { secondsToFormattedTime } from '../utils.js'
+import { secondsToFormattedTime, audioBufferToBlob } from '../utils.js'
 import { Marker } from './Marker.js'
 import { SegmentManager } from './SegmentManager.js'
 import { Song } from './Song.js'
@@ -211,7 +211,7 @@ export class MarkerList {
 		downloadSegmentButton.textContent = 'Download Segment'
 		downloadSegmentButton.addEventListener('click', () => {
 			const bounds = this.getSegmentTimeBounds()
-			this.song.downloadSegment(...bounds)
+			this.downloadSegment(...bounds)
 		})
 
 		markerListControls.appendChild(downloadSegmentButton)
@@ -246,6 +246,43 @@ export class MarkerList {
 		instructions.textContent = 'Loop function currently under construction - until complete, select one marker to loop from there to end of song, multiple markers to define loop bounds'
 		markerListControls.appendChild(instructions) 
 		return markerListControls
+	}
+
+	/**
+	 * Downloads a segment of the song
+	 * @param {number} start - The start time in seconds
+	 * @param {number} end - The end time in seconds
+	 * @returns {void}
+	*/
+	downloadSegment(start, end) {
+		const audioContext = new AudioContext()
+		audioContext.decodeAudioData(this.song.src, (buffer) => {
+			const audioContext = new AudioContext();
+
+			const newBuffer = audioContext.createBuffer(
+				buffer.numberOfChannels,
+				(end - start) * buffer.sampleRate,
+				buffer.sampleRate
+			);
+	
+			for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+				const channelData = buffer.getChannelData(channel);
+				const newChannelData = newBuffer.getChannelData(channel);
+		
+				for (let i = 0; i < newChannelData.length; i++) {
+					newChannelData[i] = channelData[Math.floor(start * buffer.sampleRate + i)];
+				}
+			}
+	
+			// Download the trimmed audio
+			const blob = audioBufferToBlob(newBuffer, "audio/mp3");
+			const link = document.createElement("a");
+			link.href = URL.createObjectURL(blob);
+			link.download = "clip";
+			link.type = "audio/mp3";
+			link.innerText = "Download";
+			link.click();
+		});
 	}
 
 	/**
