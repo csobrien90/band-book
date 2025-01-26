@@ -216,6 +216,20 @@ export class MarkerList {
 
 		markerListControls.appendChild(downloadSegmentButton)
 
+		// Make segment into new song button
+		const segmentToSongButton = document.createElement('button')
+		segmentToSongButton.textContent = 'Make Segment into New Song'
+		segmentToSongButton.addEventListener('click', () => {
+			try {
+				const [start, end] = this.getSegmentTimeBounds()
+				this.makeSegmentIntoNewSong(start, end)
+			} catch (error) {
+				console.log('here',error)
+			}
+		})
+
+		markerListControls.appendChild(segmentToSongButton)
+
 		// Loop checkbox and label
 		const toggleLoop = () => {
 			const active = this.segmentManager.toggleLoop()
@@ -282,6 +296,75 @@ export class MarkerList {
 			link.type = "audio/mp3";
 			link.innerText = "Download";
 			link.click();
+		});
+	}
+
+	/**
+	 * Makes a segment of the song into a new song in this bandbook
+	 * @param {number} start - The start time in seconds
+	 * @param {number} end - The end time in seconds
+	 * @returns {void}
+	*/
+	makeSegmentIntoNewSong(start, end) {
+		const audioContext = new AudioContext()
+		audioContext.decodeAudioData(this.song.src, (buffer) => {
+			const audioContext = new AudioContext();
+
+			const newBuffer = audioContext.createBuffer(
+				buffer.numberOfChannels,
+				(end - start) * buffer.sampleRate,
+				buffer.sampleRate
+			);
+	
+			for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+				const channelData = buffer.getChannelData(channel);
+				const newChannelData = newBuffer.getChannelData(channel);
+		
+				for (let i = 0; i < newChannelData.length; i++) {
+					newChannelData[i] = channelData[Math.floor(start * buffer.sampleRate + i)];
+				}
+			}
+	
+			// Convert the new buffer to a base64 string and make new Song
+			const clipSrcBlob = audioBufferToBlob(newBuffer, "audio/mp3")
+			const reader = new FileReader()
+			reader.readAsArrayBuffer(clipSrcBlob)
+			reader.onload = (event) => {
+				const clipSrc = event.target.result
+				const clipSlug = `${this.song.slug}-clip=${start}-${end}`
+				const clipTitle = `${this.song.title} Clip (${start}-${end})`
+				const filteredMarkers = this.markers
+					// Filter markers to only include those within the segment
+					.filter(marker => marker.time >= start && marker.time <= end)
+					// Create new markers with adjusted times and new ids
+					.map(marker => new Marker(
+						marker.time - start,
+						marker.song,
+						marker.title,
+						marker.notes,
+						crypto.randomUUID()
+					))
+
+					console.log({filteredMarkers})
+				
+				const newSong = new Song({
+					...this.song,
+					id: crypto.randomUUID(),
+					src: clipSrc,
+					slug: clipSlug,
+					title: clipTitle,
+					markers: filteredMarkers.map(m => m.getData())
+				}, this.song.bandbook)
+
+				console.log({newSong})
+	
+				this.song.bandbook.addSong(newSong)
+				this.song.bandbook.renderSongNavigation()
+				this.song.bandbook.syncManager.createSong(newSong)
+				filteredMarkers.forEach(marker => {
+					this.song.bandbook.syncManager.createMarker(marker)
+				})
+			}
 		});
 	}
 

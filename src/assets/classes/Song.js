@@ -42,6 +42,7 @@ export class Song {
 	/**
 	 * @constructor
 	 * @param {Object} params - The parameters for the song.
+	 * @param {string} params.id - The unique identifier for the song.
 	 * @param {string} params.slug - The unique slug identifier for the song.
 	 * @param {ArrayBuffer | string} params.src - The URL or binary data for the song audio file.
 	 * @param {string} params.srcType - The MIME type of the audio file.
@@ -55,7 +56,7 @@ export class Song {
 	 * @param {BandBook} bandbook - An instance of the BandBook class.
 	 * @returns {Song} - A new Song instance.
 	*/
-	constructor({slug, src, srcType, title, composer, tempo, key, timeSignature, notes, markers = []}, bandbook) {
+	constructor({id, slug, src, srcType, title, composer, tempo, key, timeSignature, notes, markers = []}, bandbook) {
 		// Assign properties
 		this.slug = slug
 		
@@ -81,6 +82,7 @@ export class Song {
 			}
 		}
 
+		this.id = id ?? crypto.randomUUID()
 		this.src = src
 		this.srcType = srcType
 		this.player = new Player(src, srcType, this)

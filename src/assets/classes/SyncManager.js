@@ -220,11 +220,11 @@ export class SyncManager {
 				const transaction = db.transaction(['songs'], 'readwrite')
 				const store = transaction.objectStore('songs')
 
-				const request = store.add({ id: song.slug, data: JSON.stringify(song.getMetadata()) })
+				const request = store.add({ id: song.id, data: JSON.stringify(song.getMetadata()) })
 				request.onsuccess = () => {
 					// Save src data
 					const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
-					const srcRequest = srcStore.add({ id: song.slug, src: song.src })
+					const srcRequest = srcStore.add({ id: song.id, src: song.src })
 
 					srcRequest.onsuccess = () => {
 						// Update the BandBook record
@@ -236,7 +236,7 @@ export class SyncManager {
 							const record = e.target.result
 							if (record) {
 								const songs = record.songs ? JSON.parse(record.songs) : []
-								songs.push(song.slug)
+								songs.push(song.id)
 								record.songs = JSON.stringify(songs)
 								booksStore.put(record)
 							}
@@ -322,7 +322,7 @@ export class SyncManager {
 								Promise.all(markerData).then((markers) => {
 									// Remove duplicate markers (by id)
 									const uniqueMarkers = markers.filter(
-										(marker, index, self) => self.findIndex(m => m.id === marker.id) === index
+										(marker, index, self) => self.findIndex(m => m?.id === marker?.id) === index
 									)
 
 									songData.markers = uniqueMarkers
@@ -355,11 +355,11 @@ export class SyncManager {
 				const transaction = db.transaction(['songs'], 'readwrite')
 				const store = transaction.objectStore('songs')
 
-				const request = store.delete(song.slug)
+				const request = store.delete(song.id)
 				request.onsuccess = () => {
 					// Delete src data
 					const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
-					const srcRequest = srcStore.delete(song.slug)
+					const srcRequest = srcStore.delete(song.id)
 	
 					srcRequest.onsuccess = () => {
 						// Delete markers
@@ -383,7 +383,7 @@ export class SyncManager {
 							const record = e.target.result
 							if (record) {
 								const songs = JSON.parse(record.songs)
-								const updatedSongs = songs.filter(s => s !== song.slug)
+								const updatedSongs = songs.filter(s => s !== song.id)
 								record.songs = JSON.stringify(updatedSongs)
 								booksStore.put(record)
 							}
@@ -411,13 +411,13 @@ export class SyncManager {
 				const transaction = db.transaction(['songs'], 'readwrite')
 				const store = transaction.objectStore('songs')
 
-				const existing = store.get(song.slug)
+				const existing = store.get(song.id)
 				existing.onsuccess = () => {
 					const record = existing.result
 					if (record) {
 						const data = JSON.parse(record.data)
 						data.title = title
-						store.put({ id: song.slug, data: JSON.stringify(data) })
+						store.put({ id: song.id, data: JSON.stringify(data) })
 						resolve(true)
 					}
 				}
@@ -437,13 +437,13 @@ export class SyncManager {
 				const transaction = db.transaction(['songs'], 'readwrite')
 				const store = transaction.objectStore('songs')
 
-				const existing = store.get(song.slug)
+				const existing = store.get(song.id)
 				existing.onsuccess = () => {
 					const record = existing.result
 					if (record) {
 						const data = JSON.parse(record.data)
 						data.composer = composer
-						store.put({ id: song.slug, data: JSON.stringify(data) })
+						store.put({ id: song.id, data: JSON.stringify(data) })
 						resolve(true)
 					}
 				}
@@ -463,13 +463,13 @@ export class SyncManager {
 				const transaction = db.transaction(['songs'], 'readwrite')
 				const store = transaction.objectStore('songs')
 
-				const existing = store.get(song.slug)
+				const existing = store.get(song.id)
 				existing.onsuccess = () => {
 					const record = existing.result
 					if (record) {
 						const data = JSON.parse(record.data)
 						data.tempo = tempo
-						store.put({ id: song.slug, data: JSON.stringify(data) })
+						store.put({ id: song.id, data: JSON.stringify(data) })
 						resolve(true)
 					}
 				}
@@ -489,13 +489,13 @@ export class SyncManager {
 				const transaction = db.transaction(['songs'], 'readwrite')
 				const store = transaction.objectStore('songs')
 
-				const existing = store.get(song.slug)
+				const existing = store.get(song.id)
 				existing.onsuccess = () => {
 					const record = existing.result
 					if (record) {
 						const data = JSON.parse(record.data)
 						data.key = key
-						store.put({ id: song.slug, data: JSON.stringify(data) })
+						store.put({ id: song.id, data: JSON.stringify(data) })
 						resolve(true)
 					}
 				}
@@ -515,13 +515,13 @@ export class SyncManager {
 				const transaction = db.transaction(['songs'], 'readwrite')
 				const store = transaction.objectStore('songs')
 
-				const existing = store.get(song.slug)
+				const existing = store.get(song.id)
 				existing.onsuccess = () => {
 					const record = existing.result
 					if (record) {
 						const data = JSON.parse(record.data)
 						data.timeSignature = timeSignature
-						store.put({ id: song.slug, data: JSON.stringify(data) })
+						store.put({ id: song.id, data: JSON.stringify(data) })
 						resolve(true)
 					}
 				}
@@ -541,13 +541,13 @@ export class SyncManager {
 				const transaction = db.transaction(['songs'], 'readwrite')
 				const store = transaction.objectStore('songs')
 
-				const existing = store.get(song.slug)
+				const existing = store.get(song.id)
 				existing.onsuccess = () => {
 					const record = existing.result
 					if (record) {
 						const data = JSON.parse(record.data)
 						data.notes = notes
-						store.put({ id: song.slug, data: JSON.stringify(data) })
+						store.put({ id: song.id, data: JSON.stringify(data) })
 						resolve(true)
 					}
 				}
@@ -573,13 +573,13 @@ export class SyncManager {
 					const songTransaction = db.transaction(['songs'], 'readwrite')
 					const songStore = songTransaction.objectStore('songs')
 
-					const existing = songStore.get(marker.song.slug)
+					const existing = songStore.get(marker.song.id)
 					existing.onsuccess = (e) => {
 						const record = e.target.result
 						if (record) {
 							const data = JSON.parse(record.data)
 							data.markers.push(marker.id)
-							songStore.put({ id: marker.song.slug, data: JSON.stringify(data) })
+							songStore.put({ id: marker.song.id, data: JSON.stringify(data) })
 						}
 					}
 
@@ -636,14 +636,14 @@ export class SyncManager {
 					const songTransaction = db.transaction(['songs'], 'readwrite')
 					const songStore = songTransaction.objectStore('songs')
 
-					const existing = songStore.get(marker.song.slug)
+					const existing = songStore.get(marker.song.id)
 					existing.onsuccess = (e) => {
 						const record = e.target.result
 						if (record) {
 							const data = JSON.parse(record.data)
 							const updatedMarkers = data.markers.filter(m => m !== marker.id)
 							data.markers = updatedMarkers
-							songStore.put({ id: marker.song.slug, data: JSON.stringify(data) })
+							songStore.put({ id: marker.song.id, data: JSON.stringify(data) })
 						}
 					}
 
