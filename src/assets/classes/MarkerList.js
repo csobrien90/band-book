@@ -260,9 +260,6 @@ export class MarkerList {
 		loopLabel.appendChild(loopCheckbox)
 		markerListControls.appendChild(loopLabel)
 
-		const instructions = document.createElement('p')
-		instructions.textContent = 'Loop function currently under construction - until complete, select one marker to loop from there to end of song, multiple markers to define loop bounds'
-		markerListControls.appendChild(instructions) 
 		return markerListControls
 	}
 
