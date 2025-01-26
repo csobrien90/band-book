@@ -149,6 +149,9 @@ export class BandBook {
 	 * @returns {void}
 	*/
 	makeSongButton(song, navigation) {
+		const item = document.createElement('li')
+		item.classList.add('song-nav-item')
+
 		const button = document.createElement('button')
 		button.textContent = song.title
 		if (song === this.activeSong) button.classList.add('active')
@@ -156,7 +159,12 @@ export class BandBook {
 			this.activeSong.player.getAudioElement().pause()
 			this.setActiveSong(song)
 		})
-		navigation.appendChild(button)
+		
+		const deleteButton = song.getDeleteSongButton(false)
+
+		item.appendChild(button)
+		item.appendChild(deleteButton)
+		navigation.appendChild(item)
 	}
 
 	/**

@@ -106,6 +106,10 @@ export class Song {
 	init() {
 		this.markerList = new MarkerList(this)
 		this.markerData.forEach(marker => {
+			if (!marker) {
+				console.warn('Invalid marker data:', marker)
+				return
+			}
 			this.markerList?.addMarker(new Marker(marker.time, this, marker.title, marker.notes, marker.id))
 		})
 	}
@@ -288,8 +292,9 @@ export class Song {
 	/**
 	 * Returns a delete song button
 	 * @returns {HTMLButtonElement} - A button element
+	 * @param {boolean} [modal=true] - A boolean indicating whether this is in the edit song modal
 	 */
-	getDeleteSongButton() {
+	getDeleteSongButton(modal = true) {
 		const button = document.createElement('button')
 		button.classList.add('delete-song')
 		button.innerHTML = '&#128465'
@@ -297,9 +302,8 @@ export class Song {
 			e.preventDefault()
 			if (confirm(`Are you sure you want to delete ${this.title}?`)) {
 				this.bandbook.removeSong(this)
-				this.bandbook.syncManager.deleteSong(this)
 				this.bandbook.refresh()
-				document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+				if (modal) document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
 			} else {
 				return
 			}

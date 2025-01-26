@@ -3,9 +3,9 @@ export class Notification {
 	 * Creates a new notification
 	 * @param {string} message - The message to display
 	 * @param {'success' | 'error' | 'info' | 'warning'} type - The type of notification
-	 * @param {boolean} [isTimed = true] - Whether the notification should disappear after a certain amount of time
+	 * @param {boolean} [isTimed = true] - Whether the notification should disappear after a certain amount of time (default: true)
 	 * @param {number} [duration = 5000] - The duration in milliseconds (default: 5000)
-	 * @param {boolean} [isInline = false] - Whether the notification should be inline or not
+	 * @param {boolean} [isInline = false] - Whether the notification should be inline or not (default: false)
 	*/
 	constructor(message, type, isTimed = true, duration = 5000, isInline = false) {
 		this.message = message

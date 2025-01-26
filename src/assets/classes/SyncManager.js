@@ -294,6 +294,9 @@ export class SyncManager {
 
 						songData = record ? JSON.parse(record.data) : undefined
 						if (!songData) resolve(undefined)
+						
+						// Add the song ID to the song data
+						songData.id = songId
 
 						// Get src data
 						const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
@@ -356,6 +359,7 @@ export class SyncManager {
 				const store = transaction.objectStore('songs')
 
 				const request = store.delete(song.id)
+				
 				request.onsuccess = () => {
 					// Delete src data
 					const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
@@ -367,7 +371,7 @@ export class SyncManager {
 						song.markerList.markers.forEach(marker => {
 							const markerRequest = markerStore.delete(marker.id)
 							markerRequest.onsuccess = () => {
-								console.log(`Marker (id: ${marker.id}) deleted successfully`)
+								console.info(`Marker (id: ${marker.id}) deleted successfully`)
 							}
 							markerRequest.onerror = (e) => {
 								console.error('Error deleting marker', e)

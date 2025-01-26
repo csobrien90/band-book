@@ -2,6 +2,7 @@ import { secondsToFormattedTime, audioBufferToBlob } from '../utils.js'
 import { Marker } from './Marker.js'
 import { SegmentManager } from './SegmentManager.js'
 import { Song } from './Song.js'
+import { Notification } from './Notification.js'
 
 export class MarkerList {
 	/**
@@ -224,7 +225,10 @@ export class MarkerList {
 				const [start, end] = this.getSegmentTimeBounds()
 				this.makeSegmentIntoNewSong(start, end)
 			} catch (error) {
-				console.log('here',error)
+				new Notification(
+					'Error: Unable to create new song from segment',
+					'error'
+				)
 			}
 		})
 
@@ -307,9 +311,11 @@ export class MarkerList {
 	*/
 	makeSegmentIntoNewSong(start, end) {
 		const audioContext = new AudioContext()
-		audioContext.decodeAudioData(this.song.src, (buffer) => {
-			const audioContext = new AudioContext();
 
+		// Clone the source to avoid detaching the original ArrayBuffer
+		const clonedSource = this.song.src.slice(0)
+
+		audioContext.decodeAudioData(clonedSource, (buffer) => {
 			const newBuffer = audioContext.createBuffer(
 				buffer.numberOfChannels,
 				(end - start) * buffer.sampleRate,
@@ -345,25 +351,32 @@ export class MarkerList {
 						crypto.randomUUID()
 					))
 
-					console.log({filteredMarkers})
-				
 				const newSong = new Song({
-					...this.song,
-					id: crypto.randomUUID(),
 					src: clipSrc,
-					slug: clipSlug,
+					srcType: this.song.srcType,
 					title: clipTitle,
-					markers: filteredMarkers.map(m => m.getData())
+					slug: clipSlug,
+					composer: this.song.composer,
+					tempo: this.song.tempo,
+					key: this.song.key,
+					timeSignature: this.song.timeSignature,
+					markers: filteredMarkers,
+					notes: ''
 				}, this.song.bandbook)
 
-				console.log({newSong})
-	
 				this.song.bandbook.addSong(newSong)
 				this.song.bandbook.renderSongNavigation()
 				this.song.bandbook.syncManager.createSong(newSong)
 				filteredMarkers.forEach(marker => {
 					this.song.bandbook.syncManager.createMarker(marker)
 				})
+			}
+
+			reader.onerror = () => {
+				new Notification(
+					'Error: Unable to create new song from segment',
+					'error'
+				)
 			}
 		});
 	}
