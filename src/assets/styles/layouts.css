@@ -20,7 +20,6 @@ section {
 	gap: 2rem;
 	padding: 0;
 	margin: 0;
-	list-style: none;
 	
 	li {
 		display: grid;

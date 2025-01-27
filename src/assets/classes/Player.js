@@ -257,22 +257,51 @@ export class Player {
 		const speedControl = document.createElement('div')
 		speedControl.className = 'speed-control'
 
+		// Create a select element with preset options
+		const presetSpeedOptions = ['0.5', '0.75', '1', '1.25', '1.5']
+		const speedSelect = document.createElement('select')
+		speedSelect.className = 'speed-select'
+
+		presetSpeedOptions.forEach(option => {
+			const speedOption = document.createElement('option')
+			speedOption.value = option
+			speedOption.textContent = `${option}x`
+			speedSelect.appendChild(speedOption)
+		})
+
+		const customOption = document.createElement('option')
+		customOption.value = 'custom'
+		customOption.textContent = 'Custom'
+		speedSelect.appendChild(customOption)
+		speedSelect.value = this?.audioElement.playbackRate || "1"
+
 		const speedInput = document.createElement('input')
-		speedInput.type = 'range'
+		speedInput.style.display = speedSelect.value === 'custom' ? 'block' : 'none'
+		speedInput.type = 'number'
 		speedInput.min = 0.5
 		speedInput.max = 2
 		speedInput.step = 0.01
-		speedInput.value = this?.audioElement.playbackRate || 1
+		speedInput.value = this?.audioElement.playbackRate || "1"
 
-		const speedLabel = document.createElement('label')
-		speedLabel.textContent = `Speed: ${speedInput.value}x`
+		const currentSpeed = document.createElement('p')
+		currentSpeed.textContent = `Speed:`
+
+		speedSelect.addEventListener('change', () => {
+			if (speedSelect.value === 'custom') {
+				speedInput.style.display = 'block'
+			} else {
+				speedInput.style.display = 'none'
+			}
+			this.audioElement.playbackRate = speedSelect.value
+			speedInput.value = speedSelect.value
+		})
 
 		speedInput.addEventListener('input', () => {
 			this.audioElement.playbackRate = speedInput.value
-			speedLabel.textContent = `Speed: ${speedInput.value}x`
 		})
 
-		speedControl.appendChild(speedLabel)
+		speedControl.appendChild(currentSpeed)
+		speedControl.appendChild(speedSelect)
 		speedControl.appendChild(speedInput)
 
 		return speedControl

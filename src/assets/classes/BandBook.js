@@ -125,8 +125,14 @@ export class BandBook {
 		const navigation = document.createElement('nav')
 		navigation.classList.add('song-navigation')
 
+		// Create a list element for the songs
+		const list = document.createElement('ul')
+		list.classList.add('song-nav-list')
+
 		// Create a button for each song
-		this.songs.forEach(song => this.makeSongButton(song, navigation))
+		this.songs.forEach(song => this.makeSongButton(song, list))
+
+		navigation.appendChild(list)
 
 		// Add a separator if there are songs
 		if (this.songs?.length > 0) navigation.appendChild(document.createElement('hr'))
