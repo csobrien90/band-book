@@ -3,6 +3,7 @@ import { Workspace } from './Workspace.js'
 import { SyncManager } from './SyncManager.js'
 import { Notification } from './Notification.js'
 import { Modal } from './Modal.js'
+import { SettingsManager } from './SettingsManager.js'
 
 /**
  * Represents a collection of songs
@@ -25,6 +26,13 @@ export class BandBook {
 	 * @default null
 	*/
 	syncManager = null
+
+	/**
+	 * The settings manager for the BandBook instance
+	 * @type {SettingsManager}
+	 * @default null
+	*/
+	settingsManager = null
 
 	/**
 	 * The navigation element for the BandBook instance
@@ -54,6 +62,7 @@ export class BandBook {
 		// Initialize dependencies
 		this.workspace = new Workspace(wrapperElement)
 		this.syncManager = new SyncManager(this)
+		this.settingsManager = new SettingsManager(this)
 
 		// Load the BandBook
 		this.syncManager.loadBandBook().then((data) => {
@@ -74,10 +83,6 @@ export class BandBook {
 		
 		// Create an array of Song instances from the song data
         this.songs = songData ? songData.map(song => new Song(song, this)) : []
-		
-		// Get the theme from the sync manager
-		const theme = await this.syncManager.loadTheme()
-		if (theme) this.wrapper.classList.add(theme)
 
 		// Set the active song
 		this.setActiveSong(this.activeSong || this.songs[0])
@@ -141,7 +146,7 @@ export class BandBook {
 		navigation.appendChild(this.getCreateSongButton())
 		navigation.appendChild(this.getImportButton())
 		navigation.appendChild(this.getExportButton())
-		navigation.appendChild(this.getThemeToggle())
+		navigation.appendChild(this.settingsManager.getSettingsNavItem())
 
 		// Deploy the new navigation element
 		this.navElement = navigation
@@ -317,22 +322,6 @@ export class BandBook {
 		a.href = url
 		a.download = 'bandbook.json'
 		a.click()
-	}
-
-	/**
-	 * Returns the theme toggle button
-	 * @returns {HTMLButtonElement} - A button element
-	*/
-	getThemeToggle() {
-		const button = document.createElement('button')
-		button.textContent = this.wrapper.classList.contains('dark') ? 'Light Mode' : 'Dark Mode'
-		button.addEventListener('click', () => {
-			this.wrapper.classList.toggle('dark')
-			button.textContent = this.wrapper.classList.contains('dark') ? 'Light Mode' : 'Dark Mode'
-			this.syncManager.saveTheme(this.wrapper.classList.contains('dark') ? 'dark' : 'light')
-			button.blur()
-		})
-		return button
 	}
 
 	/**
