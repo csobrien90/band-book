@@ -9,12 +9,7 @@
 
 ## Usage and Features
 
-- upload, delete, and edit metadata of audio files
-- play, pause, and seek audio
-- create, title, and delete formal markers
-- formal markers link to audio time
-- import and export data to JSON
-- all data is stored locally
+Full user guide can found in [this repositorys wiki](https://github.com/csobrien90/band-book/wiki/User-Guide)
 
 ## Contributing
 
