@@ -55,14 +55,17 @@ export class Player {
 		const playerElement = document.createElement('div')
 		playerElement.className = 'player'
 
-		playerElement.appendChild(this.getTimeElement())
-		playerElement.appendChild(this.getSeekingElement())
-		playerElement.appendChild(this.getPlayPauseButton())
-
-		playerElement.appendChild(this.getJumpButtons())
-		playerElement.appendChild(this.getVolumeControl())
-		playerElement.appendChild(this.getSpeedControl())
-		playerElement.appendChild(this.getDowloadButton())
+		this.getWaveform().then(waveform => {
+			playerElement.appendChild(waveform)
+			playerElement.appendChild(this.getTimeElement())
+			playerElement.appendChild(this.getSeekingElement())
+			playerElement.appendChild(this.getPlayPauseButton())
+	
+			playerElement.appendChild(this.getJumpButtons())
+			playerElement.appendChild(this.getVolumeControl())
+			playerElement.appendChild(this.getSpeedControl())
+			playerElement.appendChild(this.getDowloadButton())
+		})
 
 		return playerElement
 	}
@@ -345,5 +348,80 @@ export class Player {
 	*/
 	getCurrentTime() {
 		return this?.audioElement.currentTime
+	}
+
+
+
+// TODO: Make async/await
+
+
+	/**
+	 * Make waveform display
+	 * @returns {HTMLDivElement} - A div element wrapping the waveform
+	*/
+	getWaveform() {
+		return new Promise(async (resolve, reject) => {
+			try {
+
+				const waveformElement = document.createElement('div')
+				waveformElement.className = 'waveform'
+	
+				const averages = await this.getAverageVolumesArray()
+				for (let i = 0; i < averages.length; i++) {
+					const bar = document.createElement('div')
+					bar.className = 'bar'
+					// Set the height via CSS custom properties
+					bar.style.setProperty('--bar-height', `${averages[i]}%`)
+					waveformElement.appendChild(bar)
+				}
+	
+				resolve(waveformElement)
+			} catch (error) {
+				reject(error)
+			}
+		})
+	}
+
+	/**
+	 * Get an array of average volumes for each 1/100th of the audio
+	*/
+	async getAverageVolumesArray() {
+		const clonedSrc = this.src.slice(0)
+		return new Promise((resolve, reject) => {
+			try {
+				const audioContext = new AudioContext()
+				audioContext.decodeAudioData(clonedSrc, buffer => {
+					// Get the average volume for 1/100th of the audio
+					const bufferLength = buffer.length
+					const samples = buffer.getChannelData(0)
+					const sampleSize = bufferLength / 100
+		
+					// Create an array of averages for each segment of the audio
+					const averages = []
+		
+					for (let i = 0; i < bufferLength; i += sampleSize) {
+						const segment = samples.slice(i, i + sampleSize)
+						const sum = segment.reduce((a, b) => a + Math.abs(b), 0)
+						averages.push((sum / sampleSize) * 100)
+					}
+
+					// There should be 100 divs, but rounding issues may cause +/- 1 variance
+					document.body.style.setProperty('--waveform-divs', averages.length)
+
+					// Normalize the averages to a 0-95% range
+					const min = Math.min(...averages)
+					const max = Math.max(...averages)
+					const range = max - min
+
+					const normalizedAverages = averages.map(average => {
+						return ((average - min) / range) * 95
+					})
+					
+					resolve(normalizedAverages)
+				})
+			} catch (error) {
+				reject(error)
+			}
+		})
 	}
 }

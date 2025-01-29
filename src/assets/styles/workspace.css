@@ -25,6 +25,20 @@
 			min-width: 600px;
 		}
 
+		.waveform {
+			display: grid;
+			grid-column: -1 / 1;
+			height: 100px;
+			grid-template-columns: repeat(var(--waveform-divs, 100), 1fr);
+			align-items: center;
+
+			.bar {
+				height: var(--bar-height);
+				background-color: var(--text-neutral);
+				width: 1px;
+			}
+		}
+
 		.jump-button-wrapper {
 			width: 100%;
 			grid-column: -1/1;
