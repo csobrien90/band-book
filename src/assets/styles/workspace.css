@@ -25,9 +25,27 @@
 			min-width: 600px;
 		}
 
+		--cursor-color: rgb(0,255,0);
+		--played-highlight: rgba(0,255,0,.2);
+		--cursor-width: 1px;
+		--progress: calc(var(--current-time-ratio, 0) * 100%);
+
+		div:has(.waveform) {
+			grid-column: -1 / 1;
+			background: linear-gradient(to right, var(--played-highlight) calc(var(--progress) - var(--cursor-width)), var(--cursor-color) calc(var(--progress) - var(--cursor-width)), var(--cursor-color) var(--progress), transparent var(--progress));
+			transition: background .1s;
+			padding: 1rem 5px;
+			position: relative;
+
+			#seeking-input {
+				position: absolute;
+				inset: 0;
+				opacity: 0;
+			}
+		}
+
 		.waveform {
 			display: grid;
-			grid-column: -1 / 1;
 			height: 100px;
 			grid-template-columns: repeat(var(--waveform-divs, 100), 1fr);
 			align-items: center;
@@ -65,10 +83,6 @@
 
 		label {
 			padding: 0;
-		}
-
-		.seeking input {
-			width: 100%;
 		}
 
 		.volume-control, .speed-control {

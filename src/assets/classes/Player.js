@@ -56,9 +56,8 @@ export class Player {
 		playerElement.className = 'player'
 
 		this.getWaveform().then(waveform => {
-			playerElement.appendChild(waveform)
+			playerElement.appendChild(this.getSeekingElement(waveform))
 			playerElement.appendChild(this.getTimeElement())
-			playerElement.appendChild(this.getSeekingElement())
 			playerElement.appendChild(this.getPlayPauseButton())
 	
 			playerElement.appendChild(this.getJumpButtons())
@@ -67,6 +66,7 @@ export class Player {
 			playerElement.appendChild(this.getDowloadButton())
 		})
 
+		this.playerElement = playerElement
 		return playerElement
 	}
 
@@ -93,6 +93,9 @@ export class Player {
 		this?.audioElement.addEventListener('timeupdate', () => {
 			currentTime.textContent = format(this?.audioElement.currentTime)
 			durationElement.textContent = format(this?.audioElement.duration)
+			const currentTimeRatio = this?.audioElement.currentTime / this?.audioElement.duration
+			const roundedCurrentTimeRatio = currentTimeRatio.toFixed(4)
+			this.playerElement.style.setProperty('--current-time-ratio', roundedCurrentTimeRatio)
 		})
 
 		timeElement.appendChild(currentTime)
@@ -106,17 +109,14 @@ export class Player {
 	 * Returns the progress bar element
 	 * @returns {HTMLDivElement} - A progress element
 	*/
-	getSeekingElement() {
-		const seekingElement = document.createElement('div')
-		seekingElement.className = 'seeking'
-
+	getSeekingElement(waveformElement) {
 		const seekingInput = document.createElement('input')
 		seekingInput.type = 'range'
 		seekingInput.min = 0
 		seekingInput.max = this?.audioElement.duration || 0
 		seekingInput.value = this?.audioElement.currentTime || 0
 		seekingInput.step = 1
-		seekingInput.className = 'seeking-input'
+		seekingInput.id = 'seeking-input'
 		seekingInput.addEventListener('input', () => {
 			this.audioElement.currentTime = seekingInput.value
 		})
@@ -129,9 +129,8 @@ export class Player {
 			seekingInput.value = this?.audioElement.currentTime
 		})
 
-		seekingElement.appendChild(seekingInput)
-
-		return seekingElement
+		waveformElement.appendChild(seekingInput)
+		return waveformElement
 	}
 
 	/**
@@ -362,7 +361,7 @@ export class Player {
 	getWaveform() {
 		return new Promise(async (resolve, reject) => {
 			try {
-
+				const wrapper = document.createElement('div')
 				const waveformElement = document.createElement('div')
 				waveformElement.className = 'waveform'
 	
@@ -375,7 +374,8 @@ export class Player {
 					waveformElement.appendChild(bar)
 				}
 	
-				resolve(waveformElement)
+				wrapper.appendChild(waveformElement)
+				resolve(wrapper)
 			} catch (error) {
 				reject(error)
 			}
@@ -386,6 +386,9 @@ export class Player {
 	 * Get an array of average volumes for each 1/100th of the audio
 	*/
 	async getAverageVolumesArray() {
+		if (this.normalizedAverages) {
+			return this.normalizedAverages
+		}
 		const clonedSrc = this.src.slice(0)
 		return new Promise((resolve, reject) => {
 			try {
@@ -408,15 +411,16 @@ export class Player {
 					// There should be 100 divs, but rounding issues may cause +/- 1 variance
 					document.body.style.setProperty('--waveform-divs', averages.length)
 
-					// Normalize the averages to a 0-95% range
+					// Normalize the averages to a 3-100% range
 					const min = Math.min(...averages)
 					const max = Math.max(...averages)
 					const range = max - min
 
 					const normalizedAverages = averages.map(average => {
-						return ((average - min) / range) * 95
+						return ((average - min) / range) * 97 + 3
 					})
 					
+					this.normalizedAverages = normalizedAverages
 					resolve(normalizedAverages)
 				})
 			} catch (error) {
