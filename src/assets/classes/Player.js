@@ -399,14 +399,12 @@ export class Player {
 	 * Get an array of average volumes for each 1/100th of the audio
 	*/
 	async getAverageVolumesArray() {
-		if (this.normalizedAverages) {
-			return this.normalizedAverages
-		}
+		if (this.song.waveformVolumes.length > 0) return this.song.waveformVolumes
 		const clonedSrc = this.src.slice(0)
 		return new Promise((resolve, reject) => {
 			try {
 				const audioContext = new AudioContext()
-				audioContext.decodeAudioData(clonedSrc, buffer => {
+				audioContext.decodeAudioData(clonedSrc, async buffer => {
 					// Get the average volume for 1/100th of the audio
 					const bufferLength = buffer.length
 					const samples = buffer.getChannelData(0)
@@ -433,7 +431,7 @@ export class Player {
 						return ((average - min) / range) * 97 + 3
 					})
 					
-					this.normalizedAverages = normalizedAverages
+					await this.song.setWaveformVolumes(normalizedAverages)
 					resolve(normalizedAverages)
 				})
 			} catch (error) {

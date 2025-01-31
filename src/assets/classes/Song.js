@@ -53,10 +53,11 @@ export class Song {
 	 * @param {string} params.timeSignature - The time signature of the song.
 	 * @param {string} params.notes - Additional notes or lyrics related to the song.
 	 * @param {Array<MarkerData>} [params.markers=[]] - An optional array of markers for the song.
+	 * @param {Array<number>} [params.waveformVolumes=[]] - An optional array of average volumes for the song waveform display.
 	 * @param {BandBook} bandbook - An instance of the BandBook class.
 	 * @returns {Song} - A new Song instance.
 	*/
-	constructor({id, slug, src, srcType, title, composer, tempo, key, timeSignature, notes, markers = []}, bandbook) {
+	constructor({id, slug, src, srcType, title, composer, tempo, key, timeSignature, notes, markers = [], waveformVolumes = []}, bandbook) {
 		// Assign properties
 		this.slug = slug
 		
@@ -93,6 +94,7 @@ export class Song {
 		this.timeSignature = timeSignature
 		this.notes = notes
 		this.markerData = markers
+		this.waveformVolumes = waveformVolumes
 		this.bandbook = bandbook
 
 		// Initialize the Song instance
@@ -392,7 +394,8 @@ export class Song {
 			key: this.key,
 			timeSignature: this.timeSignature,
 			notes: this.notes,
-			markers: this.getMarkerData().map(marker => marker.id)
+			markers: this.getMarkerData().map(marker => marker.id),
+			waveformVolumes: this.waveformVolumes
 		}
 	}
 
@@ -404,5 +407,14 @@ export class Song {
 		return this.markerList?.markers.map(marker => {
 			return marker.getData()
 		})
+	}
+
+	/**
+	 * Set the array of average volumes for the song (used for the waveform display)
+	 * @param {Array} waveformVolumes 
+	 */
+	setWaveformVolumes(waveformVolumes) {
+		this.waveformVolumes = waveformVolumes
+		this.bandbook.syncManager.updateSongWaveformVolumes(this, waveformVolumes)
 	}
 }

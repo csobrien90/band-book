@@ -559,6 +559,26 @@ export class SyncManager {
 		})
 	}
 
+	updateSongWaveformVolumes(song, waveformVolumes) {
+		return new Promise((resolve) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['songs'], 'readwrite')
+				const store = transaction.objectStore('songs')
+
+				const existing = store.get(song.id)
+				existing.onsuccess = () => {
+					const record = existing.result
+					if (record) {
+						const data = JSON.parse(record.data)
+						data.waveformVolumes = waveformVolumes
+						store.put({ id: song.id, data: JSON.stringify(data) })
+						resolve(true)
+					}
+				}
+			})
+		})
+	}
+
 	/**
 	 * Create a new marker in indexedDB
 	 * @param {Marker} marker - A Marker instance
