@@ -129,8 +129,15 @@ export class Player {
 			seekingInput.value = this?.audioElement.currentTime
 		})
 
-		waveformElement.appendChild(seekingInput)
-		return waveformElement
+		if (waveformElement) {
+			waveformElement.appendChild(seekingInput)
+			return waveformElement
+		} else {
+			const seekingElement = document.createElement('div')
+			seekingElement.className = 'seeking-element'
+			seekingElement.appendChild(seekingInput)
+			return seekingElement
+		}
 	}
 
 	/**
@@ -357,6 +364,7 @@ export class Player {
 	/**
 	 * Make waveform display
 	 * @returns {HTMLDivElement} - A div element wrapping the waveform
+	 * @returns {null} - If the audio decoding times out, returns null to use backup seeking element
 	*/
 	getWaveform() {
 		return new Promise(async (resolve, reject) => {
@@ -365,17 +373,22 @@ export class Player {
 				const waveformElement = document.createElement('div')
 				waveformElement.className = 'waveform'
 	
-				const averages = await this.getAverageVolumesArray()
-				for (let i = 0; i < averages.length; i++) {
-					const bar = document.createElement('div')
-					bar.className = 'bar'
-					// Set the height via CSS custom properties
-					bar.style.setProperty('--bar-height', `${averages[i]}%`)
-					waveformElement.appendChild(bar)
+				try {
+					const averages = await this.getAverageVolumesArray()
+					for (let i = 0; i < averages.length; i++) {
+						const bar = document.createElement('div')
+						bar.className = 'bar'
+						// Set the height via CSS custom properties
+						bar.style.setProperty('--bar-height', `${averages[i]}%`)
+						waveformElement.appendChild(bar)
+					}
+		
+					wrapper.appendChild(waveformElement)
+					resolve(wrapper)
+				} catch (error) {
+					// If the audio decoding times out or otherwise fails, return null
+					resolve(null)
 				}
-	
-				wrapper.appendChild(waveformElement)
-				resolve(wrapper)
 			} catch (error) {
 				reject(error)
 			}

@@ -33,7 +33,6 @@
 		div:has(.waveform) {
 			grid-column: -1 / 1;
 			background: linear-gradient(to right, var(--played-highlight) calc(var(--progress) - var(--cursor-width)), var(--cursor-color) calc(var(--progress) - var(--cursor-width)), var(--cursor-color) var(--progress), transparent var(--progress));
-			transition: background .1s;
 			padding: 1rem 5px;
 			position: relative;
 
