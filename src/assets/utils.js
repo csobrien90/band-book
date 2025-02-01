@@ -94,3 +94,10 @@ const writeString = (view, offset, string) => {
 	  	view.setUint8(offset + i, string.charCodeAt(i));
 	}
 }
+
+export const isIOS = () => {
+	return ('ontouchstart' in window)
+		|| (navigator.MaxTouchPoints > 0)
+		|| (navigator.msMaxTouchPoints > 0)
+
+}

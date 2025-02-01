@@ -44,10 +44,10 @@
 		}
 
 		.waveform {
-			display: grid;
+			display: flex;
 			height: 100px;
-			grid-template-columns: repeat(var(--waveform-divs, 100), 1fr);
 			align-items: center;
+			justify-content: space-between;
 
 			.bar {
 				height: var(--bar-height);

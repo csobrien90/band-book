@@ -1,4 +1,4 @@
-import { secondsToFormattedTime as format } from '../utils.js'
+import { secondsToFormattedTime as format, isIOS } from '../utils.js'
 
 export class Player {
 	/**
@@ -372,8 +372,12 @@ export class Player {
 				const wrapper = document.createElement('div')
 				const waveformElement = document.createElement('div')
 				waveformElement.className = 'waveform'
-	
+				
 				try {
+					if (isIOS() && this.song.src.byteLength > 10000000) {
+						console.warn('iOS does not support waveform display for large files at this time')
+						throw new Error('iOS does not support waveform display for large files at this time')
+					}
 					const averages = await this.getAverageVolumesArray()
 					for (let i = 0; i < averages.length; i++) {
 						const bar = document.createElement('div')
@@ -418,9 +422,6 @@ export class Player {
 						const sum = segment.reduce((a, b) => a + Math.abs(b), 0)
 						averages.push((sum / sampleSize) * 100)
 					}
-
-					// There should be 100 divs, but rounding issues may cause +/- 1 variance
-					document.body.style.setProperty('--waveform-divs', averages.length)
 
 					// Normalize the averages to a 3-100% range
 					const min = Math.min(...averages)
