@@ -11,4 +11,18 @@
 		border: 1px solid var(--secondary);
 		margin: 1rem;
 	}
+
+	.song-nav-item {
+		display: grid;
+		grid-template-columns: 1fr auto auto;
+		gap: 1rem;
+
+		&:has(h3:not(:empty)) > button:first-of-type {
+			display: none;
+		}
+
+		h3:empty {
+			display: none;
+		}
+	}
 }

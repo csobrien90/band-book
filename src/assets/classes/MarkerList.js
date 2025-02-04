@@ -308,6 +308,8 @@ export class MarkerList {
 	*/
 	makeSegmentIntoNewSong(start, end) {
 		const audioContext = new AudioContext()
+		const prettyStart = secondsToFormattedTime(start)
+		const prettyEnd = secondsToFormattedTime(end)
 
 		// Clone the source to avoid detaching the original ArrayBuffer
 		const clonedSource = this.song.src.slice(0)
@@ -334,8 +336,8 @@ export class MarkerList {
 			reader.readAsArrayBuffer(clipSrcBlob)
 			reader.onload = (event) => {
 				const clipSrc = event.target.result
-				const clipSlug = `${this.song.slug}-clip=${start}-${end}`
-				const clipTitle = `${this.song.title} Clip (${start}-${end})`
+				const clipSlug = `${this.song.slug}-clip=${prettyStart}-${prettyEnd}`
+				const clipTitle = `${this.song.title} Clip (${prettyStart}-${prettyEnd})`
 				const filteredMarkers = this.markers
 					// Filter markers to only include those within the segment
 					.filter(marker => marker.time >= start && marker.time <= end)
