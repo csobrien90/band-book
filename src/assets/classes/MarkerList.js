@@ -342,13 +342,17 @@ export class MarkerList {
 					// Filter markers to only include those within the segment
 					.filter(marker => marker.time >= start && marker.time <= end)
 					// Create new markers with adjusted times and new ids
-					.map(marker => new Marker(
-						marker.time - start,
-						marker.song,
-						marker.title,
-						marker.notes,
-						crypto.randomUUID()
-					))
+					.map(marker => {
+						const newMarker = new Marker(
+							marker.time - start,
+							marker.song,
+							marker.title,
+							marker.notes,
+							crypto.randomUUID()
+						)
+
+						return newMarker.getData()
+					})
 
 				const newSong = new Song({
 					src: clipSrc,
@@ -366,7 +370,7 @@ export class MarkerList {
 				this.song.bandbook.addSong(newSong)
 				this.song.bandbook.renderSongNavigation()
 				this.song.bandbook.syncManager.createSong(newSong)
-				filteredMarkers.forEach(marker => {
+				newSong.markerList.markers.forEach(marker => {
 					this.song.bandbook.syncManager.createMarker(marker)
 				})
 			}
