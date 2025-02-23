@@ -580,6 +580,25 @@ export class SyncManager {
 	}
 
 	/**
+	 * Update a song src in indexedDB
+	 * @param {Song} song - A Song instance
+	 * @param {string} src - A new src
+	 * @returns {Promise<Boolean>} - A promise that resolves when the src is updated
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	updateSongSrc(song, src) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
+				const srcRequest = srcStore.put({ id: song.id, src: src })
+
+				srcRequest.onsuccess = () => resolve(true)
+				srcRequest.onerror = (e) => reject(e)
+			})
+		})
+	}
+
+	/**
 	 * Create a new marker in indexedDB
 	 * @param {Marker} marker - A Marker instance
 	 * @returns {Promise<Boolean>} - A promise that resolves when the marker is created

@@ -234,6 +234,17 @@ export class MarkerList {
 
 		markerListControls.appendChild(segmentToSongButton)
 
+		// Delete segment button
+		const deleteSegmentButton = document.createElement('button')
+		deleteSegmentButton.textContent = 'Delete Segment'
+		deleteSegmentButton.addEventListener('click', async () => {			
+			const bounds = this.getSegmentTimeBounds()
+			await this.deleteSegment(...bounds)
+			this.song.bandbook.refresh()
+		})
+
+		markerListControls.appendChild(deleteSegmentButton)
+
 		// Loop checkbox and label
 		const toggleLoop = () => {
 			const active = this.segmentManager.toggleLoop()
@@ -382,6 +393,93 @@ export class MarkerList {
 				)
 			}
 		});
+	}
+
+	/**
+	 * Delete the given time range (and all markers within it) and update the song src
+	 * @param {number} start - The start time in seconds
+	 * @param {number} end - The end time in seconds
+	 * @returns {Promise<void>}
+	*/
+	async deleteSegment(start, end) {
+		return new Promise((resolve, reject) => {
+			const audioContext = new AudioContext()
+			const clonedSource = this.song.src.slice(0)
+
+			audioContext.decodeAudioData(clonedSource, (buffer) => {
+				const sampleRate = buffer.sampleRate;
+				const startSample = Math.floor(start * sampleRate);
+				const endSample = Math.floor(end * sampleRate);
+				const newLength = buffer.length - (endSample - startSample);
+		
+				const newBuffer = audioContext.createBuffer(
+					buffer.numberOfChannels,
+					newLength,
+					sampleRate
+				);
+		
+				for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+					const oldData = buffer.getChannelData(channel);
+					const newData = newBuffer.getChannelData(channel);
+		
+					// Copy before the deleted segment
+					newData.set(oldData.subarray(0, startSample));
+		
+					// Copy after the deleted segment
+					newData.set(oldData.subarray(endSample), startSample);
+				}	
+		
+				// Convert the new buffer to a base64 string and update the song src
+				const clipSrcBlob = audioBufferToBlob(newBuffer, "audio/mp3")
+				const reader = new FileReader()
+				reader.readAsArrayBuffer(clipSrcBlob)
+				reader.onload = async (event) => {
+					const clipSrc = event.target.result
+					this.song.src = clipSrc
+
+					// Filter markers to only include those outside the segment and update the song's markers after the deleted segment
+					let filteredMarkers = []
+					for (let i = 0; i < this.markers.length; i++) {
+						const marker = this.markers[i]
+
+						// If the marker is inside the segment, delete it
+						if (marker.time >= start && marker.time <= end) {
+							await this.song.bandbook.syncManager.deleteMarker(marker)
+						} else {
+							// If the marker is after the segment, update its time and sync with db
+							if (marker.time > end) {
+								marker.time -= end - start
+								await this.song.bandbook.syncManager.updateMarkerTime(marker, marker.time)
+							}
+
+							// Add the marker to the filtered markers to keep after segment deletion
+							filteredMarkers.push(marker)
+						}
+					}
+
+					// Update the song markers
+					this.markers = filteredMarkers
+
+					// Clear the song's waveform volumes and update in db
+					this.song.waveformVolumes = []
+					await this.song.bandbook.syncManager.updateSongWaveformVolumes(this.song, [])
+
+					// Update the song source in the db
+					this.song.updateSrc(clipSrc)
+					await this.song.bandbook.syncManager.updateSongSrc(this.song, clipSrc)
+					resolve()
+				}
+
+				reader.onerror = () => {
+					new Notification(
+						'Error: Unable to delete time range',
+						'error'
+					)
+
+					resolve()
+				}
+			})
+		})
 	}
 
 	/**

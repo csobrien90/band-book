@@ -417,4 +417,15 @@ export class Song {
 		this.waveformVolumes = waveformVolumes
 		this.bandbook.syncManager.updateSongWaveformVolumes(this, waveformVolumes)
 	}
+
+	/**
+	 * Update the src
+	 * @param {string | ArrayBuffer} src - The new src for the song
+	 * @returns {void}
+	*/
+	updateSrc(src) {
+		this.src = src
+		delete this.player
+		this.player = new Player(src, this.srcType, this)
+	}
 }
