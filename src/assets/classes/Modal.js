@@ -52,8 +52,9 @@ export class Modal {
 	 * @returns {HTMLDivElement|HTMLFormElement} - A div element
 	*/
 	getModalContent() {
-		const contentWrapper = this.options?.useForm ?
-			document.createElement('form') : document.createElement('div')
+		const div = document.createElement('div')
+		const form = document.createElement('form')
+		const contentWrapper = this.options?.useForm ? form : div
 		contentWrapper.classList.add('modal-content')
 		contentWrapper.appendChild(this.getModalHeader())
 		contentWrapper.appendChild(this.content)

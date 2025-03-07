@@ -4,6 +4,7 @@ import { SyncManager } from "./SyncManager.js"
 import { Notification } from "./Notification.js"
 import { Modal } from "./Modal.js"
 import { SettingsManager } from "./SettingsManager.js"
+import { TagManager } from "./TagManager.js"
 
 /**
  * Represents a collection of songs
@@ -33,6 +34,9 @@ export class BandBook {
    * @default null
    */
   settingsManager = null
+
+  /** @type {TagManager} */
+  tagManager = new TagManager()
 
   /**
    * The navigation element for the BandBook instance

@@ -2,6 +2,7 @@ import { Song } from "./Song.js"
 import { MarkerList } from "./MarkerList.js"
 import { Modal } from "./Modal.js"
 import { Notification } from "./Notification.js"
+import { Tag } from "./Tag.js"
 import { formattedTimeToSeconds, secondsToFormattedTime } from "../utils.js"
 
 /**
@@ -30,6 +31,27 @@ export class Marker {
 	 * @default "New Marker"
 	*/
 	title = "New Marker"
+
+	/**
+	 * An array of the marker's Tags
+	 * @type {Tag[]}
+	 * @default []
+	*/
+	tags = []
+
+	/**
+	 * The DOM element for the tags
+	 * @type {HTMLUListElement}
+	 * @default null
+	*/
+	tagElement = null
+
+	/**
+	 * The DOM element for the tags datalist
+	 * @type {HTMLDataListElement}
+	 * @default null
+	*/
+	tagsDatalist = null
 
 	/**
 	 * The notes for the marker
@@ -207,27 +229,27 @@ export class Marker {
 		button.innerHTML = "&#9998"
 		button.ariaLabel = "Edit title"
 		button.addEventListener("click", () => {
-		modalHeader.innerHTML = ""
-		const titleInput = document.createElement("input")
-		titleInput.type = "text"
-		titleInput.value = this.getTitle()
+			modalHeader.innerHTML = ""
+			const titleInput = document.createElement("input")
+			titleInput.type = "text"
+			titleInput.value = this.getTitle()
 
-		const saveButton = document.createElement("button")
-		saveButton.textContent = "Save"
-		saveButton.addEventListener("click", (e) => {
-			e.preventDefault()
-			this.setTitle(titleInput.value)
-			this.song.bandbook.syncManager.updateMarkerTitle(this, titleInput.value)
-			this.song.bandbook.refresh()
+			const saveButton = document.createElement("button")
+			saveButton.textContent = "Save"
+			saveButton.addEventListener("click", (e) => {
+				e.preventDefault()
+				this.setTitle(titleInput.value)
+				this.song.bandbook.syncManager.updateMarkerTitle(this, titleInput.value)
+				this.song.bandbook.refresh()
 
-			// Update modal header
-			modalHeader.textContent = this.title
-			modalHeader.appendChild(this.getEditTitleButton(modalHeader))
-			modalHeader.appendChild(this.getDeleteButton())
-		})
+				// Update modal header
+				modalHeader.textContent = this.title
+				modalHeader.appendChild(this.getEditTitleButton(modalHeader))
+				modalHeader.appendChild(this.getDeleteButton())
+			})
 
-		modalHeader.appendChild(titleInput)
-		modalHeader.appendChild(saveButton)
+			modalHeader.appendChild(titleInput)
+			modalHeader.appendChild(saveButton)
 		})
 		return button
 	}
@@ -264,56 +286,107 @@ export class Marker {
 		timeProxy.pattern = "^(?:(?:1[0-1]|[1-9]):)?(?:[0-5][0-9]:)?[0-5]?[0-9]$|^[0-9]+$"
 		timeProxy.value = this.getFormattedTime()
 		timeProxy.addEventListener("change", () => {
-		const previousTime = this.getFormattedTime()
+			const previousTime = this.getFormattedTime()
 
-		// Validate
-		if (!timeProxy.value.match(timeProxy.pattern)) {
-			const error = new Notification(
-			"Time must be in valid format: SS, MM:SS, or HH:MM:SS",
-			"error",
-			true,
-			5000,
-			true
-			)
-			timeProxyWrapper.insertAdjacentElement("afterend", error.element)
-			timeProxy.value = previousTime
-			return
-		}
+			// Validate
+			if (!timeProxy.value.match(timeProxy.pattern)) {
+				const error = new Notification(
+					"Time must be in valid format: SS, MM:SS, or HH:MM:SS",
+					"error",
+					true,
+					5000,
+					true
+				)
+				timeProxyWrapper.insertAdjacentElement("afterend", error.element)
+				timeProxy.value = previousTime
+				return
+			}
 
-		const time = formattedTimeToSeconds(timeProxy.value)
+			const time = formattedTimeToSeconds(timeProxy.value)
 
-		if (time < 0 || time > this.song.getDuration()) {
-			const error = new Notification("That is not a valid time for this song", "error", true, 5000, true)
-			timeProxyWrapper.insertAdjacentElement("afterend", error.element)
-			timeProxy.value = previousTime
-			return
-		}
+			if (time < 0 || time > this.song.getDuration()) {
+				const error = new Notification("That is not a valid time for this song", "error", true, 5000, true)
+				timeProxyWrapper.insertAdjacentElement("afterend", error.element)
+				timeProxy.value = previousTime
+				return
+			}
 
-		hiddenInputChange({ target: { value: time } })
-		timeProxy.value = secondsToFormattedTime(time)
+			hiddenInputChange({ target: { value: time } })
+			timeProxy.value = secondsToFormattedTime(time)
 		})
 
 		const upOneSecond = document.createElement("button")
 		upOneSecond.innerHTML = "&#9650"
 		upOneSecond.addEventListener("click", (e) => {
-		e.preventDefault()
-		const time = formattedTimeToSeconds(timeProxy.value) + 1
-		hiddenInputChange({ target: { value: time } })
-		timeProxy.value = secondsToFormattedTime(time)
+			e.preventDefault()
+			const time = formattedTimeToSeconds(timeProxy.value) + 1
+			hiddenInputChange({ target: { value: time } })
+			timeProxy.value = secondsToFormattedTime(time)
 		})
 		const downOneSecond = document.createElement("button")
 		downOneSecond.innerHTML = "&#9660"
 		downOneSecond.addEventListener("click", (e) => {
-		e.preventDefault()
-		const time = formattedTimeToSeconds(timeProxy.value) - 1
-		hiddenInputChange({ target: { value: time } })
-		timeProxy.value = secondsToFormattedTime(time)
+			e.preventDefault()
+			const time = formattedTimeToSeconds(timeProxy.value) - 1
+			hiddenInputChange({ target: { value: time } })
+			timeProxy.value = secondsToFormattedTime(time)
 		})
 
 		timeProxyWrapper.appendChild(timeProxy)
 		timeProxyWrapper.appendChild(upOneSecond)
 		timeProxyWrapper.appendChild(downOneSecond)
 		div.appendChild(timeProxyWrapper)
+
+		// tags input/datalist
+		const tagsLabel = document.createElement("label")
+		tagsLabel.htmlFor = "marker-tags"
+		const tagsSpan = document.createElement("span")
+		tagsSpan.textContent = "Tags"
+		const tagsInput = document.createElement("input")
+		tagsInput.id = "marker-tags"
+		tagsInput.name = "marker-tags"
+		tagsInput.placeholder = "Add tags"
+		tagsInput.setAttribute("list", "all-tags")
+
+		// Prevent side effect click on edit title button
+		tagsInput.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") {
+				e.preventDefault()
+				tagsInput.dispatchEvent(new Event("change"))
+			}
+		})
+
+		// Add tag to marker
+		tagsInput.addEventListener("change", (e) => {
+			const value = e.target.value
+			if (value === "") return
+			
+			const tag = this.song.bandbook.tagManager.getTag(value)
+			this.tags.push(tag)
+			this.updateTagDisplay()
+			this.updateTagDatalist()
+
+			tagsInput.value = ""
+		})
+
+		tagsLabel.appendChild(tagsSpan)
+		tagsLabel.appendChild(tagsInput)
+		
+		if (!this.tagsDatalist) {
+			this.tagsDatalist = document.createElement("datalist")
+			this.tagsDatalist.id = "all-tags"
+			this.updateTagDatalist()
+		}
+		
+		div.appendChild(tagsLabel)
+		div.appendChild(this.tagsDatalist)
+
+		// current tags
+		if (!this.tagElement) {
+			this.tagElement = document.createElement("ul")
+			this.tagElement.classList.add("current-tags")
+		}
+		div.appendChild(this.tagElement)
 
 		// notes input
 		const notesLabel = document.createElement("label")
@@ -334,6 +407,41 @@ export class Marker {
 		div.appendChild(notesLabel)
 
 		return div
+	}
+
+	/**
+	 * Updates the tag display
+	 * @returns {void}
+	*/
+	updateTagDisplay() {
+		this.tagElement.innerHTML = ""
+		this.tags.forEach((tag) => {
+			const li = document.createElement("li")
+			const span = document.createElement("span")
+			span.textContent = tag.name
+			li.appendChild(span)
+			const deleteButton = document.createElement("button")
+			deleteButton.textContent = "X"
+			deleteButton.addEventListener("click", () => {
+				this.tags = this.tags.filter((t) => t !== tag)
+				this.updateTagDisplay()
+			})
+			li.appendChild(deleteButton)
+			this.tagElement.appendChild(li)
+		})
+	}
+
+	/**
+	 * Updates the tag datalist
+	 * @returns {void}
+	*/
+	updateTagDatalist() {
+		this.tagsDatalist.innerHTML = ""
+		this.song.bandbook.tagManager.getTags().forEach((tag) => {
+			const option = document.createElement("option")
+			option.value = tag.name
+			this.tagsDatalist.appendChild(option)
+		})
 	}
 
 	/**
