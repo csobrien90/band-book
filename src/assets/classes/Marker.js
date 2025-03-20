@@ -73,13 +73,26 @@ export class Marker {
 	 * @param {Song} song - A Song instance
 	 * @param {string} [title=""] - A title for the marker
 	 * @param {string} [notes=""] - Notes for the marker
+	 * @param {Tag[] | string[]} [tags=[]] - Tags for the marker
 	 * @param {string} [id] - An optional id for the marker
 	 * @returns {Marker} - A new Marker instance
 	 */
-	constructor(time, song, title = "", notes, id) {
+	constructor(time, song, title = "New Marker", notes, tags = [], id) {
 		this.id = id ?? crypto.randomUUID()
 		this.time = time
 		this.song = song
+
+		// Get and set tags asynchronously
+		const newTags = tags.map((tag) =>
+			typeof tag === "string" ?
+				this.song.bandbook.tagManager.getTag(tag)
+				: tag
+		)
+
+		Promise.all(newTags).then((tags) => {
+			this.tags = tags
+			this.updateTagDisplay()
+		})
 
 		this.setTitle(title)
 		this.setNotes(notes)
@@ -162,6 +175,7 @@ export class Marker {
 			item.appendChild(this.getInput())
 			item.appendChild(this.getEditMarkerButton(markerList))
 			item.appendChild(this.getDeleteButton(markerList))
+			item.appendChild(this.getTagElement())
 
 			return item
 		}
@@ -202,18 +216,21 @@ export class Marker {
 		const button = document.createElement("button")
 		button.textContent = "Edit"
 		button.addEventListener("click", () => {
-		const modalHeader = document.createElement("h2")
-		modalHeader.textContent = this.title
+			const modalHeader = document.createElement("h2")
+			modalHeader.textContent = this.title
 
-		// Append buttons to modal header and get edit form content
-		modalHeader.appendChild(this.getEditTitleButton(modalHeader))
-		modalHeader.appendChild(this.getDeleteButton(markerList))
-		const modalContent = this.getEditMarkerForm()
+			// Append buttons to modal header and get edit form content
+			modalHeader.appendChild(this.getEditTitleButton(modalHeader))
+			modalHeader.appendChild(this.getDeleteButton(markerList))
+			const modalContent = this.getEditMarkerForm()
 
-		// Open modal
-		this.activeModal = new Modal(modalHeader, modalContent, {
-			useForm: true,
-		})
+			// Open modal
+			this.activeModal = new Modal(
+				modalHeader,
+				modalContent,
+				{ useForm: true },
+				() => this.song.bandbook.refresh()
+			)
 		})
 		return button
 	}
@@ -260,9 +277,9 @@ export class Marker {
 	 */
 	getEditMarkerForm() {
 		const hiddenInputChange = (e) => {
-		const time = e.target.value
-		this.setTime(time)
-		this.song.bandbook.refresh()
+			const time = e.target.value
+			this.setTime(time)
+			this.song.bandbook.refresh()
 		}
 
 		const div = document.createElement("div")
@@ -363,6 +380,7 @@ export class Marker {
 			
 			const tag = this.song.bandbook.tagManager.getTag(value)
 			this.tags.push(tag)
+			this.song.bandbook.syncManager.updateMarkerTags(this, this.tags)
 			this.updateTagDisplay()
 			this.updateTagDatalist()
 
@@ -382,11 +400,7 @@ export class Marker {
 		div.appendChild(this.tagsDatalist)
 
 		// current tags
-		if (!this.tagElement) {
-			this.tagElement = document.createElement("ul")
-			this.tagElement.classList.add("current-tags")
-		}
-		div.appendChild(this.tagElement)
+		div.appendChild(this.getTagElement())
 
 		// notes input
 		const notesLabel = document.createElement("label")
@@ -407,6 +421,21 @@ export class Marker {
 		div.appendChild(notesLabel)
 
 		return div
+	}
+
+	/**
+	 * Gets the tag element
+	 * @returns {HTMLUListElement}
+	 */
+	getTagElement() {
+		if (!this.tagElement) {
+			this.tagElement = document.createElement("ul")
+			this.tagElement.classList.add("current-tags")
+		}
+
+		this.updateTagDisplay()
+
+		return this.tagElement
 	}
 
 	/**
@@ -500,10 +529,11 @@ export class Marker {
 	 */
 	getData() {
 		return {
-		id: this.id,
-		time: this.time,
-		notes: this.notes,
-		title: this.title,
+			id: this.id,
+			time: this.time,
+			notes: this.notes,
+			title: this.title,
+			tags: this.tags.map((tag) => tag.name)
 		}
 	}
 }

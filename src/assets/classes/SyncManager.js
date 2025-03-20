@@ -58,7 +58,7 @@ export class SyncManager {
 
 				// Create marker records
 				song.markers.forEach(marker => {
-					const newMarker = new Marker(marker.time, newSong, marker.title, marker.notes, marker.id)
+					const newMarker = new Marker(marker.time, newSong, marker.title, marker.notes, marker.tags, marker.id)
 					this.createMarker(newMarker)
 				})
 
@@ -143,6 +143,9 @@ export class SyncManager {
 
 		const markers = db.createObjectStore('markers', { keyPath: 'id' })
 		markers.createIndex('id', 'id', { unique: true })
+
+		const tags = db.createObjectStore('tags', { keyPath: 'name' })
+		tags.createIndex('name', 'name', { unique: true })
 
 		const theme = db.createObjectStore('theme', { keyPath: 'id' })
 		theme.createIndex('id', 'id', { unique: true })
@@ -775,6 +778,106 @@ export class SyncManager {
 					}
 				}
 				existing.onerror = (e) => reject(e)
+			})
+		})
+	}
+
+	/**
+	 * Update a marker's tags in indexedDB
+	 * @param {Marker} marker - A Marker instance
+	 * @param {Tag[] | string[]} tags - An array of tags
+	 * @returns {Promise<Boolean>} - A promise that resolves when the tags are updated
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	updateMarkerTags(marker, tags) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['markers'], 'readwrite')
+				const store = transaction.objectStore('markers')
+
+				const existing = store.get(marker.id)
+				existing.onsuccess = () => {
+					const record = existing.result
+					if (record) {
+						const data = JSON.parse(record.data)
+
+						if (typeof tags[0] !== 'string') {
+							tags = tags.map(tag => tag.name)
+						}
+
+						data.tags = tags
+						store.put({ id: marker.id, data: JSON.stringify(data) })
+						resolve(true)
+					}
+				}
+				existing.onerror = (e) => reject(e)
+			})
+		})
+	}
+
+	/**
+	 * Get all tags from indexedDB
+	 * @returns {Promise<string[]>} - A promise that resolves with an array of tags
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	getTags() {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['tags'], 'readwrite')
+				const store = transaction.objectStore('tags')
+
+				const all = store.getAll()
+				all.onsuccess = (e) => {
+					resolve(e.target.result)
+				}
+				all.onerror = (e) => reject(e)
+			})
+		})
+	}
+
+	/**
+	 * Add a tag to indexedDB
+	 * @param {string} tag - A tag to add
+	 * @returns {Promise<Boolean>} - A promise that resolves when the tag is added
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	addTag(tag) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['tags'], 'readwrite')
+				const store = transaction.objectStore('tags')
+
+				// Check if the tag already exists
+				const existing = store.get(tag)
+				existing.onsuccess = (e) => {
+					const record = e.target.result
+					if (record) {
+						resolve(true)
+					} else {
+						const request = store.add({ name: tag })
+						request.onsuccess = () => resolve(true)
+						request.onerror = (e) => reject(e)
+					}
+				}
+			})
+		})
+	}
+
+	/**
+	 * Remove a tag from indexedDB
+	 * @param {string} tag - A tag to remove
+	 * @returns {Promise<Boolean>} - A promise that resolves when the tag is removed
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	removeTag(tag) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['tags'], 'readwrite')
+				const store = transaction.objectStore('tags')
+
+				const request = store.delete(tag)
+				request.onsuccess = () => resolve(true)
+				request.onerror = (e) => reject(e)
 			})
 		})
 	}

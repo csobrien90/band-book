@@ -5,12 +5,14 @@ export class Modal {
 	 * @param {HTMLElement} content - The content of the modal
 	 * @param {Object} [options={}] - The options for the modal
 	 * @param {boolean} [options.useForm=false] - Whether or not to use a form element
+	 * @param {Function} onClose (optional) - A callback function to be run on modal close
 	 * @returns {Modal} - A new Modal instance
 	*/
-	constructor(title, content, options = {}) {
+	constructor(title, content, options = {}, onClose = null) {
 		this.title = title
 		this.content = content
 		this.options = options
+		this.onClose = onClose
 		
 		this.init()
 	}
@@ -91,6 +93,7 @@ export class Modal {
 	*/
 	remove() {
 		this.element.close()
+		if (this.onClose) this.onClose()
 		this.element.remove()
 		delete this
 	}

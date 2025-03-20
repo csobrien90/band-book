@@ -359,6 +359,7 @@ export class MarkerList {
 							marker.song,
 							marker.title,
 							marker.notes,
+							marker.tags,
 							crypto.randomUUID()
 						)
 

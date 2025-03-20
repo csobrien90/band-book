@@ -36,7 +36,7 @@ export class BandBook {
   settingsManager = null
 
   /** @type {TagManager} */
-  tagManager = new TagManager()
+  tagManager = null
 
   /**
    * The navigation element for the BandBook instance
@@ -87,6 +87,8 @@ export class BandBook {
    */
   async init(songData) {
     if (!this.id) this.id = this.createId
+
+	this.tagManager = new TagManager(this)
 
     // Create an array of Song instances from the song data
     this.songs = songData ? songData.map((song) => new Song(song, this)) : []

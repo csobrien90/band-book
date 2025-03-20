@@ -112,7 +112,7 @@ export class Song {
 				console.warn('Invalid marker data:', marker)
 				return
 			}
-			this.markerList?.addMarker(new Marker(marker.time, this, marker.title, marker.notes, marker.id))
+			this.markerList?.addMarker(new Marker(marker.time, this, marker.title, marker.notes, marker.tags, marker.id))
 		})
 	}
 
