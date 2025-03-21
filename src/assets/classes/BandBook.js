@@ -4,6 +4,7 @@ import { SyncManager } from "./SyncManager.js"
 import { Notification } from "./Notification.js"
 import { Modal } from "./Modal.js"
 import { SettingsManager } from "./SettingsManager.js"
+import { TagManager } from "./TagManager.js"
 
 /**
  * Represents a collection of songs
@@ -33,6 +34,9 @@ export class BandBook {
    * @default null
    */
   settingsManager = null
+
+  /** @type {TagManager} */
+  tagManager = null
 
   /**
    * The navigation element for the BandBook instance
@@ -83,6 +87,8 @@ export class BandBook {
    */
   async init(songData) {
     if (!this.id) this.id = this.createId
+
+	this.tagManager = new TagManager(this)
 
     // Create an array of Song instances from the song data
     this.songs = songData ? songData.map((song) => new Song(song, this)) : []
