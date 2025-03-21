@@ -21,7 +21,7 @@ section {
 	padding: 0;
 	margin: 0;
 	
-	li {
+	> li {
 		display: grid;
 		grid-template-columns: auto auto 1fr;
 		gap: .5rem;
@@ -41,6 +41,19 @@ section {
 	gap: 0 1rem;
 }
 
+.current-tags {
+	display: flex;
+	grid-column: -1/1;
+	gap: 1rem;
+
+	li {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: .5rem;
+		align-items: center;
+	}
+}
+
 @media (min-width: 800px) {
 	body {
 		grid-template-columns: 400px 1fr;
@@ -51,11 +64,11 @@ section {
 	}
 
 	.markers-list {
-		ul {
+		> ul {
 			gap: .5rem;
 		}
 	
-		li {
+		> li {
 			grid-template-columns: 20px auto 1fr auto auto;
 		}
 	
