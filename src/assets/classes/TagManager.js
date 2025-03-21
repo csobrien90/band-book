@@ -22,6 +22,13 @@ export class TagManager {
 	*/
 	tags = []
 
+	/**
+	 * The filter view (if active)
+	 * @type {string | null}
+	 * @default null
+	*/
+	filterView = null
+
 	constructor(bandbook) {
 		this.bandbook = bandbook;
 
@@ -76,5 +83,9 @@ export class TagManager {
 
 	getTags() {
 		return this.tags;
+	}
+
+	setFilterView(filterSlug) {
+		this.filterView = filterSlug || null
 	}
 }

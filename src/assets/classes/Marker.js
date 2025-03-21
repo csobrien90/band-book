@@ -91,7 +91,7 @@ export class Marker {
 
 		Promise.all(newTags).then((tags) => {
 			this.tags = tags
-			this.updateTagDisplay()
+			this.updateTagDisplay(true)
 		})
 
 		this.setTitle(title)
@@ -175,7 +175,7 @@ export class Marker {
 			item.appendChild(this.getInput())
 			item.appendChild(this.getEditMarkerButton(markerList))
 			item.appendChild(this.getDeleteButton(markerList))
-			item.appendChild(this.getTagElement())
+			item.appendChild(this.getTagElement(true))
 
 			return item
 		}
@@ -425,37 +425,56 @@ export class Marker {
 
 	/**
 	 * Gets the tag element
+	 * @param {boolean} useFilterButton - if true, tag is button to filter markers; if false, tag is static span
 	 * @returns {HTMLUListElement}
 	 */
-	getTagElement() {
+	getTagElement(useFilterButton = false) {
 		if (!this.tagElement) {
 			this.tagElement = document.createElement("ul")
 			this.tagElement.classList.add("current-tags")
 		}
 
-		this.updateTagDisplay()
+		this.updateTagDisplay(useFilterButton)
 
 		return this.tagElement
 	}
 
 	/**
 	 * Updates the tag display
+	 * @param {boolean} useFilterButton - if true, tag is button to filter markers; if false, tag is static span
 	 * @returns {void}
 	*/
-	updateTagDisplay() {
+	updateTagDisplay(useFilterButton = false) {
 		this.tagElement.innerHTML = ""
 		this.tags.forEach((tag) => {
 			const li = document.createElement("li")
-			const span = document.createElement("span")
-			span.textContent = tag.name
-			li.appendChild(span)
+
+			if (useFilterButton) {
+				const filterButton = document.createElement("button")
+				filterButton.textContent = tag.name
+				if (this.song.bandbook.tagManager.filterView === tag.name) filterButton.classList.add("active")
+				filterButton.addEventListener("click", () => {
+					filterButton.classList.toggle("active")
+					this.song.bandbook.tagManager.setFilterView(this.song.bandbook.tagManager.filterView === tag.name ? null : tag.name)
+					this.song.bandbook.refresh()
+				})
+				li.appendChild(filterButton)
+			} else {
+				const span = document.createElement("span")
+				span.textContent = tag.name
+				li.appendChild(span)
+			}
+
 			const deleteButton = document.createElement("button")
 			deleteButton.textContent = "X"
 			deleteButton.addEventListener("click", () => {
-				this.tags = this.tags.filter((t) => t !== tag)
-				this.updateTagDisplay()
+				const filteredTags = this.tags.filter((t) => t !== tag)
+				this.tags = filteredTags
+				this.song.bandbook.syncManager.updateMarkerTags(this, filteredTags)
+				this.updateTagDisplay(useFilterButton)
 			})
 			li.appendChild(deleteButton)
+
 			this.tagElement.appendChild(li)
 		})
 	}

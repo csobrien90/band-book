@@ -492,11 +492,16 @@ export class MarkerList {
 		const list = document.createElement('ul')
 		list.classList.add('markers-list')
 		this.markers.sort((a,b) => {
-			return a.time - b.time
-		}).forEach(marker => {
-			const item = marker.renderAsListItem(this)
-			list.appendChild(item)
-		})
+				return a.time - b.time
+			}).filter(marker => {
+				const filterView = this.song.bandbook.tagManager.filterView
+				if (!filterView) return true
+
+				return marker.tags.map(tag => tag.name).includes(filterView)
+			}).forEach(marker => {
+				const item = marker.renderAsListItem(this)
+				list.appendChild(item)
+			})
 
 		return list
 	}
