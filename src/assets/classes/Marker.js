@@ -68,6 +68,13 @@ export class Marker {
 	activeModal = null
 
 	/**
+	 * Whether this marker is the currently playing segment start
+	 * @type {boolean}
+	 * @default false
+	*/
+	segmentIsActive = false
+
+	/**
 	 * @constructor
 	 * @param {number} time - A time in seconds
 	 * @param {Song} song - A Song instance
@@ -170,15 +177,16 @@ export class Marker {
 	renderAsListItem(markerList) {
 		const item = document.createElement("li")
 
-			item.appendChild(this.getSegmentCheckbox(markerList))
-			item.appendChild(this.getButton())
-			item.appendChild(this.getInput())
-			item.appendChild(this.getEditMarkerButton(markerList))
-			item.appendChild(this.getDeleteButton(markerList))
-			item.appendChild(this.getTagElement(true))
+		item.appendChild(this.getSegmentCheckbox(markerList))
+		item.appendChild(this.getButton())
+		item.appendChild(this.getInput())
+		item.appendChild(this.getEditMarkerButton(markerList))
+		item.appendChild(this.getDeleteButton(markerList))
+		item.appendChild(this.getTagElement(true))
 
-			return item
-		}
+		if (this.segmentIsActive) item.classList.add("active")
+		return item
+	}
 
 	/**
 	 * Returns a checkbox to group markers into segments
@@ -445,6 +453,7 @@ export class Marker {
 	 * @returns {void}
 	*/
 	updateTagDisplay(useFilterButton = false) {
+		if (!this.tagElement) return
 		this.tagElement.innerHTML = ""
 		this.tags.forEach((tag) => {
 			const li = document.createElement("li")
@@ -490,6 +499,15 @@ export class Marker {
 			option.value = tag.name
 			this.tagsDatalist.appendChild(option)
 		})
+	}
+
+	/**
+	 * Sets the segmentIsActive value
+	 * @param {boolean} newValue
+	 * @returns {void}
+	*/
+	setSegmentIsActive(newValue) {
+		this.segmentIsActive = newValue
 	}
 
 	/**

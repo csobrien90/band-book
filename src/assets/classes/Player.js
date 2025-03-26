@@ -126,7 +126,31 @@ export class Player {
 		})
 
 		this?.audioElement.addEventListener('timeupdate', () => {
-			seekingInput.value = this?.audioElement.currentTime
+			const current = this?.audioElement.currentTime
+			seekingInput.value = current
+			const markers = this?.song?.markerList?.markers
+
+			// Find which segment marker should be active
+			const activeMarker = markers?.findLast(m => m.time < current)
+
+			// If the current time is before any marker (or there aren't any markers)
+			if (!activeMarker) {
+				// Deactivate active markers, refresh the display, and return
+				markers.forEach(marker => marker.setSegmentIsActive(false))
+				this?.song?.markerList?.renderMarkersList()
+				return
+			}
+
+			// If the discovered active marker is already active, return
+			if (activeMarker.segmentIsActive) return
+			else {
+				// Update all markers to reflect new active/inactive status
+				markers.forEach(marker => marker.setSegmentIsActive(marker === activeMarker))
+
+				// Refresh the marker list display to reflect newly active marker
+				this?.song?.markerList?.renderMarkersList()
+			}
+
 		})
 
 		if (waveformElement) {
