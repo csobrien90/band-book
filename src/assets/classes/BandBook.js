@@ -62,6 +62,7 @@ export class BandBook {
     this.wrapper = wrapperElement
     this.wrapper.classList.add("bandbook-loading")
     this.addFeedbackButton()
+	this.addDragAndDropListeners()
 
     // Initialize dependencies
     this.workspace = new Workspace(wrapperElement)
@@ -431,6 +432,42 @@ export class BandBook {
       })
     })
     this.wrapper.parentElement.appendChild(button)
+  }
+
+  /**
+   * Adds an event listener to make the <body> a droppable area for new songs
+   */
+  addDragAndDropListeners() {
+	const body = document.querySelector('body')
+	body.addEventListener('dragover', e => this.newSongDragListener(e))
+	body.addEventListener('drop', e => this.newSongDropListener(e))
+  }
+
+  newSongDragListener(event) {
+	event.preventDefault()
+	// console.log("drag", {event})
+  }
+
+  newSongDropListener(event) {
+	event.preventDefault()
+	const files = event.dataTransfer.files
+	if (!files) return
+
+	for (const file of files) {
+		this.processAndCreateSong(file)
+	}
+  }
+
+  processAndCreateSong(file) {
+	if (!file.type.includes("audio")) {
+		new Notification("Upload failed. Please upload a valid audio file (e.g. mp3, wav, etc.)", "error", true)
+		return
+	}
+	
+	// Get the file name without the extension
+	const title = file.name.split(".").slice(0, -1).join(".")
+
+	this.createSong(file, file.type, title)
   }
 
   /**

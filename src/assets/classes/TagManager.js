@@ -51,7 +51,7 @@ export class TagManager {
 
 		// Save in db
 		this.bandbook.syncManager.addTag(name).then(() => {
-			console.log("Tag added to db", name);
+			// Do nothing on success
 		}).catch(err => {
 			console.log("Error adding tag to db", err);
 		});

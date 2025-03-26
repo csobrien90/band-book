@@ -374,7 +374,7 @@ export class SyncManager {
 						song.markerList.markers.forEach(marker => {
 							const markerRequest = markerStore.delete(marker.id)
 							markerRequest.onsuccess = () => {
-								console.info(`Marker (id: ${marker.id}) deleted successfully`)
+								// Do nothing on success
 							}
 							markerRequest.onerror = (e) => {
 								console.error('Error deleting marker', e)
