@@ -3,6 +3,7 @@ import { Marker } from './Marker.js'
 import { MarkerList } from './MarkerList.js'
 import { Player } from './Player.js'
 import { Modal } from './Modal.js'
+import { Notification } from './Notification.js'
 
 /**
  * @typedef {Object} MarkerData
@@ -73,12 +74,11 @@ export class Song {
 					}
 					src = new Uint8Array(array).buffer
 				} else {
-					// console.warn('Song src is too large. Converting to ArrayBuffer in chunks:', title)
-					throw new Error(`${title} src is too large`)
-					// fix large src conversion!
+					throw new Error(`Song source for ${title} is too large`)
+					// TODO: fix large src conversion
 				}
 			} catch (error) {
-				console.error('Failed to convert song src to ArrayBuffer', error)
+				new Notification(error, "error")
 				src = new ArrayBuffer()
 			}
 		}
