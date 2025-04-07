@@ -184,6 +184,13 @@ export class TagManager {
 		const tagManagerContent = document.createElement('div')
 		tagManagerContent.classList.add('tag-manager-content')
 
+		if (this.tags.length === 0) {
+			const noTagsMessage = document.createElement('p')
+			noTagsMessage.textContent = 'No tags found. To get started, edit a Marker and add a tag.'
+			tagManagerContent.appendChild(noTagsMessage)
+			return tagManagerContent
+		}
+
 		const tagList = document.createElement('ul')
 		tagList.classList.add('tag-list')
 
@@ -214,6 +221,12 @@ export class TagManager {
 				this.deleteTag(tag)
 
 				tagList.removeChild(tagItem)
+
+				if (tagList.childElementCount === 0) {
+					const noTagsMessage = document.createElement('p')
+					noTagsMessage.textContent = 'No tags found. To get started, edit a Marker and add a tag.'
+					tagManagerContent.appendChild(noTagsMessage)
+				}
 			})
 			tagItem.appendChild(deleteButton)
 

@@ -481,6 +481,7 @@ export class Marker {
 			deleteButton.textContent = "X"
 			deleteButton.addEventListener("click", () => {
 				this.deleteTag(tag, useFilterButton)
+				this.updateTagDatalist()
 			})
 			li.appendChild(deleteButton)
 
@@ -499,7 +500,6 @@ export class Marker {
 		this.song.bandbook.tagManager.removeTag(tag, this)
 		this.song.bandbook.syncManager.updateMarkerTags(this, filteredTags)
 		this.updateTagDisplay(useFilterButton)
-		this.updateTagDatalist()
 	}
 
 	/**
