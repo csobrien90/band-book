@@ -387,10 +387,13 @@ export class Marker {
 			if (value === "") return
 			
 			const tag = this.song.bandbook.tagManager.getTag(value)
-			this.tags.push(tag)
-			this.song.bandbook.syncManager.updateMarkerTags(this, this.tags)
-			this.updateTagDisplay()
-			this.updateTagDatalist()
+			if (tag && !this.tags.some((t) => t.name === tag.name)) {
+				this.tags.push(tag)
+				this.song.bandbook.syncManager.updateMarkerTags(this, this.tags)
+				this.song.bandbook.tagManager.applyTag(tag, this)
+				this.updateTagDisplay()
+				this.updateTagDatalist()
+			}
 
 			tagsInput.value = ""
 		})
@@ -477,15 +480,26 @@ export class Marker {
 			const deleteButton = document.createElement("button")
 			deleteButton.textContent = "X"
 			deleteButton.addEventListener("click", () => {
-				const filteredTags = this.tags.filter((t) => t !== tag)
-				this.tags = filteredTags
-				this.song.bandbook.syncManager.updateMarkerTags(this, filteredTags)
-				this.updateTagDisplay(useFilterButton)
+				this.deleteTag(tag, useFilterButton)
 			})
 			li.appendChild(deleteButton)
 
 			this.tagElement.appendChild(li)
 		})
+	}
+
+	/**
+	 * Deletes a tag from the marker
+	 * @param {Tag} tag - The tag to delete
+	 * @param {boolean} useFilterButton - if true, tag is button to filter markers; if false, tag is static span
+	*/
+	deleteTag(tag, useFilterButton = false) {
+		const filteredTags = this.tags.filter((t) => t !== tag)
+		this.tags = filteredTags
+		this.song.bandbook.tagManager.removeTag(tag, this)
+		this.song.bandbook.syncManager.updateMarkerTags(this, filteredTags)
+		this.updateTagDisplay(useFilterButton)
+		this.updateTagDatalist()
 	}
 
 	/**
@@ -495,6 +509,7 @@ export class Marker {
 	updateTagDatalist() {
 		this.tagsDatalist.innerHTML = ""
 		this.song.bandbook.tagManager.getTags().forEach((tag) => {
+			if (this.tags.some((t) => t.name === tag.name)) return
 			const option = document.createElement("option")
 			option.value = tag.name
 			this.tagsDatalist.appendChild(option)

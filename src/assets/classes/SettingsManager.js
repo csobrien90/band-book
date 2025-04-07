@@ -41,6 +41,7 @@ export class SettingsManager {
 		const settingsContent = document.createElement('div')
 		settingsContent.classList.add('settings-content')
 		settingsContent.appendChild(this.getThemeToggle())
+		settingsContent.appendChild(this.getTagManagerButton())
 		return settingsContent
 	}
 
@@ -55,6 +56,20 @@ export class SettingsManager {
 			this.bandbook.wrapper.classList.toggle('dark')
 			button.textContent = this.bandbook.wrapper.classList.contains('dark') ? 'Light Mode' : 'Dark Mode'
 			this.bandbook.syncManager.saveTheme(this.bandbook.wrapper.classList.contains('dark') ? 'dark' : 'light')
+			button.blur()
+		})
+		return button
+	}
+
+	/**
+	 * Returns the tag manager button
+	 * @returns {HTMLButtonElement} - A button element
+	 */
+	getTagManagerButton() {
+		const button = document.createElement('button')
+		button.textContent = 'Tag Manager'
+		button.addEventListener('click', () => {
+			this.bandbook.tagManager.openTagManagerModal()
 			button.blur()
 		})
 		return button

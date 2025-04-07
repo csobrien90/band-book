@@ -89,11 +89,11 @@ export class BandBook {
   async init(songData) {
     if (!this.id) this.id = this.createId
 
-	this.tagManager = new TagManager(this)
-
+	this.tagManager = new TagManager(this, songData)
+	
     // Create an array of Song instances from the song data
     this.songs = songData ? songData.map((song) => new Song(song, this)) : []
-
+	
     // Set the active song
     this.setActiveSong(this.activeSong || this.songs[0])
   }
@@ -129,6 +129,20 @@ export class BandBook {
   getSongBySlug(slug) {
     return this.songs.find((song) => song.slug === slug)
   }
+
+  /**
+   * Returns a Marker instance given an id
+   * @param {string} id - A marker id
+   * @returns {Marker|undefined} - A Marker instance or undefined if no marker is found
+   */
+	getMarkerById(id) {
+		for (const song of this.songs) {
+		const marker = song.markerList.markers.find((marker) => marker.id === id)
+		if (marker) return marker
+		}
+		return undefined
+	}
+	
 
   /**
    * Renders the song navigation
