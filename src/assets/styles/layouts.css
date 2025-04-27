@@ -15,6 +15,16 @@ section {
 	gap: 1rem;
 }
 
+.tag-list {
+	display: grid;
+	gap: 1rem;
+	margin-block: 1rem;
+	li {
+		display: grid;
+		grid-template-columns: 4fr 1fr;
+	}
+}
+
 .markers-list {
 	display: grid;
 	gap: 2rem;

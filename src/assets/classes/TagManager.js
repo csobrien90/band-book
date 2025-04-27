@@ -138,15 +138,18 @@ export class TagManager {
 		this.tags = this.tags.filter(t => t !== tag)
 		
 		// Remove from all mapped markers
-		this.tagMap.get(tag).forEach(markerData => {
-			const marker = this.bandbook.getMarkerById(markerData.id)
-			if (!marker) return
-
-			// Remove tag from marker
-			marker.deleteTag(tag)
-			marker.updateTagDisplay()
-			this.removeTag(tag, marker);
-		})
+		const markers = this.tagMap.get(tag)
+		if (markers?.length) {
+			markers.forEach(markerData => {
+				const marker = this.bandbook.getMarkerById(markerData.id)
+				if (!marker) return
+	
+				// Remove tag from marker
+				marker.deleteTag(tag)
+				marker.updateTagDisplay()
+				this.removeTag(tag, marker);
+			})
+		}
 
 		this.tagMap.delete(tag)
 
@@ -200,13 +203,14 @@ export class TagManager {
 			const tagItem = document.createElement('li')
 			
 			// Tag name, number of applications, and delete button
-			const tagName = document.createElement('span')
+			const tagName = document.createElement('p')
 			tagName.textContent = tag.name
-			tagItem.appendChild(tagName)
 
 			const tagCount = document.createElement('span')
-			tagCount.textContent = `    ${counts.get(tag) || 0}    `
-			tagItem.appendChild(tagCount)
+			tagCount.textContent = ` (applied to ${counts.get(tag) || 0} tags)`
+			tagName.appendChild(tagCount)
+			tagItem.appendChild(tagName)
+
 
 			const deleteButton = document.createElement('button')
 			deleteButton.textContent = 'Delete'

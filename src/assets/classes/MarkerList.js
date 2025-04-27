@@ -282,7 +282,9 @@ export class MarkerList {
 	*/
 	downloadSegment(start, end) {
 		const audioContext = new AudioContext()
-		audioContext.decodeAudioData(this.song.src, (buffer) => {
+		// Clone the source to avoid detaching the original ArrayBuffer
+		const clonedSource = this.song.src.slice(0)
+		audioContext.decodeAudioData(clonedSource, (buffer) => {
 			const audioContext = new AudioContext();
 
 			const newBuffer = audioContext.createBuffer(
