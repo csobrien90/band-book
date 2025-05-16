@@ -459,6 +459,10 @@ export class Player {
 					await this.song.setWaveformVolumes(normalizedAverages)
 					resolve(normalizedAverages)
 				})
+
+				audioContext.close().catch(error => {
+					console.error('Error closing audio context:', error)
+				})
 			} catch (error) {
 				reject(error)
 			}

@@ -285,9 +285,9 @@ export class MarkerList {
 		// Clone the source to avoid detaching the original ArrayBuffer
 		const clonedSource = this.song.src.slice(0)
 		audioContext.decodeAudioData(clonedSource, (buffer) => {
-			const audioContext = new AudioContext();
+			const innerAudioContext = new AudioContext();
 
-			const newBuffer = audioContext.createBuffer(
+			const newBuffer = innerAudioContext.createBuffer(
 				buffer.numberOfChannels,
 				(end - start) * buffer.sampleRate,
 				buffer.sampleRate
@@ -304,13 +304,25 @@ export class MarkerList {
 	
 			// Download the trimmed audio
 			const blob = audioBufferToBlob(newBuffer, "audio/mp3");
+			innerAudioContext.close().catch((error) => {
+				console.error('Error closing audio buffer:', error)
+			})
 			const link = document.createElement("a");
 			link.href = URL.createObjectURL(blob);
 			link.download = "clip";
 			link.type = "audio/mp3";
 			link.innerText = "Download";
 			link.click();
+			
+			// Clean up
+			URL.revokeObjectURL(link.href);
+			link.remove();
 		});
+
+		// Close the audio context to free up resources
+		audioContext.close().catch((error) => {
+			console.error('Error closing audio context:', error)
+		})
 	}
 
 	/**
@@ -327,8 +339,9 @@ export class MarkerList {
 		// Clone the source to avoid detaching the original ArrayBuffer
 		const clonedSource = this.song.src.slice(0)
 
-		audioContext.decodeAudioData(clonedSource, (buffer) => {
-			const newBuffer = audioContext.createBuffer(
+		audioContext.decodeAudioData(clonedSource, async (buffer) => {
+			const innerAudioContext = new AudioContext();
+			const newBuffer = innerAudioContext.createBuffer(
 				buffer.numberOfChannels,
 				(end - start) * buffer.sampleRate,
 				buffer.sampleRate
@@ -344,11 +357,12 @@ export class MarkerList {
 			}
 	
 			// Convert the new buffer to a base64 string and make new Song
-			const clipSrcBlob = audioBufferToBlob(newBuffer, "audio/mp3")
-			const reader = new FileReader()
-			reader.readAsArrayBuffer(clipSrcBlob)
-			reader.onload = (event) => {
-				const clipSrc = event.target.result
+			try {
+				const clipSrcBlob = audioBufferToBlob(newBuffer, "audio/mp3")
+				innerAudioContext.close().catch((error) => {
+					console.error('Error closing audio buffer:', error)
+				})
+				const clipSrc = await clipSrcBlob.arrayBuffer()
 				const clipSlug = `${this.song.slug}-clip=${prettyStart}-${prettyEnd}`
 				const clipTitle = `${this.song.title} Clip (${prettyStart}-${prettyEnd})`
 				const filteredMarkers = this.markers
@@ -387,15 +401,18 @@ export class MarkerList {
 				newSong.markerList.markers.forEach(marker => {
 					this.song.bandbook.syncManager.createMarker(marker)
 				})
-			}
-
-			reader.onerror = () => {
+			} catch (error) {
 				new Notification(
 					'Error: Unable to create new song from segment',
 					'error'
 				)
 			}
 		});
+
+		// Close the audio context to free up resources
+		audioContext.close().catch((error) => {
+			console.error('Error closing audio context:', error)
+		})
 	}
 
 	/**
@@ -409,7 +426,7 @@ export class MarkerList {
 			const audioContext = new AudioContext()
 			const clonedSource = this.song.src.slice(0)
 
-			audioContext.decodeAudioData(clonedSource, (buffer) => {
+			audioContext.decodeAudioData(clonedSource, async (buffer) => {
 				const sampleRate = buffer.sampleRate;
 				const startSample = Math.floor(start * sampleRate);
 				const endSample = Math.floor(end * sampleRate);
@@ -431,20 +448,18 @@ export class MarkerList {
 					// Copy after the deleted segment
 					newData.set(oldData.subarray(endSample), startSample);
 				}	
-		
-				// Convert the new buffer to a base64 string and update the song src
-				const clipSrcBlob = audioBufferToBlob(newBuffer, "audio/mp3")
-				const reader = new FileReader()
-				reader.readAsArrayBuffer(clipSrcBlob)
-				reader.onload = async (event) => {
-					const clipSrc = event.target.result
-					this.song.src = clipSrc
+				try {
 
+					// Convert the new buffer to a base64 string and update the song src
+					const clipSrcBlob = audioBufferToBlob(newBuffer, "audio/mp3")
+					const clipSrc = await clipSrcBlob.arrayBuffer()
+					this.song.src = clipSrc
+	
 					// Filter markers to only include those outside the segment and update the song's markers after the deleted segment
 					let filteredMarkers = []
 					for (let i = 0; i < this.markers.length; i++) {
 						const marker = this.markers[i]
-
+	
 						// If the marker is inside the segment, delete it
 						if (marker.time >= start && marker.time <= end) {
 							await this.song.bandbook.syncManager.deleteMarker(marker)
@@ -454,33 +469,35 @@ export class MarkerList {
 								marker.time -= end - start
 								await this.song.bandbook.syncManager.updateMarkerTime(marker, marker.time)
 							}
-
+	
 							// Add the marker to the filtered markers to keep after segment deletion
 							filteredMarkers.push(marker)
 						}
 					}
-
+	
 					// Update the song markers
 					this.markers = filteredMarkers
-
+	
 					// Clear the song's waveform volumes and update in db
 					this.song.waveformVolumes = []
 					await this.song.bandbook.syncManager.updateSongWaveformVolumes(this.song, [])
-
+	
 					// Update the song source in the db
 					this.song.updateSrc(clipSrc)
 					await this.song.bandbook.syncManager.updateSongSrc(this.song, clipSrc)
 					resolve()
-				}
-
-				reader.onerror = () => {
+				} catch (error) {
 					new Notification(
 						'Error: Unable to delete time range',
 						'error'
 					)
-
 					resolve()
 				}
+			})
+
+			// Close the audio context to free up resources
+			audioContext.close().catch((error) => {
+				console.error('Error closing audio context:', error)
 			})
 		})
 	}

@@ -260,31 +260,30 @@ export class BandBook {
    * @returns {void}
    */
   createSong(file, fileType, name) {
-    const reader = new FileReader()
-    reader.onload = (readerEvent) => {
-      // Read the file as an ArrayBuffer
-      const arrayBuffer = readerEvent.target.result
+	// Read the file as an ArrayBuffer
+	file.arrayBuffer().then((arrayBuffer) => {
 
-      // Create song data
-      const songData = {
-        src: arrayBuffer,
-        srcType: fileType,
-        title: name,
-        slug: name.replace(/\s/g, "-").toLowerCase() + "-" + new Date().getTime(),
-        composer: "Unknown",
-        tempo: 120,
-        key: "C",
-        timeSignature: "4/4",
-        notes: "",
-      }
+		// Create song data
+		const songData = {
+			src: arrayBuffer,
+			srcType: fileType,
+			title: name,
+			slug: name.replace(/\s/g, "-").toLowerCase() + "-" + new Date().getTime(),
+			composer: "Unknown",
+			tempo: 120,
+			key: "C",
+			timeSignature: "4/4",
+			notes: "",
+		}
 
-      // Create a new Song instance, add it to BandBook, and sync
-      const song = new Song(songData, this)
-      this.addSong(song)
-      this.renderSongNavigation()
-      this.syncManager.createSong(song)
-    }
-    reader.readAsArrayBuffer(file)
+		// Create a new Song instance, add it to BandBook, and sync
+		const song = new Song(songData, this)
+		this.addSong(song)
+		this.renderSongNavigation()
+		this.syncManager.createSong(song)
+	}).catch((error) => {
+		new Notification("Error reading file: " + error.message, "error", true)
+	})
   }
 
   /**
@@ -355,6 +354,9 @@ export class BandBook {
     a.href = url
     a.download = "bandbook.json"
     a.click()
+
+	URL.revokeObjectURL(url)
+	a.remove()
   }
 
   /**
