@@ -148,7 +148,6 @@ export class Marker {
 	 * @throws {Error} - Throws an error if the time is less than 0 or greater than the song duration
 	 */
 	setTime(time) {
-		if (time < 0 || time > this.song.getDuration()) throw new Error("Invalid time")
 		this.time = time
 		this.song.bandbook.syncManager.updateMarkerTime(this, time)
 	}
@@ -285,9 +284,17 @@ export class Marker {
 	 */
 	getEditMarkerForm() {
 		const hiddenInputChange = (e) => {
-			const time = e.target.value
+			let isValid = true
+
+			let time = e?.target?.value
+			if ((!time && time !== 0) || time < 0 || time > this.song.getDuration()) {
+				time = 0
+				isValid = false
+			}
 			this.setTime(time)
 			this.song.bandbook.refresh()
+
+			return isValid
 		}
 
 		const div = document.createElement("div")
@@ -329,15 +336,9 @@ export class Marker {
 
 			const time = formattedTimeToSeconds(timeProxy.value)
 
-			if (time < 0 || time > this.song.getDuration()) {
-				const error = new Notification("That is not a valid time for this song", "error", true, 5000, true)
-				timeProxyWrapper.insertAdjacentElement("afterend", error.element)
-				timeProxy.value = previousTime
-				return
-			}
-
-			hiddenInputChange({ target: { value: time } })
-			timeProxy.value = secondsToFormattedTime(time)
+			const proxySuccess = hiddenInputChange({ target: { value: time } })
+			if (proxySuccess) timeProxy.value = secondsToFormattedTime(time)
+			else timeProxy.value = previousTime
 		})
 
 		const upOneSecond = document.createElement("button")
@@ -345,16 +346,16 @@ export class Marker {
 		upOneSecond.addEventListener("click", (e) => {
 			e.preventDefault()
 			const time = formattedTimeToSeconds(timeProxy.value) + 1
-			hiddenInputChange({ target: { value: time } })
-			timeProxy.value = secondsToFormattedTime(time)
+			const proxySuccess = hiddenInputChange({ target: { value: time } })
+			if (proxySuccess) timeProxy.value = secondsToFormattedTime(time)
 		})
 		const downOneSecond = document.createElement("button")
 		downOneSecond.innerHTML = "&#9660"
 		downOneSecond.addEventListener("click", (e) => {
 			e.preventDefault()
 			const time = formattedTimeToSeconds(timeProxy.value) - 1
-			hiddenInputChange({ target: { value: time } })
-			timeProxy.value = secondsToFormattedTime(time)
+			const proxySuccess = hiddenInputChange({ target: { value: time } })
+			if (proxySuccess) timeProxy.value = secondsToFormattedTime(time)
 		})
 
 		timeProxyWrapper.appendChild(timeProxy)
