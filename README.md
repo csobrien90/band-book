@@ -9,7 +9,7 @@
 
 ## Usage and Features
 
-Full user guide can found in [this repositorys wiki](https://github.com/csobrien90/band-book/wiki/User-Guide)
+Full user guide can found in [this repository's wiki](https://github.com/csobrien90/band-book/wiki/User-Guide)
 
 ## Contributing
 

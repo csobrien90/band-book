@@ -2,11 +2,12 @@
 	position: fixed;
 	top: 1rem;
 	right: 1rem;
+	max-width: calc(100vw - 2rem);	
 	z-index: 1000;
 	padding: 1rem 2rem;
 	color: white;
 	border-radius: 25px;
-	transition: right .4s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+	transition: right .3s cubic-bezier(0.5, 0, 0.5, 0.1);
 
 	&.off-screen {
 		right: -500px;

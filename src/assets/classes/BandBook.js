@@ -168,6 +168,10 @@ export class BandBook {
 
     // Add the BandBook controls
     navigation.appendChild(this.getCreateSongButton())
+	if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+		// Only show the record button if the browser supports getUserMedia
+		navigation.appendChild(this.getRecordSongButton())
+	}
     navigation.appendChild(this.getImportButton())
     navigation.appendChild(this.getExportButton())
     navigation.appendChild(this.settingsManager.getSettingsNavItem())
@@ -250,6 +254,75 @@ export class BandBook {
     button.textContent = "Add Song"
     button.addEventListener("click", () => upload.click())
     return button
+  }
+
+  /**
+   * Returns the record song button
+   * @returns {HTMLButtonElement} - A button element
+   */
+  getRecordSongButton() {
+	const button = document.createElement("button")
+	button.textContent = "Record New Song"
+	button.addEventListener("click", () => this.getRecorderModal())
+	return button
+  }
+
+  /**
+   * Creates a modal for recording a new song
+   * @returns {void}
+   */
+  getRecorderModal() {
+	const modalHeader = document.createElement("h2")
+	modalHeader.textContent = "Record New Song"
+
+	const modalContent = document.createElement("div")
+
+	const recordingCopy = document.createElement("p")
+	recordingCopy.textContent = "Click \"Record\" to use your microphone to record live audio as a new song. This is a new feature and has not been thoroughly tested. Please report any issues, submmitting feedback via the button in the bottom right corner."
+	modalContent.appendChild(recordingCopy)
+
+	navigator.mediaDevices.getUserMedia({ audio: true })
+	.then((stream) => {
+		const mediaRecorder = new MediaRecorder(stream)
+		const audioChunks = []
+
+		mediaRecorder.addEventListener("dataavailable", (event) => {
+			audioChunks.push(event.data)
+		})
+
+		const recordButton = document.createElement("button")
+		recordButton.textContent = "Record"
+		recordButton.addEventListener("click", () => {
+			mediaRecorder.start()
+			recordButton.textContent = "Recording..."
+			recordButton.disabled = true
+			stopButton.disabled = false
+		})
+
+		const stopButton = document.createElement("button")
+		stopButton.textContent = "Stop"
+		stopButton.disabled = true
+		stopButton.addEventListener("click", () => {
+			mediaRecorder.stop()
+			recordButton.textContent = "Record"
+			recordButton.disabled = false
+			stopButton.disabled = true
+		})
+
+		mediaRecorder.addEventListener("stop", () => {
+			const audioBlob = new Blob(audioChunks, { type: "audio/wav" })
+			const fileName = "recorded-audio.wav"
+			this.createSong(audioBlob, "audio/wav", fileName)
+		})
+
+		modalContent.appendChild(recordButton)
+		modalContent.appendChild(stopButton)
+
+		new Modal(modalHeader, modalContent, { useForm: false })
+	})
+	.catch((error) => {
+		new Notification("Error accessing microphone: " + error.message, "error", true)
+	})
   }
 
   /**
