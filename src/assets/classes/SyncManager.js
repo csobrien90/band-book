@@ -24,7 +24,27 @@ export class SyncManager {
 	 * @returns {void}
 	*/
 	init() {
-		// console.log('SyncManager initialized')
+		this.checkAppVersion()
+	}
+
+	/**
+	 * Checks the app version
+	 * @returns {void}
+	 */
+	checkAppVersion() {
+		// Get version from localStorage
+		const version = localStorage.getItem('bandbookVersion')
+
+		// If the version is the same as the current BandBook version, do nothing
+		if (version === this.bandbook.version) return
+
+		// If the version is different, update the BandBook version
+		localStorage.setItem('bandbookVersion', this.bandbook.version)
+
+		// If the version was not set, stop here
+		if (!version) return
+
+		this.bandbook.alertUserOfNewVersion()
 	}
 
 	/**

@@ -2,7 +2,7 @@
 	position: fixed;
 	top: 1rem;
 	right: 1rem;
-	max-width: calc(100vw - 2rem);	
+	max-width: min(500px, 100vw - 2rem);
 	z-index: 1000;
 	padding: 1rem 2rem;
 	color: white;

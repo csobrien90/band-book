@@ -21,6 +21,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Deployment
 
+Increment the `CURRENT_VERSION` in `index.html` before running the following commands to deploy:
+
 ```bash
 aws s3 sync ./src s3://bandbook --acl public-read
 aws s3 cp favicon.ico s3://bandbook --acl public-read

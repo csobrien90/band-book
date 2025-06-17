@@ -53,6 +53,12 @@ export class BandBook {
   songs = []
 
   /**
+   * The current version of the BandBook app
+   * @type {string}
+   */
+  version = CURRENT_VERSION
+
+  /**
    * @constructor
    * @param {HTMLElement} wrapperElement - An HTML element to render the workspace
    */
@@ -557,6 +563,18 @@ export class BandBook {
 	const title = file.name.split(".").slice(0, -1).join(".")
 
 	this.createSong(file, file.type, title)
+  }
+
+  /**
+   * Alerts the user if the BandBook version is outdated
+   * @returns {void}
+   */
+  alertUserOfNewVersion() {
+	new Notification(
+		`A new version of BandBook is available! Continue using this version or clear your cache and refresh the page to access the most up-to-date features.`,
+		"info",
+		false
+	)
   }
 
   /**
