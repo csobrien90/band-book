@@ -66,7 +66,6 @@ export class BandBook {
     // DOM management
     wrapperElement.id = "bandbook"
     this.wrapper = wrapperElement
-    this.wrapper.classList.add("bandbook-loading")
     this.addFeedbackButton()
 	this.addDragAndDropListeners()
 
@@ -78,13 +77,9 @@ export class BandBook {
     // Load the BandBook
     this.syncManager
       .loadBandBook()
-      .then((data) => {
-        this.init(data)
-      })
-      .catch((error) => {
-        this.wrapper.classList.remove("bandbook-loading")
-        console.error("Error loading BandBook:", error)
-      })
+      .then((data) => this.init(data))
+      .catch((error) => console.error("Error loading BandBook:", error))
+	  .finally(() => this.wrapper.classList.remove("bandbook-loading"))
   }
 
   /**

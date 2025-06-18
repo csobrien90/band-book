@@ -54,6 +54,7 @@ export class Player {
 	getPlayerElement() {
 		const playerElement = document.createElement('div')
 		playerElement.className = 'player'
+		this.song.bandbook.wrapper.classList.add('bandbook-loading')
 
 		this.getWaveform().then(waveform => {
 			playerElement.appendChild(this.getSeekingElement(waveform))
@@ -64,6 +65,10 @@ export class Player {
 			playerElement.appendChild(this.getVolumeControl())
 			playerElement.appendChild(this.getSpeedControl())
 			playerElement.appendChild(this.getDowloadButton())
+		}).catch(error => {
+			console.error('Error creating waveform:', error)
+		}).finally(() => {
+			this.song.bandbook.wrapper.classList.remove('bandbook-loading')
 		})
 
 		this.playerElement = playerElement
@@ -428,6 +433,7 @@ export class Player {
 	*/
 	async getAverageVolumesArray() {
 		if (this.song.waveformVolumes.length > 0) return this.song.waveformVolumes
+
 		const clonedSrc = this.src.slice(0)
 		return new Promise((resolve, reject) => {
 			try {

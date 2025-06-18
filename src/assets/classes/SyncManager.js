@@ -941,11 +941,9 @@ export class SyncManager {
 					} else {
 						resolve('light')
 					}
-					this.bandbook.wrapper.classList.remove('bandbook-loading')
 				}
 
 				existing.onerror = (e) => {
-					this.bandbook.wrapper.classList.remove('bandbook-loading')
 					reject(e)
 				}
 			})

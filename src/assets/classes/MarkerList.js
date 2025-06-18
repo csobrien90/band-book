@@ -281,6 +281,7 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	downloadSegment(start, end) {
+		this.song.bandbook.wrapper.classList.add('bandbook-loading')
 		const audioContext = new AudioContext()
 		// Clone the source to avoid detaching the original ArrayBuffer
 		const clonedSource = this.song.src.slice(0)
@@ -317,6 +318,8 @@ export class MarkerList {
 			// Clean up
 			URL.revokeObjectURL(link.href);
 			link.remove();
+
+			this.song.bandbook.wrapper.classList.remove('bandbook-loading')
 		});
 
 		// Close the audio context to free up resources
@@ -332,6 +335,7 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	makeSegmentIntoNewSong(start, end) {
+		this.song.bandbook.wrapper.classList.add('bandbook-loading')
 		const audioContext = new AudioContext()
 		const prettyStart = secondsToFormattedTime(start)
 		const prettyEnd = secondsToFormattedTime(end)
@@ -406,6 +410,8 @@ export class MarkerList {
 					'Error: Unable to create new song from segment',
 					'error'
 				)
+			} finally {
+				this.song.bandbook.wrapper.classList.remove('bandbook-loading')
 			}
 		});
 
@@ -423,6 +429,7 @@ export class MarkerList {
 	*/
 	async deleteSegment(start, end) {
 		return new Promise((resolve, reject) => {
+			this.song.bandbook.wrapper.classList.add('bandbook-loading')
 			const audioContext = new AudioContext()
 			const clonedSource = this.song.src.slice(0)
 
@@ -432,23 +439,23 @@ export class MarkerList {
 				const endSample = Math.floor(end * sampleRate);
 				const newLength = buffer.length - (endSample - startSample);
 		
-				const newBuffer = audioContext.createBuffer(
-					buffer.numberOfChannels,
-					newLength,
-					sampleRate
-				);
-		
-				for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
-					const oldData = buffer.getChannelData(channel);
-					const newData = newBuffer.getChannelData(channel);
-		
-					// Copy before the deleted segment
-					newData.set(oldData.subarray(0, startSample));
-		
-					// Copy after the deleted segment
-					newData.set(oldData.subarray(endSample), startSample);
-				}	
 				try {
+					const newBuffer = audioContext.createBuffer(
+						buffer.numberOfChannels,
+						newLength,
+						sampleRate
+					);
+			
+					for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+						const oldData = buffer.getChannelData(channel);
+						const newData = newBuffer.getChannelData(channel);
+			
+						// Copy before the deleted segment
+						newData.set(oldData.subarray(0, startSample));
+			
+						// Copy after the deleted segment
+						newData.set(oldData.subarray(endSample), startSample);
+					}	
 
 					// Convert the new buffer to a base64 string and update the song src
 					const clipSrcBlob = audioBufferToBlob(newBuffer, "audio/mp3")
@@ -485,12 +492,13 @@ export class MarkerList {
 					// Update the song source in the db
 					this.song.updateSrc(clipSrc)
 					await this.song.bandbook.syncManager.updateSongSrc(this.song, clipSrc)
-					resolve()
 				} catch (error) {
 					new Notification(
 						'Error: Unable to delete time range',
 						'error'
 					)
+				} finally {
+					this.song.bandbook.wrapper.classList.remove('bandbook-loading')
 					resolve()
 				}
 			})

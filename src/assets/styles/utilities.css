@@ -21,56 +21,19 @@ html:has(.active-loading) * {
 }
 
 body:has(.bandbook-loading) {
-	*:not(#bandbook-loading-overlay, #bandbook-loading-overlay *) {
-		display: none;
-	}
-
+	overflow: hidden;
+	
 	#bandbook-loading-overlay {
+		background-color: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(6px);
 		position: absolute;
 		display: grid;
 		place-items: center;
 		width: 100%;
 		height: 100%;
-		svg {
-			animation: fade-in 250ms linear;
-			scale: 3;
-			--color1: #ee82ee;
-			--color2: #4b0082;
-			--color3: #0000ff;
-			--color4: #008000;
-			--color5: #ffff00;
-			--color6: #ffa500;
-			--color7: #ff0000;
-		}
-		circle {
-			--delay: 250ms;
-			--time: 1.75s;
-			--bezier: cubic-bezier(0.32, 0.27, 0.41, 1.14);
-			transform-origin: 50% 50%;
-			animation: rotate var(--time) var(--bezier) infinite;
-			animation-delay: var(--delay);
 
-			fill: none;
-			stroke-width: 2;
+		p {
+			font-size: 3rem;
 		}
-		circle:nth-of-type(2n) {
-			animation-direction: reverse;
-			--delay: 500ms;
-			--time: 3.5s;
-		}
-		circle:nth-of-type(3) { --time: 2.75s; }
-		circle:nth-of-type(4) { --time: 2.5s; }
-		circle:nth-of-type(5) { --time: 3.25s; }
-		circle:nth-of-type(6) { --time: 3.75s; }
-		circle:nth-of-type(7) { --time: 2.25s; }
 	}
-}
-@keyframes rotate {
-	0% { transform: rotate(0deg); }
-	100% { transform: rotate(360deg); }
-}
-
-@keyframes fade-in {
-	0% { opacity: 0; }
-	100% { opacity: 1; }
 }
