@@ -3,6 +3,7 @@ import { Modal } from './Modal.js'
 /**
  * @typedef {Object} Settings
  * @property {"light" | "dark"} theme - The theme of the application
+ * @property {number[]} skipTimes - The times to add skip buttons for in the player controls (in seconds)
 */
 
 export class SettingsManager {
@@ -10,7 +11,8 @@ export class SettingsManager {
 	 * @type {Settings}
 	*/
 	DEFAULT_SETTINGS = {
-		theme: 'light'
+		theme: 'light',
+		skipTimes: [-10, -2, 2, 10]
 	}
 
 	constructor(bandbook) {
@@ -21,7 +23,7 @@ export class SettingsManager {
 			this.settings = { ...this.DEFAULT_SETTINGS, ...settings }
 
 			// Apply settings
-			this.setTheme(this.settings.theme, false)
+			this.applyTheme()
 		}).catch(() => {
 			// If there was an error loading settings, use the default settings
 			this.settings = { ...this.DEFAULT_SETTINGS }
@@ -67,9 +69,26 @@ export class SettingsManager {
 	getSettingsContent() {
 		const settingsContent = document.createElement('div')
 		settingsContent.classList.add('settings-content')
-		settingsContent.appendChild(this.getThemeToggle())
-		settingsContent.appendChild(this.getTagManagerButton())
+		settingsContent.appendChild(this.getThemeSection())
+		settingsContent.appendChild(this.getSkipTimesSection())
+		settingsContent.appendChild(this.getTagManagerSection())
 		return settingsContent
+	}
+
+	/**
+	 * Returns the theme section
+	 * @returns {HTMLDivElement} - A div element
+	*/
+	getThemeSection() {
+		const themeSection = document.createElement('div')
+		themeSection.classList.add('theme-section')
+
+		const themeHeader = document.createElement('h3')
+		themeHeader.textContent = 'Theme'
+		themeSection.appendChild(themeHeader)
+
+		themeSection.appendChild(this.getThemeToggle())
+		return themeSection
 	}
 
 	/**
@@ -88,6 +107,23 @@ export class SettingsManager {
 			button.blur()
 		})
 		return button
+	}
+
+	/**
+	 * Returns the tag manager section
+	 * @returns {HTMLDivElement} - A div element
+	 */
+	getTagManagerSection() {
+		const tagManagerSection = document.createElement('div')
+		tagManagerSection.classList.add('tag-manager-section')
+
+		const tagManagerHeader = document.createElement('h3')
+		tagManagerHeader.textContent = 'Tag Manager'
+		tagManagerSection.appendChild(tagManagerHeader)
+
+		tagManagerSection.appendChild(this.getTagManagerButton())
+
+		return tagManagerSection
 	}
 
 	/**
@@ -130,12 +166,82 @@ export class SettingsManager {
 	/**
 	 * Sets the theme
 	 * @param {"light" | "dark"} theme - The theme to set
-	 * @param {boolean} [save=true] - Whether to save the settings after changing the theme
 	 */
-	setTheme(theme, save = true) {
+	setTheme(theme) {
 		this.settings.theme = theme
+		this.applyTheme()
+		this.saveSettings()
+	}
+
+	/**
+	 * Applies the current theme to the application
+	 * @returns {void}
+	 */
+	applyTheme() {
 		this.bandbook.wrapper.classList.remove('light', 'dark')
-		this.bandbook.wrapper.classList.add(theme)
-		if (save) this.saveSettings()
+		this.bandbook.wrapper.classList.add(this.settings.theme)
+	}
+
+	/**
+	 * Returns the skip times for the player controls
+	 * @returns {number[]} - The skip times in seconds
+	 */
+	getSkipTimes() {
+		return this.settings.skipTimes || this.DEFAULT_SETTINGS.skipTimes
+	}
+
+	/**
+	 * Sets the skip times for the player controls
+	 * @param {number[]} skipTimes - The skip times in seconds
+	 */
+	setSkipTimes(skipTimes) {
+		this.settings.skipTimes = skipTimes
+		this.saveSettings()
+	}
+
+	/**
+	 * Returns the skip times section
+	 * @returns {HTMLDivElement} - A div element containing the skip times section
+	 */
+	getSkipTimesSection() {
+		const skipTimesSection = document.createElement('formgroup')
+		skipTimesSection.classList.add('skip-times')
+
+		const skipTimesHeader = document.createElement('h3')
+		skipTimesHeader.textContent = 'Skip Times'
+		skipTimesSection.appendChild(skipTimesHeader)
+
+		const skipTimes = this.getSkipTimes().sort((a, b) => a - b)
+
+		for (let i = 0; i < 4; i++) {
+			const skipTime = skipTimes[i]
+			const input = document.createElement('input')
+			input.type = 'number'
+			input.value = skipTime || ""
+			input.min = -90
+			input.max = 90
+			input.step = 1
+
+			input.addEventListener('input', (e) => {
+				const value = parseInt(e.target.value, 10)
+				if (value === 0) {
+					e.target.value = ''
+				} else if (isNaN(value)) {
+					e.target.value = ''
+				} else if (value < -90 || value > 90) {
+					e.target.value = skipTime // Reset to previous value if out of bounds
+				} else {
+					const newSkipTimes = this.getSkipTimes()
+					newSkipTimes[i] = value
+					this.setSkipTimes(newSkipTimes)
+				}
+
+				// Update the button text in the player controls
+				this.bandbook.activeSong.player.updateSkipButtons()
+			})
+			skipTimesSection.appendChild(input)
+		}
+
+		return skipTimesSection
 	}
 }

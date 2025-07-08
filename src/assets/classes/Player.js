@@ -61,7 +61,7 @@ export class Player {
 			playerElement.appendChild(this.getTimeElement())
 			playerElement.appendChild(this.getPlayPauseButton())
 	
-			playerElement.appendChild(this.getJumpButtons())
+			playerElement.appendChild(this.getSkipButtons())
 			playerElement.appendChild(this.getVolumeControl())
 			playerElement.appendChild(this.getSpeedControl())
 			playerElement.appendChild(this.getDowloadButton())
@@ -198,47 +198,38 @@ export class Player {
 	}
 
 	/**
-	 * Returns the jump 10 seconds buttons
+	 * Returns the skip buttons
 	 * @returns {HTMLDivElement} - A div element
 	*/
-	getJumpButtons() {
-		const jumpButtonsWrapper = document.createElement('div')
-		jumpButtonsWrapper.className = 'jump-button-wrapper'
+	getSkipButtons() {
+		const skipButtonsWrapper = document.createElement('div')
+		skipButtonsWrapper.className = 'skip-button-wrapper'
 
-		const jumpTenSecondsBackward = document.createElement('button')
-		jumpTenSecondsBackward.className = 'jump-backward'
-		jumpTenSecondsBackward.textContent = '<< 10s'
-		jumpTenSecondsBackward.addEventListener('click', () => {
-			this.audioElement.currentTime -= 10
+		const skipTimes = this.song.bandbook.settingsManager.getSkipTimes().sort((a, b) => a - b)
+
+		skipTimes.forEach(time => {
+			const skipButton = document.createElement('button')
+			skipButton.className = time < 0 ? 'skip-backward' : 'skip-forward'
+			skipButton.textContent = `${time < 0 ? '<< ' : '>> '}${Math.abs(time)}s`
+			skipButton.addEventListener('click', () => {
+				this.audioElement.currentTime += time
+			})
+			skipButtonsWrapper.appendChild(skipButton)
 		})
 
-		const jumpTwoSecondsBackward = document.createElement('button')
-		jumpTwoSecondsBackward.className = 'jump-backward'
-		jumpTwoSecondsBackward.textContent = '<< 2s'
-		jumpTwoSecondsBackward.addEventListener('click', () => {
-			this.audioElement.currentTime -= 2
-		})
+		return skipButtonsWrapper
+	}
 
-		const jumpTwoSecondsForward = document.createElement('button')
-		jumpTwoSecondsForward.className = 'jump-forward'
-		jumpTwoSecondsForward.textContent = '2s >>'
-		jumpTwoSecondsForward.addEventListener('click', () => {
-			this.audioElement.currentTime += 2
-		})
+	/**
+	 * Updates the skip buttons in the player element
+	 * @returns {void}
+	*/
+	updateSkipButtons() {
+		const skipButtons = this.playerElement.querySelector('.skip-button-wrapper')
+		if (!skipButtons) return
 
-		const jumpTenSecondsForward = document.createElement('button')
-		jumpTenSecondsForward.className = 'jump-forward'
-		jumpTenSecondsForward.textContent = '10s >>'
-		jumpTenSecondsForward.addEventListener('click', () => {
-			this.audioElement.currentTime += 10
-		})
-
-		jumpButtonsWrapper.appendChild(jumpTenSecondsBackward)
-		jumpButtonsWrapper.appendChild(jumpTwoSecondsBackward)
-		jumpButtonsWrapper.appendChild(jumpTwoSecondsForward)
-		jumpButtonsWrapper.appendChild(jumpTenSecondsForward)
-
-		return jumpButtonsWrapper
+		const newskipButtonsWrapper = this.getSkipButtons()
+		skipButtons.replaceChildren(...newskipButtonsWrapper.children)
 	}
 
 	/**

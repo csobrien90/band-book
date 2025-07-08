@@ -56,7 +56,7 @@
 			}
 		}
 
-		.jump-button-wrapper {
+		.skip-button-wrapper {
 			width: 100%;
 			grid-column: -1/1;
 			display: grid;
