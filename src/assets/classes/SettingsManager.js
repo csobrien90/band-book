@@ -6,6 +6,7 @@ import { Modal } from './Modal.js'
  * @property {number[]} skipTimes - The times to add skip buttons for in the player controls (in seconds)
  * @property {number} markerTimeAdjustment - The time adjustment for markers (in seconds)
  * @property {boolean} performanceMode - Whether performance mode is enabled
+ * @property {boolean} experimentalFeatures - Whether experimental features are enabled
 */
 
 export class SettingsManager {
@@ -17,7 +18,8 @@ export class SettingsManager {
 		theme: 'light',
 		skipTimes: [-10, -2, 2, 10],
 		markerTimeAdjustment: 0,
-		performanceMode: false
+		performanceMode: false,
+		experimentalFeatures: false
 	}
 
 	/**
@@ -36,6 +38,9 @@ export class SettingsManager {
 
 			// Apply settings
 			this.applyTheme()
+
+			// Check app version
+			this.bandbook.syncManager.checkAppVersion()
 		}).catch(() => {
 			// If there was an error loading settings, use the default settings
 			this.settings = { ...this.DEFAULT_SETTINGS }
@@ -93,6 +98,7 @@ export class SettingsManager {
 		settingsContent.appendChild(this.getMarkerTimeAdjustmentSection())
 		settingsContent.appendChild(this.getTagManagerSection())
 		settingsContent.appendChild(this.getPerformanceModeSection())
+		settingsContent.appendChild(this.getExperimentalFeaturesSection())
 		settingsContent.appendChild(this.getRestoreDefaultsSection())
 		return settingsContent
 	}
@@ -330,7 +336,7 @@ export class SettingsManager {
 
 		const desc = document.createElement('p')
 		const small = document.createElement('small')
-		small.textContent = 'When in performance mode, non-essential features (waveform generation, animations, etc.) are disabled to improve performance.'
+		small.textContent = 'When in performance mode, some non-essential features (waveform generation, animations, etc.) are disabled to improve performance.'
 		desc.appendChild(small)
 		section.appendChild(desc)
 
@@ -353,6 +359,51 @@ export class SettingsManager {
 	*/
 	isPerformanceMode() {
 		return this.settings.performanceMode || this.DEFAULT_SETTINGS.performanceMode
+	}
+
+	/**
+	 * Returns the experimental features section
+	 * @returns {HTMLDivElement} - A div element containing the experimental features section
+	*/
+	getExperimentalFeaturesSection() {
+		const section = document.createElement('div')
+		section.classList.add('experimental-features')
+		const header = document.createElement('h3')
+		header.textContent = 'Experimental Features'
+		section.appendChild(header)
+
+		const versionArr = this.bandbook.version.split('.').map(Number)
+		const desc = document.createElement('p')
+		const small = document.createElement('small')
+		small.textContent = `
+			The current application version is ${this.bandbook.version}.
+			Normally, the next time you would be prompted to clear cache and update the app
+			would be when Version ${versionArr[0]}.${versionArr[1] + 1}.0 is released.
+			When this is enabled, you will be prompted to update upon the next feature
+			release: Version ${versionArr[0]}.${versionArr[1]}.${versionArr[2] + 1}
+		`
+		desc.appendChild(small)
+		section.appendChild(desc)
+
+		const toggle = document.createElement('input')
+		toggle.type = 'checkbox'
+		toggle.checked = this.isExperimentalFeaturesEnabled()
+		toggle.addEventListener('change', (e) => {
+			this.settings.experimentalFeatures = e.target.checked
+			this.saveSettings()
+			this.setRequiresRefresh(true)
+		})
+		section.appendChild(toggle)
+
+		return section
+	}
+
+	/**
+	 * Checks if experimental features are enabled
+	 * @return {boolean} - True if experimental features are enabled, false otherwise
+	*/
+	isExperimentalFeaturesEnabled() {
+		return this.settings.experimentalFeatures || this.DEFAULT_SETTINGS.experimentalFeatures
 	}
 
 	/**
