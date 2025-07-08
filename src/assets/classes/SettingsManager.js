@@ -9,7 +9,8 @@ import { Modal } from './Modal.js'
 */
 
 export class SettingsManager {
-	/** * Default settings for the application
+	/**
+	 * Default settings for the application
 	 * @type {Settings}
 	*/
 	DEFAULT_SETTINGS = {
@@ -19,8 +20,15 @@ export class SettingsManager {
 		performanceMode: false
 	}
 
+	/**
+	 * A flag to indicate if new settings require a refresh to take effect
+	 * @type {boolean}
+	 * @default false
+	*/
+
 	constructor(bandbook) {
 		this.bandbook = bandbook
+		this.newSettingsRequireRefresh = false
 
 		// Get all settings from the sync manager
 		this.bandbook.syncManager.loadSettings().then(settings => {
@@ -63,6 +71,7 @@ export class SettingsManager {
 	openSettingsModal() {
 		const settingsModalHeader = document.createElement('h2')
 		settingsModalHeader.textContent = 'Settings'
+		
 		new Modal(settingsModalHeader, this.getSettingsContent())
 	}
 
@@ -73,6 +82,12 @@ export class SettingsManager {
 	getSettingsContent() {
 		const settingsContent = document.createElement('div')
 		settingsContent.classList.add('settings-content')
+
+		const requiredRefreshMessage = document.createElement('p')
+		requiredRefreshMessage.classList.add('inline-notification', 'refresh-required-message')
+		requiredRefreshMessage.textContent = 'Some new settings require a refresh to take effect. Please refresh the page to apply changes.'
+		settingsContent.appendChild(requiredRefreshMessage)
+		
 		settingsContent.appendChild(this.getThemeSection())
 		settingsContent.appendChild(this.getSkipTimesSection())
 		settingsContent.appendChild(this.getMarkerTimeAdjustmentSection())
@@ -315,7 +330,7 @@ export class SettingsManager {
 
 		const desc = document.createElement('p')
 		const small = document.createElement('small')
-		small.textContent = 'When in performance mode, non-essential features (waveforms, animations, etc.) are disabled to improve performance.'
+		small.textContent = 'When in performance mode, non-essential features (waveform generation, animations, etc.) are disabled to improve performance.'
 		desc.appendChild(small)
 		section.appendChild(desc)
 
@@ -325,6 +340,7 @@ export class SettingsManager {
 		toggle.addEventListener('change', (e) => {
 			this.settings.performanceMode = e.target.checked
 			this.saveSettings()
+			this.setRequiresRefresh(true)
 		})
 		section.appendChild(toggle)
 
@@ -337,6 +353,19 @@ export class SettingsManager {
 	*/
 	isPerformanceMode() {
 		return this.settings.performanceMode || this.DEFAULT_SETTINGS.performanceMode
+	}
+
+	/**
+	 * Sets whether new settings require a refresh to take effect
+	 * @param {boolean} value - True if a refresh is required, false otherwise
+	 * @return {void}
+	*/
+	setRequiresRefresh(value) {
+		this.newSettingsRequireRefresh = value
+
+		if (value) {
+			this.bandbook.wrapper.classList.add('settings-require-refresh')
+		}
 	}
 
 	/**

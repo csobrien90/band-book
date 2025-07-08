@@ -61,3 +61,13 @@
 		color: var(--danger);
 	}
 }
+
+.inline-notification.refresh-required-message {
+	display: none;
+}
+
+body:has(.settings-require-refresh) {
+	.inline-notification.refresh-required-message {
+		display: block;
+	}
+}
