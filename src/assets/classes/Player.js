@@ -388,6 +388,7 @@ export class Player {
 	*/
 	getWaveform() {
 		return new Promise(async (resolve, reject) => {
+			if (this.song.bandbook.settingsManager.isPerformanceMode()) return resolve(null);
 			try {
 				const wrapper = document.createElement('div')
 				const waveformElement = document.createElement('div')

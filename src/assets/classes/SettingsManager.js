@@ -5,6 +5,7 @@ import { Modal } from './Modal.js'
  * @property {"light" | "dark"} theme - The theme of the application
  * @property {number[]} skipTimes - The times to add skip buttons for in the player controls (in seconds)
  * @property {number} markerTimeAdjustment - The time adjustment for markers (in seconds)
+ * @property {boolean} performanceMode - Whether performance mode is enabled
 */
 
 export class SettingsManager {
@@ -14,7 +15,8 @@ export class SettingsManager {
 	DEFAULT_SETTINGS = {
 		theme: 'light',
 		skipTimes: [-10, -2, 2, 10],
-		markerTimeAdjustment: 0
+		markerTimeAdjustment: 0,
+		performanceMode: false
 	}
 
 	constructor(bandbook) {
@@ -75,6 +77,7 @@ export class SettingsManager {
 		settingsContent.appendChild(this.getSkipTimesSection())
 		settingsContent.appendChild(this.getMarkerTimeAdjustmentSection())
 		settingsContent.appendChild(this.getTagManagerSection())
+		settingsContent.appendChild(this.getPerformanceModeSection())
 		settingsContent.appendChild(this.getRestoreDefaultsSection())
 		return settingsContent
 	}
@@ -296,6 +299,44 @@ export class SettingsManager {
 		section.appendChild(input)
 
 		return section
+	}
+
+	/**
+	 * Returns the performance mode section
+	 * @returns {HTMLDivElement} - A div element containing the performance mode section
+	*/
+	getPerformanceModeSection() {
+		const section = document.createElement('div')
+		section.classList.add('performance-mode')
+
+		const header = document.createElement('h3')
+		header.textContent = 'Performance Mode'
+		section.appendChild(header)
+
+		const desc = document.createElement('p')
+		const small = document.createElement('small')
+		small.textContent = 'When in performance mode, non-essential features (waveforms, animations, etc.) are disabled to improve performance.'
+		desc.appendChild(small)
+		section.appendChild(desc)
+
+		const toggle = document.createElement('input')
+		toggle.type = 'checkbox'
+		toggle.checked = this.settings.performanceMode || this.DEFAULT_SETTINGS.performanceMode
+		toggle.addEventListener('change', (e) => {
+			this.settings.performanceMode = e.target.checked
+			this.saveSettings()
+		})
+		section.appendChild(toggle)
+
+		return section
+	}
+
+	/**
+	 * Checks if performance mode is enabled
+	 * @return {boolean} - True if performance mode is enabled, false otherwise
+	*/
+	isPerformanceMode() {
+		return this.settings.performanceMode || this.DEFAULT_SETTINGS.performanceMode
 	}
 
 	/**
