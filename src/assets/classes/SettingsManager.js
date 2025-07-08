@@ -4,6 +4,7 @@ import { Modal } from './Modal.js'
  * @typedef {Object} Settings
  * @property {"light" | "dark"} theme - The theme of the application
  * @property {number[]} skipTimes - The times to add skip buttons for in the player controls (in seconds)
+ * @property {number} markerTimeAdjustment - The time adjustment for markers (in seconds)
 */
 
 export class SettingsManager {
@@ -12,7 +13,8 @@ export class SettingsManager {
 	*/
 	DEFAULT_SETTINGS = {
 		theme: 'light',
-		skipTimes: [-10, -2, 2, 10]
+		skipTimes: [-10, -2, 2, 10],
+		markerTimeAdjustment: 0
 	}
 
 	constructor(bandbook) {
@@ -71,7 +73,9 @@ export class SettingsManager {
 		settingsContent.classList.add('settings-content')
 		settingsContent.appendChild(this.getThemeSection())
 		settingsContent.appendChild(this.getSkipTimesSection())
+		settingsContent.appendChild(this.getMarkerTimeAdjustmentSection())
 		settingsContent.appendChild(this.getTagManagerSection())
+		settingsContent.appendChild(this.getRestoreDefaultsSection())
 		return settingsContent
 	}
 
@@ -145,7 +149,9 @@ export class SettingsManager {
 	 * @returns {void}
 	 */
 	restoreAllDefaults() {
-		this.setTheme(this.DEFAULT_SETTINGS.theme)
+		this.settings = { ...this.DEFAULT_SETTINGS }
+		this.saveSettings()
+		this.applyTheme(this.DEFAULT_SETTINGS.theme)
 	}
 
 	/**
@@ -243,5 +249,84 @@ export class SettingsManager {
 		}
 
 		return skipTimesSection
+	}
+
+	/**
+	 * Returns the marker time adjustment value
+	 * @returns {number} - The marker time adjustment value in seconds
+	*/
+	getMarkerTimeAdjustment() {
+		return this.settings.markerTimeAdjustment || this.DEFAULT_SETTINGS.markerTimeAdjustment
+	}
+
+	/**
+	 * Returns the marker time adjustment section
+	 * @returns {HTMLDivElement} - A div element containing the marker time adjustment section
+	 */
+	getMarkerTimeAdjustmentSection() {
+		const section = document.createElement('div')
+		section.classList.add('marker-time-adjustment')
+
+		const header = document.createElement('h3')
+		header.textContent = 'Adjust Add Marker Timing'
+		section.appendChild(header)
+
+		const desc = document.createElement('p')
+		const small = document.createElement('small')
+		small.textContent = 'Subtract this number of seconds when adding a new marker. This can be useful for compensating for response time, latency, and other delays.'
+		desc.appendChild(small)
+		section.appendChild(desc)
+
+		const input = document.createElement('input')
+		input.type = 'number'
+		input.value = this.settings.markerTimeAdjustment || this.DEFAULT_SETTINGS.markerTimeAdjustment
+		input.min = 0
+		input.max = 10
+		input.step = 1
+		input.addEventListener('input', (e) => {
+			const value = parseInt(e.target.value, 10)
+			if (value < 0 || value > 10 || isNaN(value)) {
+				// Reset to previous value if out of bounds
+				e.target.value = this.settings.markerTimeAdjustment
+			} else {
+				this.settings.markerTimeAdjustment = value
+				this.saveSettings()
+			}
+		})
+		section.appendChild(input)
+
+		return section
+	}
+
+	/**
+	 * Returns a section containing a button to restore all settings to their defaults
+	 * @returns {HTMLDivElement} - A div element containing the button
+	 */
+	getRestoreDefaultsSection() {
+		const section = document.createElement('div')
+		section.classList.add('restore-defaults')
+
+		const header = document.createElement('h3')
+		header.textContent = 'Restore Defaults'
+		section.appendChild(header)
+
+		const button = this.getRestoreDefaultsButton()
+		section.appendChild(button)
+
+		return section
+	}
+
+	/**
+	 * Returns a button to restore all settings to their defaults
+	 * @returns {HTMLButtonElement} - A button element
+	 */
+	getRestoreDefaultsButton() {
+		const button = document.createElement('button')
+		button.textContent = 'Restore Defaults'
+		button.addEventListener('click', () => {
+			this.restoreAllDefaults()
+			button.blur()
+		})
+		return button
 	}
 }

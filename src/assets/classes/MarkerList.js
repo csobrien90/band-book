@@ -162,7 +162,15 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	createMarker() {
-		const newMarker = new Marker(this.song.player.getCurrentTime(), this.song)
+		let time = this.song.player.getCurrentTime()
+
+		// Adjust per the user's settings
+		const markerTimeAdjustment = this.song.bandbook.settingsManager.getMarkerTimeAdjustment()
+		if (markerTimeAdjustment) {
+			time -= markerTimeAdjustment
+		}
+
+		const newMarker = new Marker(time, this.song)
 		this.addMarker(newMarker)
 		this.renderMarkersList()
 		this.song.bandbook.syncManager.createMarker(newMarker)
