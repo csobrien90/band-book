@@ -1,12 +1,14 @@
 import { BandBook } from './BandBook.js'
 import { Song } from './Song.js'
 import { Marker } from './Marker.js'
+import { SettingsManager } from './SettingsManager.js'
 
 
 export class SyncManager {
 	/**
 	 * @typedef {import('./Song.js').SongData} SongData
 	 * @typedef {import('./Song.js').MarkerData} MarkerData
+	 * @typedef {import('./SettingsManager.js').Settings} Settings
 	*/
 
 	/**
@@ -167,8 +169,8 @@ export class SyncManager {
 		const tags = db.createObjectStore('tags', { keyPath: 'name' })
 		tags.createIndex('name', 'name', { unique: true })
 
-		const theme = db.createObjectStore('theme', { keyPath: 'id' })
-		theme.createIndex('id', 'id', { unique: true })
+		const settings = db.createObjectStore('settings', { keyPath: 'id' })
+		settings.createIndex('id', 'id', { unique: true })
 	}
 
 	/**
@@ -903,49 +905,48 @@ export class SyncManager {
 	}
 
 	/**
-	 * Save the theme to indexedDB
-	 * @param {string} theme - The theme to save
-	 * @returns {Promise<Boolean>} - A promise that resolves when the theme is saved
+	 * Load the settings object from indexedDB
+	 * @returns {Promise<Settings>} - A promise that resolves with the settings object
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	*/
-	saveTheme(theme) {
+	loadSettings() {
 		return new Promise((resolve, reject) => {
 			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['theme'], 'readwrite')
-				const store = transaction.objectStore('theme')
+				const transaction = db.transaction(['settings'], 'readwrite')
+				const store = transaction.objectStore('settings')
 
-				const request = store.put({ id: 'theme', data: theme })
-				request.onsuccess = () => resolve(true)
-				request.onerror = (e) => reject(e)
-			})
-		})
-	}
-
-	/**
-	 * Load the theme from indexedDB
-	 * @returns {Promise<'light' | 'dark'>} - A promise that resolves with the theme
-	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
-	loadTheme() {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['theme'], 'readwrite')
-				const store = transaction.objectStore('theme')
-
-				const existing = store.get('theme')
+				const existing = store.get('settings')
 				existing.onsuccess = (e) => {
 					const record = e.target.result
 					if (record) {
-						this.bandbook.wrapper.classList.toggle('dark', record.data === 'dark')
 						resolve(record.data)
 					} else {
-						resolve('light')
+						resolve({})
 					}
 				}
 
 				existing.onerror = (e) => {
 					reject(e)
 				}
+			})
+		})
+	}
+
+	/**
+	 * Save the settings object to indexedDB
+	 * @param {Settings} settings - The settings object to save
+	 * @returns {Promise<Boolean>} - A promise that resolves when the settings are saved
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	*/
+	saveSettings(settings) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				const transaction = db.transaction(['settings'], 'readwrite')
+				const store = transaction.objectStore('settings')
+
+				const request = store.put({ id: 'settings', data: settings })
+				request.onsuccess = () => resolve(true)
+				request.onerror = (e) => reject(e)
 			})
 		})
 	}
