@@ -1,0 +1,31 @@
+.settings-content {
+	display: grid;
+	gap: 2rem;
+}
+
+.theme-selection {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	gap: 1rem;
+
+	label {
+		&:has(input:checked) {
+			background-color: var(--secondary);
+		}
+
+		&:has(input:focus) {
+			background-color: var(--accent);
+		}
+	}
+}
+
+.skip-times {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	justify-content: start;
+	gap: 1rem;
+
+	h3 {
+		grid-column: 1 / -1;
+	}
+}

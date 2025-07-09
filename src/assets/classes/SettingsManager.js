@@ -1,8 +1,12 @@
 import { Modal } from './Modal.js'
 
 /**
+ * @typedef {"dark" | "light"} ThemeName
+*/
+
+/**
  * @typedef {Object} Settings
- * @property {"light" | "dark"} theme - The theme of the application
+ * @property {ThemeName} theme - The theme of the application
  * @property {number[]} skipTimes - The times to add skip buttons for in the player controls (in seconds)
  * @property {number} markerTimeAdjustment - The time adjustment for markers (in seconds)
  * @property {boolean} performanceMode - Whether performance mode is enabled
@@ -21,6 +25,12 @@ export class SettingsManager {
 		performanceMode: false,
 		experimentalFeatures: false
 	}
+
+	/**
+	 * All themes available in the application
+	 * @type {ThemeName[]}
+	*/
+	THEMES = ['dark', 'light']
 
 	/**
 	 * A flag to indicate if new settings require a refresh to take effect
@@ -77,7 +87,7 @@ export class SettingsManager {
 		const settingsModalHeader = document.createElement('h2')
 		settingsModalHeader.textContent = 'Settings'
 		
-		new Modal(settingsModalHeader, this.getSettingsContent())
+		new Modal(settingsModalHeader, this.getSettingsContent(), {useForm: true})
 	}
 
 	/**
@@ -96,9 +106,9 @@ export class SettingsManager {
 		settingsContent.appendChild(this.getThemeSection())
 		settingsContent.appendChild(this.getSkipTimesSection())
 		settingsContent.appendChild(this.getMarkerTimeAdjustmentSection())
-		settingsContent.appendChild(this.getTagManagerSection())
 		settingsContent.appendChild(this.getPerformanceModeSection())
 		settingsContent.appendChild(this.getExperimentalFeaturesSection())
+		settingsContent.appendChild(this.getTagManagerSection())
 		settingsContent.appendChild(this.getRestoreDefaultsSection())
 		return settingsContent
 	}
@@ -115,26 +125,43 @@ export class SettingsManager {
 		themeHeader.textContent = 'Theme'
 		themeSection.appendChild(themeHeader)
 
-		themeSection.appendChild(this.getThemeToggle())
+		themeSection.appendChild(this.getThemeSelection())
 		return themeSection
 	}
 
 	/**
-	 * Returns the theme toggle button
-	 * @returns {HTMLButtonElement} - A button element
+	 * Returns the theme selection fieldset
+	 * @returns {HTMLFieldSetElement} - The fieldset element for theme selection
 	*/
-	getThemeToggle() {
-		const button = document.createElement('button')
-		button.textContent = this.settings.theme === 'dark' ? 'Light Mode' : 'Dark Mode'
-		button.addEventListener('click', () => {
-			const oldTheme = this.settings.theme
-			const newTheme = oldTheme === 'dark' ? 'light' : 'dark'
-			button.textContent = `${oldTheme.charAt(0).toUpperCase() + oldTheme.slice(1)} Mode`
+	getThemeSelection() {
+		const fieldset = document.createElement('fieldset')
+		fieldset.classList.add('theme-selection')
 
-			this.setTheme(newTheme)
-			button.blur()
+		this.THEMES.forEach(theme => {
+			const label = document.createElement('label')
+			label.classList.add('btn')
+			label.textContent = theme.charAt(0).toUpperCase() + theme.slice(1) + ' Mode'
+			label.setAttribute('for', `theme-${theme}`)
+
+			const input = document.createElement('input')
+			input.classList.add('sr-only')
+			input.id = `theme-${theme}`
+			input.type = 'radio'
+			input.name = 'theme'
+			input.value = theme
+			input.checked = this.settings.theme === theme
+			input.addEventListener('change', (e) => {
+				e.preventDefault()
+				e.stopPropagation()
+				if (e.target.checked) {
+					this.setTheme(theme)
+				}
+			})
+			label.appendChild(input)
+			fieldset.appendChild(label)
 		})
-		return button
+
+		return fieldset
 	}
 
 	/**
@@ -161,7 +188,9 @@ export class SettingsManager {
 	getTagManagerButton() {
 		const button = document.createElement('button')
 		button.textContent = 'Tag Manager'
-		button.addEventListener('click', () => {
+		button.addEventListener('click', (e) => {
+			e.preventDefault()
+			e.stopPropagation()
 			this.bandbook.tagManager.openTagManagerModal()
 			button.blur()
 		})
@@ -234,7 +263,7 @@ export class SettingsManager {
 	 * @returns {HTMLDivElement} - A div element containing the skip times section
 	 */
 	getSkipTimesSection() {
-		const skipTimesSection = document.createElement('formgroup')
+		const skipTimesSection = document.createElement('fieldset')
 		skipTimesSection.classList.add('skip-times')
 
 		const skipTimesHeader = document.createElement('h3')
@@ -244,8 +273,15 @@ export class SettingsManager {
 		const skipTimes = this.getSkipTimes().sort((a, b) => a - b)
 
 		for (let i = 0; i < 4; i++) {
+			const label = document.createElement('label')
+			label.classList.add('sr-only')
+			label.textContent = `Skip Time ${i + 1}`
+			label.setAttribute('for', `skip-time-${i}`)
+			skipTimesSection.appendChild(label)
+
 			const skipTime = skipTimes[i]
 			const input = document.createElement('input')
+			input.id = `skip-time-${i}`
 			input.type = 'number'
 			input.value = skipTime || ""
 			input.min = -90
@@ -253,6 +289,8 @@ export class SettingsManager {
 			input.step = 1
 
 			input.addEventListener('input', (e) => {
+				e.preventDefault()
+				e.stopPropagation()
 				const value = parseInt(e.target.value, 10)
 				if (value === 0) {
 					e.target.value = ''
@@ -301,13 +339,22 @@ export class SettingsManager {
 		desc.appendChild(small)
 		section.appendChild(desc)
 
+		const label = document.createElement('label')
+		label.classList.add('sr-only')
+		label.textContent = 'Marker Time Adjustment (seconds):'
+		label.setAttribute('for', 'marker-time-adjustment')
+		section.appendChild(label)
+
 		const input = document.createElement('input')
+		input.id = 'marker-time-adjustment'
 		input.type = 'number'
 		input.value = this.settings.markerTimeAdjustment || this.DEFAULT_SETTINGS.markerTimeAdjustment
 		input.min = 0
 		input.max = 10
 		input.step = 1
 		input.addEventListener('input', (e) => {
+			e.preventDefault()
+			e.stopPropagation()
 			const value = parseInt(e.target.value, 10)
 			if (value < 0 || value > 10 || isNaN(value)) {
 				// Reset to previous value if out of bounds
@@ -340,10 +387,19 @@ export class SettingsManager {
 		desc.appendChild(small)
 		section.appendChild(desc)
 
+		const label = document.createElement('label')
+		label.classList.add('sr-only')
+		label.textContent = 'Enable Performance Mode'
+		label.setAttribute('for', 'performance-mode-toggle')
+		section.appendChild(label)
+
 		const toggle = document.createElement('input')
+		toggle.id = 'performance-mode-toggle'
 		toggle.type = 'checkbox'
 		toggle.checked = this.settings.performanceMode || this.DEFAULT_SETTINGS.performanceMode
 		toggle.addEventListener('change', (e) => {
+			e.preventDefault()
+			e.stopPropagation()
 			this.settings.performanceMode = e.target.checked
 			this.saveSettings()
 			this.setRequiresRefresh(true)
@@ -385,10 +441,19 @@ export class SettingsManager {
 		desc.appendChild(small)
 		section.appendChild(desc)
 
+		const label = document.createElement('label')
+		label.classList.add('sr-only')
+		label.textContent = 'Enable Experimental Features'
+		label.setAttribute('for', 'experimental-features-toggle')
+		section.appendChild(label)
+
 		const toggle = document.createElement('input')
+		toggle.id = 'experimental-features-toggle'
 		toggle.type = 'checkbox'
 		toggle.checked = this.isExperimentalFeaturesEnabled()
 		toggle.addEventListener('change', (e) => {
+			e.preventDefault()
+			e.stopPropagation()
 			this.settings.experimentalFeatures = e.target.checked
 			this.saveSettings()
 			this.setRequiresRefresh(true)
@@ -444,7 +509,14 @@ export class SettingsManager {
 	getRestoreDefaultsButton() {
 		const button = document.createElement('button')
 		button.textContent = 'Restore Defaults'
-		button.addEventListener('click', () => {
+		button.addEventListener('click', (e) => {
+			e.preventDefault()
+			e.stopPropagation()
+
+			if (!confirm('Are you sure you want to restore all settings to their defaults? This cannot be undone.')) {
+				return
+			}
+
 			this.restoreAllDefaults()
 			button.blur()
 		})

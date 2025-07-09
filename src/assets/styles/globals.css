@@ -13,6 +13,7 @@
 
 	--primary: var(--blue);
 	--secondary: var(--gray);
+	--accent: var(--red);
 	--success: var(--green);
 	--info: var(--cyan);
 	--warning: var(--yellow);
@@ -24,6 +25,7 @@
 		--background-neutral: var(--black);
 		--text-neutral: var(--white);
 		--primary: var(--cyan);
+		--accent: var(--yellow);
 	}
 }
 
@@ -96,4 +98,8 @@ input {
 	border: 1px solid var(--secondary);
 	border-radius: 5px;
 	padding: .5rem;
+}
+
+fieldset {
+	border: none;
 }
