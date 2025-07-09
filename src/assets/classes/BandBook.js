@@ -97,6 +97,26 @@ export class BandBook {
 	
     // Set the active song
     this.setActiveSong(this.activeSong || this.songs[0])
+
+	this.checkForUploadedAudio()
+  }
+
+  /**
+   * Checks for uploaded audio files
+   * @returns {void}
+   */
+  checkForUploadedAudio() {
+	fetch("/get-uploaded-audio")
+	.then(res => res.json())
+	.then(files => {
+		files.forEach(file => {
+			const audioBlob = new Blob([new Uint8Array(file.data)], { type: file.type })
+			this.createSong(audioBlob, file.type, file.name)
+		});
+	}).catch(err => {
+		console.error("Error fetching uploaded audio files:", err)
+		new Notification("Error adding audio file(s). Refresh and try again.", "error", true)
+	});
   }
 
   /**
