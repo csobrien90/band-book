@@ -107,13 +107,19 @@ export class BandBook {
    */
   checkForUploadedAudio() {
 	fetch("/get-uploaded-audio")
-	.then(res => res.json())
+	.then(res => {
+		if (!res.ok) throw res;
+		return res.json();
+	})
 	.then(files => {
 		files.forEach(file => {
 			const audioBlob = new Blob([new Uint8Array(file.data)], { type: file.type })
 			this.createSong(audioBlob, file.type, file.name)
 		});
 	}).catch(err => {
+		// If not found, this is not an error, just no files uploaded
+		if (err.status === 404) return;
+
 		console.error("Error fetching uploaded audio files:", err)
 		new Notification("Error adding audio file(s). Refresh and try again.", "error", true)
 	});
