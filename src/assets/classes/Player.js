@@ -1,4 +1,5 @@
 import { secondsToFormattedTime as format, isIOS } from '../utils.js'
+import { Icon } from './Icon.js'
 
 export class Player {
 	/**
@@ -21,6 +22,9 @@ export class Player {
 	*/
 	init() {
 		this.createAudioElement(this.src)
+
+		this.volumeIcon = new Icon('volume').getImg()
+		this.mutedIcon = new Icon('muted').getImg()
 	}
 
 	/**
@@ -57,14 +61,32 @@ export class Player {
 		this.song.bandbook.wrapper.classList.add('bandbook-loading')
 
 		this.getWaveform().then(waveform => {
-			playerElement.appendChild(this.getSeekingElement(waveform))
-			playerElement.appendChild(this.getTimeElement())
-			playerElement.appendChild(this.getPlayPauseButton())
-	
-			playerElement.appendChild(this.getSkipButtons())
-			playerElement.appendChild(this.getVolumeControl())
-			playerElement.appendChild(this.getSpeedControl())
-			playerElement.appendChild(this.getDowloadButton())
+			/* Top Row */
+			const topRow = document.createElement('div')
+			topRow.className = 'top-row'
+			topRow.appendChild(this.getPlayPauseButton())
+
+			const { currentTimeElement, durationElement } = this.getTimeElements()
+			const seekingWrapper = document.createElement('div')
+			seekingWrapper.className = 'seeking-wrapper'
+			seekingWrapper.appendChild(currentTimeElement)
+			seekingWrapper.appendChild(this.getSeekingElement(waveform))
+			seekingWrapper.appendChild(durationElement)
+
+			topRow.appendChild(seekingWrapper)
+			
+			topRow.appendChild(this.getVolumeControl())
+
+			/* Bottom Row */
+			const bottomRow = document.createElement('div')
+			bottomRow.className = 'bottom-row'
+			bottomRow.appendChild(this.getSkipButtons())
+			bottomRow.appendChild(this.getSpeedControl())
+			bottomRow.appendChild(this.getDowloadButton())
+
+			/* Append everything to the player element */
+			playerElement.appendChild(topRow)
+			playerElement.appendChild(bottomRow)
 		}).catch(error => {
 			console.error('Error creating waveform:', error)
 		}).finally(() => {
@@ -76,16 +98,16 @@ export class Player {
 	}
 
 	/**
-	 * Returns the time element
-	 * @returns {HTMLSpanElement} - A span element
+	 * Returns the time elements
+	 * @returns {{ currentTimeElement: HTMLSpanElement, durationElement: HTMLSpanElement }} - An object containing current time and duration elements
 	*/
-	getTimeElement() {
+	getTimeElements() {
 		const timeElement = document.createElement('p')
 		timeElement.className = 'time'
 
-		const currentTime = document.createElement('span')
-		currentTime.className = 'current-time'
-		currentTime.textContent = format(this?.audioElement.currentTime) || format(0)
+		const currentTimeElement = document.createElement('span')
+		currentTimeElement.className = 'current-time'
+		currentTimeElement.textContent = format(this?.audioElement.currentTime) || format(0)
 
 		const durationElement = document.createElement('span')
 		durationElement.className = 'duration'
@@ -96,18 +118,14 @@ export class Player {
 		})
 
 		this?.audioElement.addEventListener('timeupdate', () => {
-			currentTime.textContent = format(this?.audioElement.currentTime)
+			currentTimeElement.textContent = format(this?.audioElement.currentTime)
 			durationElement.textContent = format(this?.audioElement.duration)
 			const currentTimeRatio = this?.audioElement.currentTime / this?.audioElement.duration
 			const roundedCurrentTimeRatio = currentTimeRatio.toFixed(4)
 			this.playerElement.style.setProperty('--current-time-ratio', roundedCurrentTimeRatio)
 		})
 
-		timeElement.appendChild(currentTime)
-		timeElement.appendChild(document.createTextNode(' / '))
-		timeElement.appendChild(durationElement)
-
-		return timeElement
+		return { currentTimeElement, durationElement }
 	}
 
 	/**
@@ -242,9 +260,15 @@ export class Player {
 
 		const muteButton = document.createElement('button')
 		muteButton.className = 'mute'
-		muteButton.textContent = 'Mute'
+		const isMuted = this?.audioElement.muted || false
+		muteButton.ariaLabel = isMuted ? 'Unmute' : 'Mute'
+		muteButton.appendChild(isMuted ? this.mutedIcon : this.volumeIcon)
+
+		const volumeSliderWrapper = document.createElement('div')
+		volumeSliderWrapper.className = 'volume-slider-wrapper'
 
 		const volumeInput = document.createElement('input')
+		volumeInput.id = 'volume-input'
 		volumeInput.type = 'range'
 		volumeInput.min = 0
 		volumeInput.max = 1
@@ -253,10 +277,13 @@ export class Player {
 
 		const volumeLabel = document.createElement('label')
 		volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
+		volumeLabel.className = 'sr-only'
+		volumeLabel.htmlFor = 'volume-input'
 
 		muteButton.addEventListener('click', () => {
 			this.audioElement.muted = !this?.audioElement.muted
-			muteButton.textContent = this?.audioElement.muted ? 'Unmute' : 'Mute'
+			muteButton.ariaLabel = this?.audioElement.muted ? 'Unmute' : 'Mute'
+			muteButton.replaceChildren(this?.audioElement.muted ? this.mutedIcon : this.volumeIcon)
 			volumeInput.value = this?.audioElement.muted ? 0 : this?.audioElement.volume
 			volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
 		})
@@ -265,15 +292,16 @@ export class Player {
 			this.audioElement.volume = volumeInput.value
 			volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
 			if (volumeInput.value === '0' || this?.audioElement.muted) {
-				muteButton.textContent = 'Unmute'
+				muteButton.replaceChildren(this.mutedIcon)
 			} else {
-				muteButton.textContent = 'Mute'
+				muteButton.replaceChildren(this.volumeIcon)
 			}
 		})
 
 		volumeControl.appendChild(muteButton)
-		volumeControl.appendChild(volumeLabel)
-		volumeControl.appendChild(volumeInput)
+		volumeSliderWrapper.appendChild(volumeLabel)
+		volumeSliderWrapper.appendChild(volumeInput)
+		volumeControl.appendChild(volumeSliderWrapper)
 
 		return volumeControl
 	}
@@ -312,8 +340,9 @@ export class Player {
 		speedInput.step = 0.01
 		speedInput.value = this?.audioElement.playbackRate || "1"
 
-		const currentSpeed = document.createElement('p')
-		currentSpeed.textContent = `Speed:`
+		const speedLabel = document.createElement('label')
+		speedLabel.textContent = 'Speed:'
+		speedLabel.className = 'sr-only'
 
 		speedSelect.addEventListener('change', () => {
 			if (speedSelect.value === 'custom') {
@@ -329,7 +358,7 @@ export class Player {
 			this.audioElement.playbackRate = speedInput.value
 		})
 
-		speedControl.appendChild(currentSpeed)
+		speedControl.appendChild(speedLabel)
 		speedControl.appendChild(speedSelect)
 		speedControl.appendChild(speedInput)
 

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.0"  width="500" height="500" viewBox="0 0 75 75">
+	<path
+		d="M39.389,13.769 L22.235,28.606 L6,28.606 L6,47.699 L21.989,47.699 L39.389,62.75 L39.389,13.769z"
+		stroke="#111"
+		stroke-width="5"
+		stroke-linejoin="round"
+		fill="#111"
+	/>
+	<line
+		x1="50" y1="27" x2="71" y2="50"
+		stroke="#111"
+		stroke-width="5"
+		stroke-linecap="round"
+		fill="none"
+	/>
+	<line
+		x1="50" y1="50" x2="71" y2="27"
+		stroke="#111"
+		stroke-width="5"
+		stroke-linecap="round"
+		fill="none"
+	/>
+</svg>

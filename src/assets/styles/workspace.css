@@ -1,5 +1,4 @@
 #workspace {
-	max-width: 1000px;
 	width: 100%;
 	align-content: flex-start;
 	
@@ -17,7 +16,6 @@
 
 	.player {
 		display: grid;
-		grid-template-columns: auto 1fr auto;
 		align-items: center;
 		gap: .5rem 1rem;
 
@@ -30,12 +28,25 @@
 		--cursor-width: 1px;
 		--progress: calc(var(--current-time-ratio, 0) * 100%);
 
-		div:has(.waveform) {
+		.top-row, .bottom-row {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 1rem;
+		}
+
+		.seeking-wrapper {
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			flex-grow: 1;
+		}
+
+		div:has(> .waveform) {
 			grid-column: -1 / 1;
 			background: linear-gradient(to right, var(--played-highlight) calc(var(--progress) - var(--cursor-width)), var(--cursor-color) calc(var(--progress) - var(--cursor-width)), var(--cursor-color) var(--progress), transparent var(--progress));
-			padding: 1rem 5px;
 			position: relative;
-
+			width: 100%;
 			#seeking-input {
 				position: absolute;
 				inset: 0;
@@ -57,11 +68,9 @@
 		}
 
 		.skip-button-wrapper {
-			width: 100%;
-			grid-column: -1/1;
 			display: grid;
 			grid-template-columns: repeat(4, 1fr);
-			gap: 1rem;
+			gap: .5rem;
 
 			button {
 				width: 100%;
@@ -85,10 +94,35 @@
 		}
 
 		.volume-control, .speed-control {
+			position: relative;
 			display: flex;
+			justify-content: center;
 			align-items: center;
 			gap: 1rem;
 			grid-column: 1 / -1;
+
+			.mute {
+				width: 50px;
+				height: 50px;
+				display: grid;
+				place-items: center;
+				cursor: pointer;
+				padding: 0;
+			}
+
+			.volume-slider-wrapper {
+				display: none;
+				position: absolute;
+				top: -147px;
+				writing-mode: vertical-lr;
+				transform: rotate(180deg);
+			}
+		}
+
+		.volume-control:hover .volume-slider-wrapper,
+		.volume-control:focus-within .volume-slider-wrapper {
+			display: grid;
+			width: 50px;
 		}
 	}
 	

@@ -289,52 +289,69 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	downloadSegment(start, end) {
-		this.song.bandbook.wrapper.classList.add('bandbook-loading')
-		const audioContext = new AudioContext()
-		// Clone the source to avoid detaching the original ArrayBuffer
-		const clonedSource = this.song.src.slice(0)
-		audioContext.decodeAudioData(clonedSource, (buffer) => {
-			const innerAudioContext = new AudioContext();
+		this.song.bandbook.wrapper.classList.add('bandbook-loading');
+		const audioContext = new AudioContext();
+		const clonedSource = this.song.src.slice(0);
 
-			const newBuffer = innerAudioContext.createBuffer(
+		audioContext.decodeAudioData(clonedSource, (buffer) => {
+			const playbackRate = this.song.player.audioElement.playbackRate || 1
+			const segmentDuration = end - start;
+			const renderedDuration = segmentDuration / playbackRate;
+
+			const sampleRate = buffer.sampleRate;
+			const offlineCtx = new OfflineAudioContext({
+				numberOfChannels: buffer.numberOfChannels,
+				length: Math.ceil(renderedDuration * sampleRate),
+				sampleRate: sampleRate
+			});
+
+			// Create source and set playbackRate
+			const source = offlineCtx.createBufferSource();
+			const segmentBuffer = offlineCtx.createBuffer(
 				buffer.numberOfChannels,
-				(end - start) * buffer.sampleRate,
-				buffer.sampleRate
+				segmentDuration * sampleRate,
+				sampleRate
 			);
-	
+
+			// Copy the selected segment into the segmentBuffer
 			for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
-				const channelData = buffer.getChannelData(channel);
-				const newChannelData = newBuffer.getChannelData(channel);
-		
-				for (let i = 0; i < newChannelData.length; i++) {
-					newChannelData[i] = channelData[Math.floor(start * buffer.sampleRate + i)];
+				const sourceData = buffer.getChannelData(channel);
+				const segmentData = segmentBuffer.getChannelData(channel);
+				const startIndex = Math.floor(start * sampleRate);
+				for (let i = 0; i < segmentData.length; i++) {
+					segmentData[i] = sourceData[startIndex + i];
 				}
 			}
-	
-			// Download the trimmed audio
-			const blob = audioBufferToBlob(newBuffer, "audio/mp3");
-			innerAudioContext.close().catch((error) => {
-				console.error('Error closing audio buffer:', error)
-			})
-			const link = document.createElement("a");
-			link.href = URL.createObjectURL(blob);
-			link.download = "clip";
-			link.type = "audio/mp3";
-			link.innerText = "Download";
-			link.click();
-			
-			// Clean up
-			URL.revokeObjectURL(link.href);
-			link.remove();
 
-			this.song.bandbook.wrapper.classList.remove('bandbook-loading')
+			source.buffer = segmentBuffer;
+			source.playbackRate.value = playbackRate;
+			source.connect(offlineCtx.destination);
+			source.start(0);
+
+			// Render and download
+			offlineCtx.startRendering().then(renderedBuffer => {
+				const blob = audioBufferToBlob(renderedBuffer, "audio/mp3");
+				const link = document.createElement("a");
+				link.href = URL.createObjectURL(blob);
+				link.download = `${this.song.title}_clip_${start}-${Math.floor(end)}.mp3`;
+				link.click();
+
+				// Clean up
+				URL.revokeObjectURL(link.href);
+				link.remove();
+				this.song.bandbook.wrapper.classList.remove('bandbook-loading');
+			}).catch(err => {
+				console.error("Rendering failed:", err);
+				this.song.bandbook.wrapper.classList.remove('bandbook-loading');
+			});
+
+			audioContext.close().catch(console.error);
+		}, (err) => {
+			console.error("Decoding failed:", err);
+			this.song.bandbook.wrapper.classList.remove('bandbook-loading');
 		});
-
-		// Close the audio context to free up resources
-		audioContext.close().catch((error) => {
-			console.error('Error closing audio context:', error)
-		})
 	}
+
 
 	/**
 	 * Makes a segment of the song into a new song in this bandbook
