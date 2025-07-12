@@ -23,6 +23,8 @@ export class Player {
 	init() {
 		this.createAudioElement(this.src)
 
+		this.playIcon = new Icon('play').getImg()
+		this.pauseIcon = new Icon('pause').getImg()
 		this.volumeIcon = new Icon('volume').getImg()
 		this.mutedIcon = new Icon('muted').getImg()
 	}
@@ -194,14 +196,17 @@ export class Player {
 	getPlayPauseButton() {
 		const button = document.createElement('button')
 		button.className = 'play-pause'
-		button.textContent = 'Play'
+		button.ariaLabel = 'Play'
+		button.appendChild(this.playIcon)
 
 		this?.audioElement.addEventListener('play', () => {
-			button.textContent = 'Pause'
+			button.ariaLabel = 'Pause'
+			button.replaceChildren(this.pauseIcon)
 		})
 
 		this?.audioElement.addEventListener('pause', () => {
-			button.textContent = 'Play'
+			button.ariaLabel = 'Play'
+			button.replaceChildren(this.playIcon)
 		})
 
 		button.addEventListener('click', () => {

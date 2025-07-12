@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.0"  width="500" height="500" viewBox="0 0 75 75">
+	<line
+		x1="18" y1="18" x2="18" y2="60"
+		stroke="#111"
+		stroke-width="14"
+		stroke-linecap="round"
+	/>
+	<line
+		x1="48" y1="18" x2="48" y2="60"
+		stroke="#111"
+		stroke-width="14"
+		stroke-linecap="round"
+	/>
+</svg>

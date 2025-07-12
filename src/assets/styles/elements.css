@@ -25,4 +25,6 @@ label {
 
 button {
 	touch-action: manipulation;
+	display: grid;
+	place-items: center;
 }
