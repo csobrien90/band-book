@@ -123,7 +123,7 @@ export class Song {
 	 * @returns {null} - Returns null if the player is not available or the audio does not have a duration
 	*/
 	getDuration() {
-		return this.player?.getAudioElement()?.duration
+		return this.player?.getAudioElement()?.duration || 0
 	}
 
 	/**
@@ -167,6 +167,7 @@ export class Song {
 		const button = document.createElement('button')
 		button.classList.add('edit-asset-title')
 		button.ariaLabel = 'Edit title'
+		button.title = 'Edit title'
 		button.appendChild(new Icon('edit').getImg())
 		button.addEventListener('click', () => {
 			modalHeader.innerHTML = ''
@@ -301,6 +302,7 @@ export class Song {
 		const button = document.createElement('button')
 		button.classList.add('delete-song')
 		button.ariaLabel = 'Delete song'
+		button.title = 'Delete song'
 		button.appendChild(new Icon('delete').getImg())
 		button.addEventListener('click', (e) => {
 			e.preventDefault()

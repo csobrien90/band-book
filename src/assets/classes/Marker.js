@@ -223,6 +223,7 @@ export class Marker {
 	getEditMarkerButton(markerList) {
 		const button = document.createElement("button")
 		button.ariaLabel = "Edit Marker"
+		button.title = "Edit Marker"
 		button.appendChild(new Icon("edit").getImg())
 		button.addEventListener("click", () => {
 			const modalHeader = document.createElement("h2")
@@ -254,6 +255,7 @@ export class Marker {
 		button.classList.add("edit-asset-title")
 		button.innerHTML = "&#9998"
 		button.ariaLabel = "Edit title"
+		button.title = "Edit title"
 		button.addEventListener("click", () => {
 			modalHeader.innerHTML = ""
 			const titleInput = document.createElement("input")
@@ -535,7 +537,8 @@ export class Marker {
 	 */
 	getDeleteButton(markerList) {
 		const deleteButton = document.createElement("button")
-		deleteButton.ariaLabel = "Delete"
+		deleteButton.ariaLabel = "Delete Marker"
+		deleteButton.title = "Delete Marker"
 		deleteButton.appendChild(new Icon("delete").getImg())
 		deleteButton.addEventListener("click", () => {
 		if (confirm(`Are you sure you want to delete ${this.title}?`)) {

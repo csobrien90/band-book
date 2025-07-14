@@ -1,0 +1,21 @@
+<svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://web.resource.org/cc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:svg="http://www.w3.org/2000/svg" viewBox="0 0 52.13 97.301" version="1.0">
+    <path fill="#111" transform="translate(-400, -658)" d="m408.04 658c5.88 14.34 12.3 22.76 16.39 27.42 3.23 3.68 20.94 20.04 0.53 45.61 12.12-25.04 7.76-39.88-13.92-49.03v53c0.68 21.83-21.75 23.16-27.21 17.35-5.65-5.99 7.67-25.89 24.21-19.35v-75z" fill-rule="evenodd"/>
+	<line
+		x1="55"
+		y1="50"
+		x2="55"
+		y2="80"
+		stroke="#111"
+		stroke-linecap="round"
+		stroke-width="6"
+	/>
+	<line
+		x1="40"
+		y1="65"
+		x2="70"
+		y2="65"
+		stroke="#111"
+		stroke-linecap="round"
+		stroke-width="6"
+	/>
+</svg>

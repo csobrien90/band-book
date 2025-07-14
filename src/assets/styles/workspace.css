@@ -1,6 +1,6 @@
 #workspace {
-	width: 100%;
 	align-content: flex-start;
+	justify-content: flex-start;
 	padding: 1rem;
 
 	.player-wrapper {
@@ -8,8 +8,6 @@
 		align-items: center;
 		justify-content: stretch;
 		gap: 1rem;
-		padding: 1rem 0;
-		width: 100%;
 	}
 
 	.player {
@@ -135,7 +133,15 @@
 		}
 
 		&:has(#loop-checkbox:checked) {
-			fill: var(--warning);
+			img {
+				filter: /* filter to yellow */
+					invert(73%)
+					sepia(86%)
+					saturate(1349%)
+					hue-rotate(350deg)
+					brightness(103%)
+					contrast(106%);
+			}
 		}
 	}
 }

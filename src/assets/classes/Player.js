@@ -197,15 +197,18 @@ export class Player {
 		const button = document.createElement('button')
 		button.className = 'play-pause'
 		button.ariaLabel = 'Play'
+		button.title = 'Play/Pause'
 		button.appendChild(this.playIcon)
 
 		this?.audioElement.addEventListener('play', () => {
 			button.ariaLabel = 'Pause'
+			button.title = 'Pause'
 			button.replaceChildren(this.pauseIcon)
 		})
 
 		this?.audioElement.addEventListener('pause', () => {
 			button.ariaLabel = 'Play'
+			button.title = 'Play'
 			button.replaceChildren(this.playIcon)
 		})
 
@@ -267,6 +270,7 @@ export class Player {
 		muteButton.className = 'mute'
 		const isMuted = this?.audioElement.muted || false
 		muteButton.ariaLabel = isMuted ? 'Unmute' : 'Mute'
+		muteButton.title = isMuted ? 'Unmute' : 'Mute'
 		muteButton.appendChild(isMuted ? this.mutedIcon : this.volumeIcon)
 
 		const volumeSliderWrapper = document.createElement('div')
@@ -288,6 +292,7 @@ export class Player {
 		muteButton.addEventListener('click', () => {
 			this.audioElement.muted = !this?.audioElement.muted
 			muteButton.ariaLabel = this?.audioElement.muted ? 'Unmute' : 'Mute'
+			muteButton.title = this?.audioElement.muted ? 'Unmute' : 'Mute'
 			muteButton.replaceChildren(this?.audioElement.muted ? this.mutedIcon : this.volumeIcon)
 			volumeInput.value = this?.audioElement.muted ? 0 : this?.audioElement.volume
 			volumeLabel.textContent = `Volume: ${Math.round(volumeInput.value * 100)}%`
@@ -378,6 +383,7 @@ export class Player {
 		const button = document.createElement('a')
 		button.className = 'btn'
 		button.ariaLabel = 'Download'
+		button.title = 'Download'
 		button.appendChild(new Icon('download', 30, 30).getImg())
 
 		// Create a blob from the source and set the href attribute

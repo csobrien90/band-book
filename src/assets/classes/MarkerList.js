@@ -3,6 +3,7 @@ import { Marker } from './Marker.js'
 import { SegmentManager } from './SegmentManager.js'
 import { Song } from './Song.js'
 import { Notification } from './Notification.js'
+import { Icon } from './Icon.js'
 
 export class MarkerList {
 	/**
@@ -90,9 +91,15 @@ export class MarkerList {
 		this.selectedMarkers = new Set([...this.selectedMarkers].sort((a, b) => a.time - b.time))
 
 		// Update the loop event listener
-		const currentBounds = this.getSegmentTimeBounds()
+		let currentBounds = this.getSegmentTimeBounds()
+		if (!currentBounds) {
+			currentBounds = [0, this.song.getDuration()]
+			this.updateSegmentBoundsDisplay()
+		} else {
+			this.updateSegmentBoundsDisplay(...currentBounds)
+		}
+
 		this.segmentManager.setBounds(...currentBounds)
-		this.updateSegmentBoundsDisplay(...currentBounds)
 		this.segmentManager.updateLoopListener()
 
 		// Return the set of selected markers
@@ -106,6 +113,11 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	updateSegmentBoundsDisplay(start, end) {
+		if (!start && !end) {
+			this.segmentBoundsDisplay.textContent = ''
+			return
+		}
+
 		this.segmentBoundsDisplay.textContent = `Selected Segment: ${secondsToFormattedTime(start)} - ${secondsToFormattedTime(end)}`
 	}
 
@@ -119,7 +131,7 @@ export class MarkerList {
 
 		// If no markers are selected, return the start and end times of the song
 		if (selectedMarkersArray.length === 0) {
-			return [0, this.song.getDuration()]
+			return null
 		}
 			
 		// If one marker is selected, the start time is the time of the marker
@@ -209,29 +221,55 @@ export class MarkerList {
 		const markerListControls = document.createElement('div')
 		markerListControls.classList.add('segment-controls')
 
+		const header = document.createElement('header')
+		const heading = document.createElement('h3')
+		heading.textContent = 'Segment Controls'
+		header.appendChild(heading)
+
+		const instructions = document.createElement('p')
+		instructions.textContent = 'Select markers to create a segment.'
+		
+		header.appendChild(instructions)
+		markerListControls.appendChild(header)
+
 		// Selected segment bounds display
 		const segmentBounds = document.createElement('p')
 		segmentBounds.id = 'selected-segment-bounds'
 		this.segmentBoundsDisplay = segmentBounds
 		markerListControls.appendChild(segmentBounds)
 
+		const segmentButtonsWrapper = document.createElement('div')
+		segmentButtonsWrapper.classList.add('segment-buttons-wrapper')
+
 		// Download segment button
 		const downloadSegmentButton = document.createElement('button')
-		downloadSegmentButton.textContent = 'Download Segment'
+		downloadSegmentButton.ariaLabel = 'Download Segment'
+		downloadSegmentButton.title = 'Download Segment'
+		downloadSegmentButton.appendChild(new Icon('download', 30, 30).getImg())
 		downloadSegmentButton.addEventListener('click', () => {
 			const bounds = this.getSegmentTimeBounds()
+			if (!bounds) return new Notification(
+				'Error: No segment selected',
+				'error'
+			)
 			this.downloadSegment(...bounds)
 		})
 
-		markerListControls.appendChild(downloadSegmentButton)
+		segmentButtonsWrapper.appendChild(downloadSegmentButton)
 
 		// Make segment into new song button
 		const segmentToSongButton = document.createElement('button')
-		segmentToSongButton.textContent = 'Make Segment into New Song'
+		segmentToSongButton.ariaLabel = 'Make Segment into New Song'
+		segmentToSongButton.title = 'Make Segment into New Song'
+		segmentToSongButton.appendChild(new Icon('add-song', 30, 30).getImg())
 		segmentToSongButton.addEventListener('click', () => {
 			try {
-				const [start, end] = this.getSegmentTimeBounds()
-				this.makeSegmentIntoNewSong(start, end)
+				const bounds = this.getSegmentTimeBounds()
+				if (!bounds) return new Notification(
+					'Error: No segment selected',
+					'error'
+				)
+				this.makeSegmentIntoNewSong(...bounds)
 			} catch (error) {
 				new Notification(
 					'Error: Unable to create new song from segment',
@@ -240,45 +278,55 @@ export class MarkerList {
 			}
 		})
 
-		markerListControls.appendChild(segmentToSongButton)
+		segmentButtonsWrapper.appendChild(segmentToSongButton)
 
 		// Delete segment button
 		const deleteSegmentButton = document.createElement('button')
-		deleteSegmentButton.textContent = 'Delete Segment'
+		deleteSegmentButton.ariaLabel = 'Remove Segment'
+		deleteSegmentButton.title = 'Remove Segment'
+		deleteSegmentButton.appendChild(new Icon('cut', 30, 30).getImg())
 		deleteSegmentButton.addEventListener('click', async () => {			
 			const bounds = this.getSegmentTimeBounds()
+			if (!bounds) return new Notification(
+				'Error: No segment selected',
+				'error'
+			)
 			await this.deleteSegment(...bounds)
 			this.song.bandbook.refresh()
 		})
 
-		markerListControls.appendChild(deleteSegmentButton)
+		segmentButtonsWrapper.appendChild(deleteSegmentButton)
 
 		// Loop checkbox and label
+		const loopLabel = document.createElement('label')
+		loopLabel.classList.add('btn')
+		loopLabel.htmlFor = 'loop-checkbox'
+		loopLabel.ariaLabel = "Toggle Loop"
+		loopLabel.title = "Toggle Loop"
+		loopLabel.appendChild(new Icon('loop', 30, 30).getImg())
+		loopLabel.tabIndex = 0
+		loopLabel.title = 'Toggle Loop'
+
+		const loopCheckbox = document.createElement('input')
+
 		const toggleLoop = () => {
 			const active = this.segmentManager.toggleLoop()
 			loopCheckbox.checked = active
 		}
 
-		const loopLabel = document.createElement('label')
-		loopLabel.htmlFor = 'loop-checkbox'
-		const loopIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32" xml:space="preserve"><path d="M24.6,11.5c-0.3-0.5-0.9-0.6-1.4-0.3c-0.5,0.3-0.6,0.9-0.3,1.4c0.7,1,1,2.2,1,3.4c0,3.3-2.7,6-6,6h-4c-3.3,0-6-2.7-6-6  s2.7-6,6-6h3v1.4c0,0.4,0.2,0.7,0.6,0.9c0.1,0.1,0.3,0.1,0.4,0.1c0.2,0,0.4-0.1,0.6-0.2l3-2.4C21.9,9.6,22,9.3,22,9  s-0.1-0.6-0.4-0.8l-3-2.4c-0.3-0.2-0.7-0.3-1.1-0.1C17.2,5.9,17,6.2,17,6.6V8h-3c-4.4,0-8,3.6-8,8s3.6,8,8,8h4c4.4,0,8-3.6,8-8  C26,14.4,25.5,12.8,24.6,11.5z"/></svg>`
-		loopLabel.innerHTML = loopIcon
-		loopLabel.tabIndex = 0
-		loopLabel.title = 'Toggle Loop'
-
-		const loopCheckbox = document.createElement('input')
 		loopCheckbox.type = 'checkbox'
 		loopCheckbox.id = 'loop-checkbox'
 		loopCheckbox.addEventListener('change', () => toggleLoop())
 		loopLabel.addEventListener('keydown', e => {
-			e.preventDefault()
 			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault()
 				toggleLoop()
 			}
 		})
 		loopLabel.appendChild(loopCheckbox)
-		markerListControls.appendChild(loopLabel)
+		segmentButtonsWrapper.appendChild(loopLabel)
 
+		markerListControls.appendChild(segmentButtonsWrapper)
 		return markerListControls
 	}
 
