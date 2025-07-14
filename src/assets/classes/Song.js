@@ -4,6 +4,7 @@ import { MarkerList } from './MarkerList.js'
 import { Player } from './Player.js'
 import { Modal } from './Modal.js'
 import { Notification } from './Notification.js'
+import { Icon } from './Icon.js'
 
 /**
  * @typedef {Object} MarkerData
@@ -165,8 +166,8 @@ export class Song {
 	getEditTitleButton(modalHeader) {
 		const button = document.createElement('button')
 		button.classList.add('edit-asset-title')
-		button.innerHTML = '&#9998'
 		button.ariaLabel = 'Edit title'
+		button.appendChild(new Icon('edit').getImg())
 		button.addEventListener('click', () => {
 			modalHeader.innerHTML = ''
 			const titleInput = document.createElement('input')
@@ -299,7 +300,8 @@ export class Song {
 	getDeleteSongButton(modal = true) {
 		const button = document.createElement('button')
 		button.classList.add('delete-song')
-		button.innerHTML = '&#128465'
+		button.ariaLabel = 'Delete song'
+		button.appendChild(new Icon('delete').getImg())
 		button.addEventListener('click', (e) => {
 			e.preventDefault()
 			if (confirm(`Are you sure you want to delete ${this.title}?`)) {

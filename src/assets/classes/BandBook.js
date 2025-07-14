@@ -118,7 +118,7 @@ export class BandBook {
 		});
 	}).catch(err => {
 		// If not found, this is not an error, just no files uploaded
-		if (err.status === 404) return;
+		if (err.status === 404 || err.status === 403) return;
 
 		console.error("Error fetching uploaded audio files:", err)
 		new Notification("Error adding audio file(s). Refresh and try again.", "error", true)

@@ -2,6 +2,7 @@
 	display: grid;
 	background: var(--primary);
 	height: fit-content;
+	justify-items: start;
 
 	button {
 		text-align: left;
@@ -10,18 +11,24 @@
 	hr {
 		border: 1px solid var(--secondary);
 		margin: 1rem;
+		width: calc(100% - 2rem);
+	}
+
+	.song-nav-list {
+		width: 100%;
 	}
 
 	.song-nav-item {
 		display: grid;
 		grid-template-columns: 1fr auto auto;
-		gap: 1rem;
+		align-items: center;
+		width: 100%;
 
-		&:has(h3:not(:empty)) > button:first-of-type {
-			display: none;
+		button:first-of-type {
+			justify-content: start;
 		}
 
-		h3:empty {
+		h3:empty, &:has(h3:not(:empty)) > button:first-of-type {
 			display: none;
 		}
 	}

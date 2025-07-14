@@ -84,7 +84,7 @@ export class Player {
 			bottomRow.className = 'bottom-row'
 			bottomRow.appendChild(this.getSkipButtons())
 			bottomRow.appendChild(this.getSpeedControl())
-			bottomRow.appendChild(this.getDowloadButton())
+			bottomRow.appendChild(this.getDownloadButton())
 
 			/* Append everything to the player element */
 			playerElement.appendChild(topRow)
@@ -374,10 +374,11 @@ export class Player {
 	 * Returns the download button
 	 * @returns {HTMLAnchorElement} - An anchor element
 	*/
-	getDowloadButton() {
+	getDownloadButton() {
 		const button = document.createElement('a')
 		button.className = 'btn'
-		button.textContent = 'Download'
+		button.ariaLabel = 'Download'
+		button.appendChild(new Icon('download', 30, 30).getImg())
 
 		// Create a blob from the source and set the href attribute
 		const srcBlob = new Blob([this.src], { type: this.srcType })

@@ -4,6 +4,7 @@ import { Modal } from "./Modal.js"
 import { Notification } from "./Notification.js"
 import { Tag } from "./Tag.js"
 import { formattedTimeToSeconds, secondsToFormattedTime } from "../utils.js"
+import { Icon } from "./Icon.js"
 
 /**
  * Represents a specific point in time in a song
@@ -221,7 +222,8 @@ export class Marker {
 	 */
 	getEditMarkerButton(markerList) {
 		const button = document.createElement("button")
-		button.textContent = "Edit"
+		button.ariaLabel = "Edit Marker"
+		button.appendChild(new Icon("edit").getImg())
 		button.addEventListener("click", () => {
 			const modalHeader = document.createElement("h2")
 			modalHeader.textContent = this.title
@@ -533,7 +535,8 @@ export class Marker {
 	 */
 	getDeleteButton(markerList) {
 		const deleteButton = document.createElement("button")
-		deleteButton.textContent = "Delete"
+		deleteButton.ariaLabel = "Delete"
+		deleteButton.appendChild(new Icon("delete").getImg())
 		deleteButton.addEventListener("click", () => {
 		if (confirm(`Are you sure you want to delete ${this.title}?`)) {
 			markerList.removeMarker(this)

@@ -23,8 +23,14 @@ label {
 	}
 }
 
-button {
+button, .btn {
 	touch-action: manipulation;
 	display: grid;
 	place-items: center;
+}
+
+*:is(button, a):has(.icon) {
+	padding: 0;
+	width: 50px;
+	height: 50px;
 }

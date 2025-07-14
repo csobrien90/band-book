@@ -9,6 +9,7 @@ export class Icon {
 
 	getImg() {
 		const img = document.createElement('img');
+		img.className = 'icon';
 		img.src = `./assets/icons/${this.name}.svg`;
 		img.width = this.width;
 		img.height = this.height;

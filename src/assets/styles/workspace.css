@@ -1,17 +1,15 @@
 #workspace {
 	width: 100%;
 	align-content: flex-start;
-	
+	padding: 1rem;
+
 	.player-wrapper {
 		display: grid;
 		align-items: center;
+		justify-content: stretch;
 		gap: 1rem;
 		padding: 1rem 0;
-	
-		button, .btn {
-			min-width: 200px;
-			height: 100%;
-		}
+		width: 100%;
 	}
 
 	.player {
@@ -43,10 +41,10 @@
 		}
 
 		div:has(> .waveform) {
-			grid-column: -1 / 1;
 			background: linear-gradient(to right, var(--played-highlight) calc(var(--progress) - var(--cursor-width)), var(--cursor-color) calc(var(--progress) - var(--cursor-width)), var(--cursor-color) var(--progress), transparent var(--progress));
 			position: relative;
-			width: 100%;
+			flex-grow: 1;
+
 			#seeking-input {
 				position: absolute;
 				inset: 0;
@@ -73,16 +71,11 @@
 			gap: .5rem;
 
 			button {
-				width: 100%;
 				display: grid;
 				place-items: center;
+				padding: 5px;
+				font-size: 1.2rem;
 			}
-		}
-
-		button, .btn {
-			min-width: 0;
-			justify-self: flex-start;
-			height: auto;
 		}
 
 		a.btn:hover, a.btn:focus {
@@ -119,10 +112,12 @@
 			}
 		}
 
-		.volume-control:hover .volume-slider-wrapper,
-		.volume-control:focus-within .volume-slider-wrapper {
-			display: grid;
-			width: 50px;
+		@media screen and (min-width: 768px) {
+			.volume-control:hover .volume-slider-wrapper,
+			.volume-control:focus-within .volume-slider-wrapper {
+				display: grid;
+				width: 50px;
+			}
 		}
 	}
 	

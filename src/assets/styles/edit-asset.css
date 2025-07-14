@@ -20,10 +20,6 @@ h2:has(.edit-asset-title) {
 	}
 }
 
-.edit-asset-title {
-	rotate: 80deg;
-}
-
 .edit-asset {
 	display: grid;
 	gap: 1rem;
