@@ -39,6 +39,10 @@ section {
 	}
 }
 
+.segment-controls:has(+ .markers-list:is(:empty)) {
+	display: none;
+}
+
 label[for="loop-checkbox"] {
 	width: 50px;
 	height: 50px;
