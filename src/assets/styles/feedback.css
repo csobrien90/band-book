@@ -20,3 +20,7 @@ button.feedback {
 	grid-template-rows: 1fr auto;
 	gap: 1rem;
 }
+
+body {
+	padding-block-end: 72px; /* Space for the feedback button */
+}

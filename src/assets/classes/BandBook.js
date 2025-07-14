@@ -5,6 +5,7 @@ import { Notification } from "./Notification.js"
 import { Modal } from "./Modal.js"
 import { SettingsManager } from "./SettingsManager.js"
 import { TagManager } from "./TagManager.js"
+import { Icon } from "./Icon.js"
 
 /**
  * Represents a collection of songs
@@ -181,6 +182,25 @@ export class BandBook {
     const navigation = document.createElement("nav")
     navigation.classList.add("song-navigation")
 
+	// Create a header for the navigation
+	const header = document.createElement("header")
+	// const logo = new Icon("logo", 50, 50).getImg()
+	const logo = document.createElement("p")
+	logo.textContent = "BandBook"
+	header.appendChild(logo)
+
+	const navToggle = document.createElement("label")
+	navToggle.classList.add("nav-toggle")
+	navToggle.htmlFor = "nav-toggle"
+	const toggleCheckbox = document.createElement("input")
+	toggleCheckbox.type = "checkbox"
+	toggleCheckbox.id = "nav-toggle"
+	navToggle.appendChild(toggleCheckbox)
+	header.appendChild(navToggle)
+	navigation.appendChild(header)
+
+	navigation.appendChild(document.createElement("hr"))
+
     // Create a list element for the songs
     const list = document.createElement("ul")
     list.classList.add("song-nav-list")
@@ -194,14 +214,19 @@ export class BandBook {
     if (this.songs?.length > 0) navigation.appendChild(document.createElement("hr"))
 
     // Add the BandBook controls
-    navigation.appendChild(this.getCreateSongButton())
+	const navButtonWrapper = document.createElement("div")
+	navButtonWrapper.classList.add("nav-button-wrapper")
+
+    navButtonWrapper.appendChild(this.getCreateSongButton())
 	if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
 		// Only show the record button if the browser supports getUserMedia
-		navigation.appendChild(this.getRecordSongButton())
+		navButtonWrapper.appendChild(this.getRecordSongButton())
 	}
-    navigation.appendChild(this.getImportButton())
-    navigation.appendChild(this.getExportButton())
-    navigation.appendChild(this.settingsManager.getSettingsNavItem())
+    navButtonWrapper.appendChild(this.getImportButton())
+    navButtonWrapper.appendChild(this.getExportButton())
+    navButtonWrapper.appendChild(this.settingsManager.getSettingsNavItem())
+
+	navigation.appendChild(navButtonWrapper)
 
     // Deploy the new navigation element
     this.navElement = navigation
@@ -466,11 +491,9 @@ export class BandBook {
   addFeedbackButton() {
     const button = document.createElement("button")
     button.classList.add("feedback")
-    button.innerHTML = `
-			<svg xmlns="http://www.w3.org/2000/svg" style="width: 2rem height: 2rem vertical-align: middle fill: currentColor" viewBox="0 0 1024 1024" version="1.1">
-				<path d="M339.626667 788.48c-0.948148 0-1.896296-0.094815-3.887407-0.948148-12.61037-5.878519-15.265185-14.317037-15.265185-18.204444L320.474074 667.306667l-40.011852 0c-31.099259 0-45.605926-14.601481-45.605926-46.648889L234.856296 291.65037c0-32.047407 13.558519-46.648889 45.605926-46.648889l463.075556 0c31.099259 0 45.605926 14.601481 45.605926 46.648889l0 328.154074c0 32.047407-13.558519 46.648889-45.605926 46.648889L449.422222 666.453333 346.453333 785.540741C344.746667 787.247407 342.565926 788.48 339.626667 788.48L339.626667 788.48zM277.617778 279.608889c-5.499259 0-7.205926 1.327407-7.205926 8.248889l0 331.946667c0 6.731852 7.395556 12.98963 16.687407 12.98963l53.57037 0c5.783704 0 9.671111 3.887407 9.671111 9.671111l0 88.367407 88.367407-96.047407c1.896296-1.896296 4.835556-2.939259 6.826667-2.939259l302.838519 0c4.456296 0 7.205926-1.042963 7.205926-8.248889L755.579259 287.857778c0-6.352593-4.171852-8.248889-7.205926-8.248889L277.617778 279.608889 277.617778 279.608889z"/><path d="M348.634074 404.859259l326.637037 0c10.42963 0 18.962963-8.533333 18.962963-18.962963s-8.533333-18.962963-18.962963-18.962963L348.634074 366.933333c-10.42963 0-18.962963 8.533333-18.962963 18.962963S338.204444 404.859259 348.634074 404.859259z"/><path d="M675.365926 493.037037 348.634074 493.037037c-10.42963 0-18.962963 8.533333-18.962963 18.962963s8.533333 18.962963 18.962963 18.962963l326.637037 0c10.42963 0 18.962963-8.533333 18.962963-18.962963S685.795556 493.037037 675.365926 493.037037z"/>
-			</svg>
-		`
+    button.ariaLabel = "Feedback"
+	button.title = "Feedback"
+	button.appendChild(new Icon("feedback", 50, 50).getImg())
     button.addEventListener("click", () => {
       const modalHeader = document.createElement("h2")
       modalHeader.textContent = "Let us know what you think!"

@@ -1,6 +1,5 @@
 #workspace {
 	align-content: flex-start;
-	justify-content: flex-start;
 	padding: 1rem;
 
 	.player-wrapper {
@@ -134,13 +133,7 @@
 
 		&:has(#loop-checkbox:checked) {
 			img {
-				filter: /* filter to yellow */
-					invert(73%)
-					sepia(86%)
-					saturate(1349%)
-					hue-rotate(350deg)
-					brightness(103%)
-					contrast(106%);
+				filter: var(--filter-to-accent)
 			}
 		}
 	}

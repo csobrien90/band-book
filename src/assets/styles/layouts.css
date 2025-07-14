@@ -34,6 +34,10 @@ section {
 		gap: .5rem;
 	}
 
+	&:has(> p:not(:empty)) header p {
+		display: none;
+	}
+
 	&:has(> p:empty) .segment-buttons-wrapper {
 		display: none;
 	}
@@ -56,7 +60,7 @@ label[for="loop-checkbox"] {
 
 	> li {
 		display: grid;
-		grid-template-columns: 20px auto max(160px, 30vw) 50px 50px;
+		grid-template-columns: 30px auto max(150px, 20vw) 50px 50px;
 		gap: .5rem;
 		justify-content: flex-start;
 	}
@@ -87,7 +91,13 @@ label[for="loop-checkbox"] {
 	}
 }
 
-@media (min-width: 800px) {
+@media screen and (min-width: 500px) {
+	body {
+		padding-inline-start: 80px;
+	}
+}
+
+@media screen and (min-width: 800px) {
 	body {
 		grid-template-columns: 400px 1fr;
 	}
@@ -113,4 +123,10 @@ label[for="loop-checkbox"] {
 			grid-column: unset;
 		}
 	}
+}
+
+@media screen and (min-width: 1200px) {
+	body {
+		padding-inline-start: 500px;
+	}	
 }

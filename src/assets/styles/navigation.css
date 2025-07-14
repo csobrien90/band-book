@@ -1,8 +1,90 @@
 .song-navigation {
+	position: fixed;
+	top: 0;
+	left: -500px;
+	bottom: 0;
+	width: 100%;
+	z-index: 1000;
 	display: grid;
+	grid-template-rows: auto auto 1fr auto auto;
 	background: var(--primary);
-	height: fit-content;
 	justify-items: start;
+	padding-block: 1rem 80px;
+	overflow: hidden;
+	transition: left .1s ease-in-out;
+	max-width: 500px;
+
+	.song-nav-list, hr, .nav-button-wrapper {
+		pointer-events: none;
+		opacity: 0;
+	}
+
+	&:has(input:checked) {
+		left: 0;
+
+		.song-nav-list, hr, .nav-button-wrapper {
+			pointer-events: auto;
+			opacity: 1;
+		}
+	}
+
+	> header {
+		width: 100%;
+		padding-inline: 1rem;
+		display: grid;
+		grid-template-columns: 1fr auto;
+
+		label[for="nav-toggle"] {
+			display: grid;
+			place-items: center;
+			width: 50px;
+			height: 50px;
+			background: url('../icons/menu.svg') center / contain no-repeat;
+			filter: invert(1);
+			cursor: pointer;
+
+			position: fixed;
+			left: 1rem;
+			bottom: 1rem;
+
+			&:hover, &:focus {
+				filter: var(--filter-to-accent);
+			}
+
+			&:has(input:checked) {
+				background: url('../icons/hide-menu.svg') center / contain no-repeat;
+			}
+
+			input {
+				display: none;
+			}
+
+		}
+		
+	}
+	
+	@media screen and (min-width: 500px) {
+		left: -420px;
+		padding-block: 1rem;
+
+		> header label[for="nav-toggle"] {
+			position: static;
+			filter: none;
+		}
+	}
+
+	@media screen and (min-width: 1200px) {
+		left: 0;
+
+		.song-nav-list, hr, .nav-button-wrapper {
+			pointer-events: auto;
+			opacity: 1;
+		}
+
+		> header label[for="nav-toggle"] {
+			display: none;
+		}
+	}
 
 	button {
 		text-align: left;
@@ -16,6 +98,7 @@
 
 	.song-nav-list {
 		width: 100%;
+		overflow-y: auto;
 	}
 
 	.song-nav-item {
@@ -30,6 +113,17 @@
 
 		h3:empty, &:has(h3:not(:empty)) > button:first-of-type {
 			display: none;
+		}
+	}
+
+	.nav-button-wrapper {
+		width: 100%;
+		display: grid;
+		justify-items: start;
+
+		button {
+			width: 100%;
+			justify-content: start;
 		}
 	}
 }
