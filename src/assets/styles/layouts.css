@@ -38,8 +38,11 @@ section {
 		display: none;
 	}
 
-	&:has(> p:empty) .segment-buttons-wrapper {
-		display: none;
+	@media screen and (min-width: 800px) {
+		/* Only hide on desktop b/c iPhone PWAs can't handle has well enough yet */
+		&:has(> p:empty) .segment-buttons-wrapper {
+			display: none;
+		}
 	}
 }
 

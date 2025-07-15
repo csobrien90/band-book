@@ -40,8 +40,8 @@
 			width: 50px;
 			height: 50px;
 			background: url('../icons/menu.svg') center / contain no-repeat;
-			filter: invert(1);
 			cursor: pointer;
+			filter: invert(1);
 
 			position: fixed;
 			left: 1rem;
@@ -125,5 +125,11 @@
 			width: 100%;
 			justify-content: start;
 		}
+	}
+}
+
+body:has(main.light) .song-navigation  {
+	& > header label[for="nav-toggle"] {
+		filter: invert(0);
 	}
 }
