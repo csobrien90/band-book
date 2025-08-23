@@ -417,48 +417,102 @@ export class Player {
 		return this?.audioElement.currentTime
 	}
 
-
-
-// TODO: Make async/await
-
-
 	/**
-	 * Make waveform display
+	 * Make waveform display canvas element
 	 * @returns {HTMLDivElement} - A div element wrapping the waveform
 	 * @returns {null} - If the audio decoding times out, returns null to use backup seeking element
 	*/
 	getWaveform() {
-		return new Promise(async (resolve, reject) => {
-			if (this.song.bandbook.settingsManager.isPerformanceMode()) return resolve(null);
-			try {
-				const wrapper = document.createElement('div')
-				const waveformElement = document.createElement('div')
-				waveformElement.className = 'waveform'
-				
-				try {
-					if (isIOS() && this.song.src.byteLength > 10000000) {
-						console.warn('iOS does not support waveform display for large files at this time')
-						throw new Error('iOS does not support waveform display for large files at this time')
-					}
-					const averages = await this.getAverageVolumesArray()
-					for (let i = 0; i < averages.length; i++) {
-						const bar = document.createElement('div')
-						bar.className = 'bar'
-						// Set the height via CSS custom properties
-						bar.style.setProperty('--bar-height', `${averages[i]}%`)
-						waveformElement.appendChild(bar)
-					}
-		
-					wrapper.appendChild(waveformElement)
-					resolve(wrapper)
-				} catch (error) {
-					// If the audio decoding times out or otherwise fails, return null
-					resolve(null)
-				}
-			} catch (error) {
-				reject(error)
+	return new Promise(async (resolve, reject) => {
+		if (this.song.bandbook.settingsManager.isPerformanceMode()) return resolve(null);
+
+		try {
+			const wrapper = document.createElement('div');
+			const canvas = document.createElement('canvas');
+			canvas.className = 'waveform';
+			// Let layout decide visual size; we’ll set backing store after measuring
+			canvas.style.width = '100%';
+			canvas.style.height = '100px';
+			wrapper.appendChild(canvas); // append first so clientWidth is accurate
+
+		try {
+			if (isIOS() && this.song.src.byteLength > 10000000) {
+				console.warn('iOS does not support waveform display for large files at this time');
+				throw new Error('iOS does not support waveform display for large files at this time');
 			}
-		})
+
+			const averages = await this.getAverageVolumesArray();
+			const ctx = canvas.getContext('2d');
+			if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+			// Measure CSS pixels and set a crisp backing store
+			const cssWidth = Math.max(300, Math.floor(canvas.clientWidth || averages.length));
+			const cssHeight = 100;
+			const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+			canvas.width = cssWidth * dpr;
+			canvas.height = cssHeight * dpr;
+
+			// Work in CSS units but render on a HiDPI backing store
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+			// Colors
+			const color =
+			getComputedStyle(document.documentElement)
+				.getPropertyValue('--text-neutral')
+				.trim() || '#000';
+			ctx.fillStyle = color;
+			ctx.strokeStyle = color;
+
+			// Turn off image smoothing (mostly for images, but harmless)
+			ctx.imageSmoothingEnabled = false;
+
+			// Layout math
+			const n = averages.length;
+			const step = cssWidth / n;
+
+			// Draw
+			ctx.clearRect(0, 0, cssWidth, cssHeight);
+			for (let i = 0; i < n; i++) {
+				const valuePct = Math.max(0, Math.min(100, averages[i]));
+				const barHeight = (valuePct / 100) * cssHeight;
+
+				// Desired bar width in CSS px
+				const desired = step * 0.6;
+
+				// Convert to device pixels, snap to integer, then back to CSS px
+				const barWidthDev = Math.max(1, Math.round(desired * dpr));
+				const barWidth = barWidthDev / dpr;
+
+				// Center bars vertically (to match your flex centering)
+				const y = (cssHeight - barHeight) / 2;
+
+				// Compute x and snap to device pixel grid to avoid anti-alias fuzz
+				let x = i * step + (step - barWidth) / 2;
+				x = Math.round(x * dpr) / dpr;
+
+				if (barWidthDev <= 1) {
+					// Sub-1px (CSS) bars: draw a crisp 1 device-pixel vertical line
+					// Align to half-pixel in CSS units so the 1px stroke lands on device pixels
+					const xCenter = Math.round((i * step + step / 2) * dpr) / dpr + (1 / (2 * dpr));
+					ctx.beginPath();
+					ctx.moveTo(xCenter, y);
+					ctx.lineTo(xCenter, y + barHeight);
+					ctx.lineWidth = 1; // 1 device pixel thanks to HiDPI transform
+					ctx.stroke();
+				} else {
+					// Wider bars: draw a filled rect snapped to device pixels
+					ctx.fillRect(x, y, barWidth, barHeight);
+				}
+			}
+
+			resolve(wrapper);
+		} catch {
+			resolve(null);
+		}
+		} catch (error) {
+		reject(error);
+		}
+	});
 	}
 
 	/**
