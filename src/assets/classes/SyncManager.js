@@ -246,6 +246,34 @@ export class SyncManager {
 	}
 
 	/**
+	 * Reorder the songs in indexedDB
+	 * @param {Array<string>} songIds - An array of Song ids
+	 * @returns {Promise<Boolean>} - A promise that resolves when the songs are reordered
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	 */
+	reorderSongs(songIds) {
+		return new Promise((resolve, reject) => {
+			this.connectToBandbookDB((db) => {
+				// Get book by id
+				const transaction = db.transaction(['books'], 'readwrite')
+				const store = transaction.objectStore('books')
+				const existing = store.get(this.bandbook.id)
+				existing.onsuccess = (e) => {
+					const record = e.target.result
+					if (record) {
+						// Update the songs array
+						record.songs = JSON.stringify(songIds)
+						store.put(record)
+						resolve(true)
+					}
+				}
+
+				existing.onerror = (e) => reject(e)
+			})
+		})
+	}
+
+	/**
 	 * Create a new song in indexedDB
 	 * @param {Song} song - A Song instance
 	 * @returns {Promise<Boolean>} - A promise that resolves when the record is created

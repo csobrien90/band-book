@@ -204,6 +204,62 @@ export class BandBook {
     // Create a list element for the songs
     const list = document.createElement("ul")
     list.classList.add("song-nav-list")
+	list.addEventListener("dragover", (e) => e.preventDefault())
+	list.addEventListener("drop", (e) => {
+		const draggedSongId = e.dataTransfer.getData("text/plain")
+
+		// construct map of song items' bounding boxes
+		const songItems = Array.from(list.children)
+		const songBounds = songItems.reduce((acc, item) => {
+			acc[item.textContent] = item.getBoundingClientRect()
+			return acc
+		}, {})
+
+		// If dropping onto a song, log
+		const targetSong = songItems.find(item => {
+			const bounds = songBounds[item.textContent]
+			return e.clientY >= bounds.top && e.clientY <= bounds.bottom
+		})
+		const targetSongIndex = songItems.indexOf(targetSong)
+		let newIndex;
+
+		if (targetSong) {
+			// If dropping on the top half of the song, log "UP"
+			const bounds = songBounds[targetSong.textContent]
+			if (e.clientY < bounds.top + bounds.height / 2) {
+				newIndex = targetSongIndex - 1
+			} else {
+				newIndex = targetSongIndex + 1
+			}
+		}
+
+		// If dropping above or below the list, log that
+		if (!targetSong) {
+			if (e.clientY < list.getBoundingClientRect().top) {
+				newIndex = 0
+			} else {
+				newIndex = this.songs.length - 1
+			}
+		}
+
+		// Reorder the songs array
+		if (newIndex !== undefined) {
+			const draggedSong = this.songs.find((song) => song.id === draggedSongId)
+			if (draggedSong) {
+				this.songs = this.songs.filter((song) => song.id !== draggedSongId)
+				this.songs.splice(newIndex, 0, draggedSong)
+
+				this.syncManager
+					.reorderSongs(this.songs.map(song => song.id))
+					.then(res => console.log("Reorder songs result:", res))
+					.catch(err => console.error("Error reordering songs:", err))
+					.finally(() => {
+						this.renderSongNavigation()
+					})
+			}
+		}
+
+	})
 
     // Create a button for each song
     this.songs.forEach((song) => this.makeSongButton(song, list))
@@ -243,6 +299,15 @@ export class BandBook {
     const item = document.createElement("li")
     item.classList.add("song-nav-item")
 
+	const dragAndDropIcon = document.createElement("span")
+	dragAndDropIcon.classList.add("drag-and-drop-icon")
+	dragAndDropIcon.appendChild(new Icon("up-down", 20, 20).getImg())
+	dragAndDropIcon.draggable = true
+	dragAndDropIcon.title = "Drag and drop to reorder songs"
+	dragAndDropIcon.addEventListener("dragstart", (e) => {
+	  e.dataTransfer.setData("text/plain", song.id)
+	})
+
     const button = document.createElement("button")
     button.textContent = song.title
     if (song === this.activeSong) button.classList.add("active")
@@ -255,6 +320,7 @@ export class BandBook {
     const editTitleButton = song.getEditTitleButton(titleHeader)
     const deleteButton = song.getDeleteSongButton(false)
 
+	item.appendChild(dragAndDropIcon)
     item.appendChild(button)
 	item.appendChild(titleHeader)
     item.appendChild(editTitleButton)
@@ -589,8 +655,17 @@ export class BandBook {
 
   newSongDropListener(event) {
 	event.preventDefault()
+	
 	const files = event.dataTransfer.files
 	if (!files) return
+
+	// Ignore drag-and-drop events from the song navigation
+	if (
+		event.srcElement.classList.contains("song-nav-list") ||
+		event.target.classList.contains("song-nav-list") ||
+		event.target.classList.contains("song-navigation") ||
+		files[0].name === "up-down.svg"
+	) return
 
 	for (const file of files) {
 		this.processAndCreateSong(file)

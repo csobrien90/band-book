@@ -103,7 +103,7 @@
 
 	.song-nav-item {
 		display: grid;
-		grid-template-columns: 1fr auto auto;
+		grid-template-columns: auto 1fr auto auto;
 		align-items: center;
 		width: 100%;
 
