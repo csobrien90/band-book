@@ -2,4 +2,6 @@ TODO.md
 band-book.wiki
 bb-feedback-function
 bb-admin-dashboard
+bb-backend
 .vscode
+src/secrets.js

@@ -142,7 +142,9 @@ export class Song {
 	*/
 	getEditSongButton() {
 		const button = document.createElement('button')
-		button.textContent = 'Edit Song'
+		button.ariaLabel = 'Edit song'
+		button.title = 'Edit song'
+		button.appendChild(new Icon('edit').getImg())
 		button.addEventListener('click', () => {
 			const modalHeader = document.createElement('h2')
 			modalHeader.textContent = this.title
@@ -318,16 +320,6 @@ export class Song {
 	}
 
 	/**
-	 * Gets the wrapper element with the song action buttons
-	 * @returns {HTMLDivElement} - A div element
-	*/
-	getActionButtons() {
-		const wrapper = document.createElement('div')
-		wrapper.appendChild(this.getEditSongButton())
-		return wrapper
-	}
-
-	/**
 	 * Get workspace header
 	 * @returns {HTMLElement} - A header element
 	*/
@@ -335,7 +327,6 @@ export class Song {
 		const header = document.createElement('header')
 		header.classList.add('song-header')
 		header.appendChild(this.getTitleElement())
-		header.appendChild(this.getActionButtons())
 		return header
 	}
 

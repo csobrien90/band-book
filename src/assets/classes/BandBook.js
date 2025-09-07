@@ -5,6 +5,7 @@ import { Notification } from "./Notification.js"
 import { Modal } from "./Modal.js"
 import { SettingsManager } from "./SettingsManager.js"
 import { TagManager } from "./TagManager.js"
+import { AuthManager } from "./AuthManager.js"
 import { Icon } from "./Icon.js"
 
 /**
@@ -35,6 +36,13 @@ export class BandBook {
    * @default null
    */
   settingsManager = null
+
+  /**
+   * The authentication manager for the BandBook instance
+   * @type {AuthManager}
+   * @default null
+   */
+  authManager = null
 
   /** @type {TagManager} */
   tagManager = null
@@ -74,6 +82,7 @@ export class BandBook {
     this.workspace = new Workspace(wrapperElement)
     this.syncManager = new SyncManager(this)
     this.settingsManager = new SettingsManager(this)
+	this.authManager = new AuthManager(this)
 
     // Load the BandBook
     this.syncManager
@@ -281,6 +290,7 @@ export class BandBook {
     navButtonWrapper.appendChild(this.getImportButton())
     navButtonWrapper.appendChild(this.getExportButton())
     navButtonWrapper.appendChild(this.settingsManager.getSettingsNavItem())
+	navButtonWrapper.appendChild(this.authManager.getAuthButton())
 
 	navigation.appendChild(navButtonWrapper)
 
@@ -317,7 +327,7 @@ export class BandBook {
     })
 
 	const titleHeader = document.createElement("h3")
-    const editTitleButton = song.getEditTitleButton(titleHeader)
+    const editTitleButton = song.getEditSongButton()
     const deleteButton = song.getDeleteSongButton(false)
 
 	item.appendChild(dragAndDropIcon)
