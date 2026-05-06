@@ -7,6 +7,7 @@ import { SettingsManager } from "./SettingsManager.js"
 import { TagManager } from "./TagManager.js"
 import { AuthManager } from "./AuthManager.js"
 import { Icon } from "./Icon.js"
+import { AUTH_API_BASE } from "../../secrets.js"
 
 /**
  * Represents a collection of songs
@@ -76,13 +77,14 @@ export class BandBook {
     wrapperElement.id = "bandbook"
     this.wrapper = wrapperElement
     this.addFeedbackButton()
-	this.addDragAndDropListeners()
+	  this.addDragAndDropListeners()
+    this.addVisibilityChangeListeners()
 
     // Initialize dependencies
     this.workspace = new Workspace(wrapperElement)
     this.syncManager = new SyncManager(this)
     this.settingsManager = new SettingsManager(this)
-	this.authManager = new AuthManager(this)
+	  this.authManager = new AuthManager(this)
 
     // Load the BandBook
     this.syncManager
@@ -100,7 +102,7 @@ export class BandBook {
   async init(songData) {
     if (!this.id) this.id = this.createId
 
-	this.tagManager = new TagManager(this, songData)
+	  this.tagManager = new TagManager(this, songData)
 	
     // Create an array of Song instances from the song data
     this.songs = songData ? songData.map((song) => new Song(song, this)) : []
@@ -108,7 +110,7 @@ export class BandBook {
     // Set the active song
     this.setActiveSong(this.activeSong || this.songs[0])
 
-	this.checkForUploadedAudio()
+	  this.checkForUploadedAudio()
   }
 
   /**
@@ -116,23 +118,23 @@ export class BandBook {
    * @returns {void}
    */
   checkForUploadedAudio() {
-	fetch("/get-uploaded-audio")
-	.then(res => {
-		if (!res.ok) throw res;
-		return res.json();
-	})
-	.then(files => {
-		files.forEach(file => {
-			const audioBlob = new Blob([new Uint8Array(file.data)], { type: file.type })
-			this.createSong(audioBlob, file.type, file.name)
-		});
-	}).catch(err => {
-		// If not found, this is not an error, just no files uploaded
-		if (err.status === 404 || err.status === 403) return;
+    fetch("/get-uploaded-audio")
+    .then(res => {
+      if (!res.ok) throw res;
+      return res.json();
+    })
+    .then(files => {
+      files.forEach(file => {
+        const audioBlob = new Blob([new Uint8Array(file.data)], { type: file.type })
+        this.createSong(audioBlob, file.type, file.name)
+      });
+    }).catch(err => {
+      // If not found, this is not an error, just no files uploaded
+      if (err.status === 404 || err.status === 403) return;
 
-		console.error("Error fetching uploaded audio files:", err)
-		new Notification("Error adding audio file(s). Refresh and try again.", "error", true)
-	});
+      console.error("Error fetching uploaded audio files:", err)
+      new Notification("Error adding audio file(s). Refresh and try again.", "error", true)
+    });
   }
 
   /**
@@ -191,108 +193,108 @@ export class BandBook {
     const navigation = document.createElement("nav")
     navigation.classList.add("song-navigation")
 
-	// Create a header for the navigation
-	const header = document.createElement("header")
-	// const logo = new Icon("logo", 50, 50).getImg()
-	const logo = document.createElement("p")
-	logo.textContent = "BandBook"
-	header.appendChild(logo)
+    // Create a header for the navigation
+    const header = document.createElement("header")
+    // const logo = new Icon("logo", 50, 50).getImg()
+    const logo = document.createElement("p")
+    logo.textContent = "BandBook"
+    header.appendChild(logo)
 
-	const navToggle = document.createElement("label")
-	navToggle.classList.add("nav-toggle")
-	navToggle.htmlFor = "nav-toggle"
-	const toggleCheckbox = document.createElement("input")
-	toggleCheckbox.type = "checkbox"
-	toggleCheckbox.id = "nav-toggle"
-	navToggle.appendChild(toggleCheckbox)
-	header.appendChild(navToggle)
-	navigation.appendChild(header)
+    const navToggle = document.createElement("label")
+    navToggle.classList.add("nav-toggle")
+    navToggle.htmlFor = "nav-toggle"
+    const toggleCheckbox = document.createElement("input")
+    toggleCheckbox.type = "checkbox"
+    toggleCheckbox.id = "nav-toggle"
+    navToggle.appendChild(toggleCheckbox)
+    header.appendChild(navToggle)
+    navigation.appendChild(header)
 
-	navigation.appendChild(document.createElement("hr"))
+    navigation.appendChild(document.createElement("hr"))
 
-    // Create a list element for the songs
-    const list = document.createElement("ul")
-    list.classList.add("song-nav-list")
-	list.addEventListener("dragover", (e) => e.preventDefault())
-	list.addEventListener("drop", (e) => {
-		const draggedSongId = e.dataTransfer.getData("text/plain")
+      // Create a list element for the songs
+      const list = document.createElement("ul")
+      list.classList.add("song-nav-list")
+    list.addEventListener("dragover", (e) => e.preventDefault())
+    list.addEventListener("drop", (e) => {
+      const draggedSongId = e.dataTransfer.getData("text/plain")
 
-		// construct map of song items' bounding boxes
-		const songItems = Array.from(list.children)
-		const songBounds = songItems.reduce((acc, item) => {
-			acc[item.textContent] = item.getBoundingClientRect()
-			return acc
-		}, {})
+      // construct map of song items' bounding boxes
+      const songItems = Array.from(list.children)
+      const songBounds = songItems.reduce((acc, item) => {
+        acc[item.textContent] = item.getBoundingClientRect()
+        return acc
+      }, {})
 
-		// If dropping onto a song, log
-		const targetSong = songItems.find(item => {
-			const bounds = songBounds[item.textContent]
-			return e.clientY >= bounds.top && e.clientY <= bounds.bottom
-		})
-		const targetSongIndex = songItems.indexOf(targetSong)
-		let newIndex;
+      // If dropping onto a song, log
+      const targetSong = songItems.find(item => {
+        const bounds = songBounds[item.textContent]
+        return e.clientY >= bounds.top && e.clientY <= bounds.bottom
+      })
+      const targetSongIndex = songItems.indexOf(targetSong)
+      let newIndex;
 
-		if (targetSong) {
-			// If dropping on the top half of the song, log "UP"
-			const bounds = songBounds[targetSong.textContent]
-			if (e.clientY < bounds.top + bounds.height / 2) {
-				newIndex = targetSongIndex - 1
-			} else {
-				newIndex = targetSongIndex + 1
-			}
-		}
+      if (targetSong) {
+        // If dropping on the top half of the song, log "UP"
+        const bounds = songBounds[targetSong.textContent]
+        if (e.clientY < bounds.top + bounds.height / 2) {
+          newIndex = targetSongIndex - 1
+        } else {
+          newIndex = targetSongIndex + 1
+        }
+      }
 
-		// If dropping above or below the list, log that
-		if (!targetSong) {
-			if (e.clientY < list.getBoundingClientRect().top) {
-				newIndex = 0
-			} else {
-				newIndex = this.songs.length - 1
-			}
-		}
+      // If dropping above or below the list, log that
+      if (!targetSong) {
+        if (e.clientY < list.getBoundingClientRect().top) {
+          newIndex = 0
+        } else {
+          newIndex = this.songs.length - 1
+        }
+      }
 
-		// Reorder the songs array
-		if (newIndex !== undefined) {
-			const draggedSong = this.songs.find((song) => song.id === draggedSongId)
-			if (draggedSong) {
-				this.songs = this.songs.filter((song) => song.id !== draggedSongId)
-				this.songs.splice(newIndex, 0, draggedSong)
+      // Reorder the songs array
+      if (newIndex !== undefined) {
+        const draggedSong = this.songs.find((song) => song.id === draggedSongId)
+        if (draggedSong) {
+          this.songs = this.songs.filter((song) => song.id !== draggedSongId)
+          this.songs.splice(newIndex, 0, draggedSong)
 
-				this.syncManager
-					.reorderSongs(this.songs.map(song => song.id))
-					.then(res => console.log("Reorder songs result:", res))
-					.catch(err => console.error("Error reordering songs:", err))
-					.finally(() => {
-						this.renderSongNavigation()
-					})
-			}
-		}
+          this.syncManager
+            .reorderSongs(this.songs.map(song => song.id))
+            .then(res => console.log("Reorder songs result:", res))
+            .catch(err => console.error("Error reordering songs:", err))
+            .finally(() => {
+              this.renderSongNavigation()
+            })
+        }
+      }
 
-	})
+    })
 
-    // Create a button for each song
-    this.songs.forEach((song) => this.makeSongButton(song, list))
+      // Create a button for each song
+      this.songs.forEach((song) => this.makeSongButton(song, list))
 
-    navigation.appendChild(list)
+      navigation.appendChild(list)
 
-    // Add a separator if there are songs
-    if (this.songs?.length > 0) navigation.appendChild(document.createElement("hr"))
+      // Add a separator if there are songs
+      if (this.songs?.length > 0) navigation.appendChild(document.createElement("hr"))
 
-    // Add the BandBook controls
-	const navButtonWrapper = document.createElement("div")
-	navButtonWrapper.classList.add("nav-button-wrapper")
+      // Add the BandBook controls
+    const navButtonWrapper = document.createElement("div")
+    navButtonWrapper.classList.add("nav-button-wrapper")
 
-    navButtonWrapper.appendChild(this.getCreateSongButton())
-	if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-		// Only show the record button if the browser supports getUserMedia
-		navButtonWrapper.appendChild(this.getRecordSongButton())
-	}
-    navButtonWrapper.appendChild(this.getImportButton())
-    navButtonWrapper.appendChild(this.getExportButton())
-    navButtonWrapper.appendChild(this.settingsManager.getSettingsNavItem())
-	navButtonWrapper.appendChild(this.authManager.getAuthButton())
+      navButtonWrapper.appendChild(this.getCreateSongButton())
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      // Only show the record button if the browser supports getUserMedia
+      navButtonWrapper.appendChild(this.getRecordSongButton())
+    }
+      navButtonWrapper.appendChild(this.getImportButton())
+      navButtonWrapper.appendChild(this.getExportButton())
+      navButtonWrapper.appendChild(this.settingsManager.getSettingsNavItem())
+    navButtonWrapper.appendChild(this.authManager.getAuthButton())
 
-	navigation.appendChild(navButtonWrapper)
+    navigation.appendChild(navButtonWrapper)
 
     // Deploy the new navigation element
     this.navElement = navigation
@@ -531,20 +533,17 @@ export class BandBook {
    * @returns {Promise<Object>} - A JSON object representing the BandBook instance
    */
   async export() {
-    // Get the data for each song
-    let songData = []
-    for (let i = 0; i < this.songs.length; i++) {
-      const song = this.songs[i]
-      const songDataItem = await song.getData()
-      songData.push(songDataItem)
+    let stringifiedData;
+    try {
+      stringifiedData = await this.getData()
+      if (!stringifiedData) {
+        new Notification("No data to export", "error");
+        return;
+      }
+    } catch (error) {
+      new Notification("Error exporting BandBook data", "error", false)
+      return
     }
-
-    // Create an object and stringify it for download
-    const data = {
-      id: this.id,
-      songs: songData,
-    }
-    const stringifiedData = JSON.stringify(data, null, 2)
 
     // Create a Blob to download the JSON file
     const blob = new Blob([stringifiedData], { type: "application/json" })
@@ -556,8 +555,36 @@ export class BandBook {
     a.download = "bandbook.json"
     a.click()
 
-	URL.revokeObjectURL(url)
-	a.remove()
+    URL.revokeObjectURL(url)
+    a.remove()
+  }
+
+  /**
+   * Gets the BandBook data for serialization
+   * @param {boolean} [includeSrc=true] - Whether to include the audio source data
+   * @returns {Promise<string>} - The BandBook data as a stringified JSON object
+   */
+  async getData(includeSrc = true) {
+    // Get the data for each song
+    let songData = []
+    for (let i = 0; i < this.songs.length; i++) {
+      const song = this.songs[i]
+      const songDataItem = await song.getData(includeSrc)
+      songData.push(songDataItem)
+    }
+
+    // Create an object and stringify it for download
+    const data = {
+      id: this.id,
+      songs: songData,
+    }
+
+    try {
+      const stringifiedData = JSON.stringify(data, null, 2)
+      return stringifiedData
+    } catch (error) {
+      throw new Error("Error stringifying BandBook data: " + error.message)
+    }
   }
 
   /**
@@ -653,45 +680,59 @@ export class BandBook {
    * Adds an event listener to make the <body> a droppable area for new songs
    */
   addDragAndDropListeners() {
-	const body = document.querySelector('body')
-	body.addEventListener('dragover', e => this.newSongDragListener(e))
-	body.addEventListener('drop', e => this.newSongDropListener(e))
+    const body = document.querySelector('body')
+    body.addEventListener('dragover', e => this.newSongDragListener(e))
+    body.addEventListener('drop', e => this.newSongDropListener(e))
   }
 
   newSongDragListener(event) {
-	event.preventDefault()
-	// console.log("drag", {event})
+    event.preventDefault()
+    // console.log("drag", {event})
   }
 
   newSongDropListener(event) {
-	event.preventDefault()
-	
-	const files = event.dataTransfer.files
-	if (!files) return
+    event.preventDefault()
+    
+    const files = event.dataTransfer.files
+    if (!files) return
 
-	// Ignore drag-and-drop events from the song navigation
-	if (
-		event.srcElement.classList.contains("song-nav-list") ||
-		event.target.classList.contains("song-nav-list") ||
-		event.target.classList.contains("song-navigation") ||
-		files[0].name === "up-down.svg"
-	) return
+    // Ignore drag-and-drop events from the song navigation
+    if (
+      event.srcElement.classList.contains("song-nav-list") ||
+      event.target.classList.contains("song-nav-list") ||
+      event.target.classList.contains("song-navigation") ||
+      files[0].name === "up-down.svg"
+    ) return
 
-	for (const file of files) {
-		this.processAndCreateSong(file)
-	}
+    for (const file of files) {
+      this.processAndCreateSong(file)
+    }
   }
 
   processAndCreateSong(file) {
-	if (!file.type.includes("audio")) {
-		new Notification("Upload failed. Please upload a valid audio file (e.g. mp3, wav, etc.)", "error", true)
-		return
-	}
-	
-	// Get the file name without the extension
-	const title = file.name.split(".").slice(0, -1).join(".")
+    if (!file.type.includes("audio")) {
+      new Notification("Upload failed. Please upload a valid audio file (e.g. mp3, wav, etc.)", "error", true)
+      return
+    }
+    
+    // Get the file name without the extension
+    const title = file.name.split(".").slice(0, -1).join(".")
 
-	this.createSong(file, file.type, title)
+    this.createSong(file, file.type, title)
+  }
+
+  addVisibilityChangeListeners() {
+    window.addEventListener("visibilitychange", async () => {
+      if (document.visibilityState === "hidden") {
+        try {
+          const data = await this.getData(false)
+          navigator.sendBeacon(`${AUTH_API_BASE}/data`, data)
+        } catch (error) {
+          console.error("Error saving BandBook data on visibility change:", error)
+        }
+      }
+    })
+
   }
 
   /**
@@ -699,11 +740,11 @@ export class BandBook {
    * @returns {void}
    */
   alertUserOfNewVersion() {
-	new Notification(
-		`A new version of BandBook is available! Continue using this version or clear your cache and refresh the page to access the most up-to-date features.`,
-		"info",
-		false
-	)
+    new Notification(
+      `A new version of BandBook is available! Continue using this version or clear your cache and refresh the page to access the most up-to-date features.`,
+      "info",
+      false
+    )
   }
 
   /**

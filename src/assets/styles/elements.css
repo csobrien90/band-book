@@ -23,6 +23,10 @@ label {
 	}
 }
 
+*:is(input, textarea):invalid:not(:placeholder-shown) {
+	border: 2px solid red;
+}
+
 button, .btn {
 	touch-action: manipulation;
 	display: grid;
@@ -35,6 +39,6 @@ button, .btn {
 	height: 50px;
 }
 
-body:has(main.light) *:is(button, a, label):has(.icon) img {
+body:has(main.light) *:is(button, a, label):not(.edit-asset-title):has(.icon) img {
 	filter: invert(1);
 }

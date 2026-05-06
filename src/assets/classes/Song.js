@@ -5,6 +5,7 @@ import { Player } from './Player.js'
 import { Modal } from './Modal.js'
 import { Notification } from './Notification.js'
 import { Icon } from './Icon.js'
+import { SongUtilities } from './SongUtilities.js'
 
 /**
  * @typedef {Object} MarkerData
@@ -88,6 +89,7 @@ export class Song {
 		this.src = src
 		this.srcType = srcType
 		this.player = new Player(src, srcType, this)
+		this.utilities = new SongUtilities(this)
 		this.title = title
 		this.composer = composer
 		this.tempo = tempo
@@ -327,6 +329,7 @@ export class Song {
 		const header = document.createElement('header')
 		header.classList.add('song-header')
 		header.appendChild(this.getTitleElement())
+		header.appendChild(this.utilities.getPrintSongSummaryButton())
 		return header
 	}
 
@@ -336,14 +339,17 @@ export class Song {
 	 * @throws {Error} - An error if the song data cannot be retrieved
 	 * @async
 	*/
-	async getData() {
+	async getData(includeSrc = true) {
 		return new Promise(async (resolve, reject) => {
 			try {
-				const stringifiedSrc = await this.getStringifiedSrc()
 				const data = {
-					...this.getMetadata(),
-					src: stringifiedSrc,
+					...this.getMetadata(includeSrc),
 					markers: this.getMarkerData()
+				}
+
+				if (includeSrc) {
+					const stringifiedSrc = await this.getStringifiedSrc()
+					data.src = stringifiedSrc
 				}
 
 				resolve(data)
@@ -379,7 +385,7 @@ export class Song {
 	 * Get song metadata for serialization
 	 * @returns {SongMeta} - A song metadata object
 	*/
-	getMetadata() {
+	getMetadata(includeWaveformVolumes = true) {
 		return {
 			slug: this.slug,
 			title: this.title,
@@ -390,7 +396,7 @@ export class Song {
 			timeSignature: this.timeSignature,
 			notes: this.notes,
 			markers: this.getMarkerData().map(marker => marker.id),
-			waveformVolumes: this.waveformVolumes
+			waveformVolumes: includeWaveformVolumes ? this.waveformVolumes : undefined
 		}
 	}
 

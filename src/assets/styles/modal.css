@@ -37,6 +37,7 @@ dialog.modal {
 			}
 	
 			.close {
+				color: inherit;
 				background: transparent;
 				padding: 0;
 	

@@ -33,6 +33,7 @@
 		padding-inline: 1rem;
 		display: grid;
 		grid-template-columns: 1fr auto;
+		color: white;
 
 		label[for="nav-toggle"] {
 			display: grid;
@@ -130,6 +131,10 @@
 
 body:has(main.light) .song-navigation  {
 	& > header label[for="nav-toggle"] {
-		filter: invert(0);
+		filter: invert(1);
+
+		&:hover, &:focus {
+			filter: invert(0);
+		}
 	}
 }

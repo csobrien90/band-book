@@ -5,6 +5,7 @@ export class Modal {
 	 * @param {HTMLElement} content - The content of the modal
 	 * @param {Object} [options={}] - The options for the modal
 	 * @param {boolean} [options.useForm=false] - Whether or not to use a form element
+	 * @param {Function} [options.onFormSubmit=null] - A callback function to be run on form submit
 	 * @param {Function} onClose (optional) - A callback function to be run on modal close
 	 * @returns {Modal} - A new Modal instance
 	*/
@@ -34,7 +35,8 @@ export class Modal {
 	getModalElement() {
 		const dialog = document.createElement('dialog')
 		dialog.classList.add('modal')
-		dialog.appendChild(this.getModalContent())
+		const content = this.getModalContent()
+		dialog.appendChild(content)
 
 		// If user clicks outside of the modal, close it
 		dialog.addEventListener('click', e => {
@@ -43,6 +45,12 @@ export class Modal {
 
 		// If user presses the escape key, close the modal
 		document.addEventListener('keydown', e => {
+			if (e.key === "Enter" && !e.target.classList.contains('close')) {
+				e.preventDefault()
+				if (this.options?.useForm && this.options?.onFormSubmit) {
+					this.options.onFormSubmit({target: content})
+				}
+			}
 			if (e.key === 'Escape') this.remove()
 		})
 
@@ -56,6 +64,12 @@ export class Modal {
 	getModalContent() {
 		const div = document.createElement('div')
 		const form = document.createElement('form')
+		if (this.options?.useForm && this.options?.onFormSubmit) {
+			form.addEventListener('submit', (e) => {
+				e.preventDefault()
+				this.options.onFormSubmit(e)
+			})
+		}
 		const contentWrapper = this.options?.useForm ? form : div
 		contentWrapper.classList.add('modal-content')
 		contentWrapper.appendChild(this.getModalHeader())

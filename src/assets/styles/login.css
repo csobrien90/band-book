@@ -1,0 +1,9 @@
+.bb-error-message:not(:empty) {
+    font-size: 1rem;
+    width: fit-content;
+    background-color: red;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    margin-block: .5rem;
+}

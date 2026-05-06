@@ -73,11 +73,12 @@ export class AuthManager {
 		emailLabel.appendChild(emailSpan)
 
 		const emailInput = document.createElement("input")
-		emailInput.setAttribute("type", "text")
+		emailInput.setAttribute("type", "email")
 		emailInput.setAttribute("autocomplete", "email")
 		emailInput.setAttribute("id", "bb-login-email")
 		emailInput.setAttribute("name", "email")
 		emailInput.setAttribute("required", "true")
+		emailInput.setAttribute("placeholder", " ")
 
 		emailLabel.appendChild(emailInput)
 		content.appendChild(emailLabel)
@@ -96,6 +97,7 @@ export class AuthManager {
 		passwordInput.setAttribute("id", "bb-login-password")
 		passwordInput.setAttribute("name", "password")
 		passwordInput.setAttribute("required", "true")
+		passwordInput.setAttribute("placeholder", " ")
 
 		passwordLabel.appendChild(passwordInput)
 		content.appendChild(passwordLabel)
@@ -112,10 +114,11 @@ export class AuthManager {
 		content.appendChild(errorMessage)
 		content.appendChild(submitButton)
 		
-		const loginModal = new Modal(titleEl, content, {useForm: true})
+		const handleLoginSubmit = async (e) => {
+			// validate submission
+			const form = e.target
+			if (!form.checkValidity()) return form.reportValidity()
 
-		submitButton.addEventListener("click", async (e) => {
-			e.preventDefault()
 			submitButton.disabled = true
 			errorMessage.innerText = ""
 			
@@ -128,32 +131,52 @@ export class AuthManager {
 				return
 			}
 
-			fetch(`${AUTH_API_BASE}/login`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({ email, password }),
-				credentials: "include"
-			}).then(async (response) => {
-				const body = await response.text();
-				return [response.ok, body];
-			}).then(([ok, body]) => {
+			try {
+
+				const loginRes = await fetch(`${AUTH_API_BASE}/login`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json"
+					},
+					body: JSON.stringify({ email, password }),
+					credentials: "include"
+				})
+	
+				const [ok, body] = await (async (response) => {
+					const body = await response.text();
+					return [response.ok, body];
+				})(loginRes)
+				
 				if (!ok) {
 					throw new Error(body || "Login failed");
-				} else {
-					this.isLoggedIn = true;
-					this.updateAuthButton();
-					loginModal.remove();
-					new Notification("Successfully Logged In", "success");
 				}
-			}).catch((error) => {
-				errorMessage.innerText = `Login failed: ${error.message}`;
-			}).finally(() => {
-				submitButton.disabled = false;
-			});
 
-		})
+				this.isLoggedIn = true;
+				this.updateAuthButton();
+				loginModal.remove();
+			} catch (error) {
+				errorMessage.innerText = `Login failed - check your credentials and try again.`;
+			} finally {
+				submitButton.disabled = false;
+			}
+
+			const localDataPresent = this.bandbook.songs.length > 0
+
+			if (!localDataPresent) {
+				try {
+					const res = await fetch(`${AUTH_API_BASE}/data`, {credentials: "include"})
+					const data = await res.json()
+					this.bandbook.init(data?.songs)
+				} catch (e) {
+					return new Notification("Failed to load user data after login", "error");
+				}
+			}
+
+			new Notification("Successfully Logged In", "success");
+		}
+
+		const loginModal = new Modal(titleEl, content, {useForm: true, onFormSubmit: (e) => handleLoginSubmit(e)})
+
 		emailInput.focus()
 	}
 
