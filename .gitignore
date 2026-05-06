@@ -4,4 +4,4 @@ bb-feedback-function
 bb-admin-dashboard
 bb-backend
 .vscode
-src/secrets.js
+src/globals.js

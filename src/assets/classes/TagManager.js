@@ -40,7 +40,6 @@ export class TagManager {
 	 * The constructor for the TagManager class
 	 * @param {BandBook} bandbook - The BandBook instance
 	 * @param {SongData} songData - The song data
-	 * @returns {void}
 	*/
 	constructor(bandbook, songData) {
 		this.bandbook = bandbook;
@@ -65,15 +64,26 @@ export class TagManager {
 				})
 			}
 		}).catch(err => {
-			console.log("Error getting tags from db", err);
+			console.error("Error getting tags from db", err);
 		}).finally(() => {
 			this.ready = true;
 		})
 	}
 
+	/**
+	 * Creates a new tag and saves it to the database
+	 * @param {string} name - The name of the tag
+	 * @returns {Tag} - The created Tag instance
+	*/
 	createTag(name) {
 		// Create new tag
 		const newTag = new Tag(name)
+
+		// Short circuit if tag already exists
+		if (this.tags.some(t => t.name === newTag.name)) {
+			return this.tags.find(t => t.name === newTag.name);
+		}
+
 		this.tags.push(newTag);
 		this.tagMap.set(newTag, []);
 
@@ -81,12 +91,17 @@ export class TagManager {
 		this.bandbook.syncManager.addTag(name).then(() => {
 			// Do nothing on success
 		}).catch(err => {
-			console.log("Error adding tag to db", err);
+			console.error("Error adding tag to db", err);
 		});
 		
 		return newTag;
 	}
 
+	/**
+	 * Gets a tag by name, creating it if it doesn't exist
+	 * @param {string} name - The name of the tag
+	 * @returns {Promise<Tag>} - A promise that resolves to the Tag instance
+	*/
 	getTag(name) {
 		// If not ready, wait
 		if (!this.ready) {
@@ -100,7 +115,8 @@ export class TagManager {
 			});
 		}
 
-		const existingTag = this.tags.find(tag => tag.name === name);
+		const normalized = name.trim().toLowerCase();
+		const existingTag = this.tags.find(tag => tag.name === normalized);
 
 		if (existingTag) {
 			return existingTag;
@@ -109,10 +125,19 @@ export class TagManager {
 		}
 	}
 
+	/**
+	 * Gets all tags
+	 * @returns {Tag[]} - An array of all Tag instances
+	*/
 	getTags() {
 		return this.tags;
 	}
 
+	/**
+	 * Applies a tag to a marker
+	 * @param {Tag} tag - The Tag instance to apply
+	 * @param {Marker} marker - The Marker instance to apply the tag to
+	*/
 	applyTag(tag, marker) {
 		if (this.tagMap.has(tag)) {
 			this.tagMap.get(tag).push(marker);
@@ -121,6 +146,11 @@ export class TagManager {
 		}
 	}
 
+	/**
+	 * Removes a tag from a marker
+	 * @param {Tag} tag - The Tag instance to remove
+	 * @param {Marker} marker - The Marker instance to remove the tag from
+	*/
 	removeTag(tag, marker) {
 		if (this.tagMap.has(tag)) {
 			const markers = this.tagMap.get(tag);
@@ -131,6 +161,10 @@ export class TagManager {
 		}
 	}
 
+	/**
+	 * Deletes a tag and removes it from all markers
+	 * @param {Tag} tag - The Tag instance to delete
+	*/
 	deleteTag(tag) {
 		// Short circuit if tag does not exist
 		if (!this.tags.includes(tag)) return
@@ -145,9 +179,9 @@ export class TagManager {
 				if (!marker) return
 	
 				// Remove tag from marker
+				this.removeTag(tag, marker);
 				marker.deleteTag(tag)
 				marker.updateTagDisplay()
-				this.removeTag(tag, marker);
 			})
 		}
 
@@ -157,10 +191,14 @@ export class TagManager {
 		this.bandbook.syncManager.removeTag(tag.name).then(() => {
 			// Do nothing on success
 		}).catch(err => {
-			console.log("Error removing tag from db", err);
+			console.error("Error removing tag from db", err);
 		});
 	}
 
+	/**
+	 * Gets the count of applications for each tag
+	 * @returns {Map<Tag, number>} - A map of Tag instances to their application counts
+	*/
 	getCounts() {
 		const counts = new Map();
 		this.tagMap.forEach((markers, tag) => {
@@ -169,10 +207,17 @@ export class TagManager {
 		return counts;
 	}
 
+	/**
+	 * Sets the filter view for the workspace
+	 * @param {string | null} filterSlug - The slug of the filter to set, or null to clear the filter
+	*/
 	setFilterView(filterSlug) {
 		this.filterView = filterSlug || null
 	}
 
+	/**
+	 * Opens the tag manager modal
+	*/
 	openTagManagerModal() {
 		const tagManagerHeader = document.createElement('h2')
 		tagManagerHeader.textContent = 'Tag Manager'

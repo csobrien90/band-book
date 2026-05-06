@@ -13,13 +13,16 @@ export class SongUtilities {
     /**
      * @constructor
      * @param {Song} song - An instance of the Song class.
-     * @returns {SongUtilities} - A new SongUtilities instance.
     */
     constructor(song) {
         // Assign properties
         this.song = song
     }
 
+    /**
+     * Creates a button that, when clicked, prints a summary of the song.
+     * @returns {HTMLButtonElement} - The button element.
+    */
     getPrintSongSummaryButton() {
         const button = document.createElement('button')
         button.textContent = 'Print Song Summary'
@@ -27,6 +30,9 @@ export class SongUtilities {
         return button
     }
 
+    /**
+     * Opens a new window and prints a summary of the song, including its title, key, composer, description, and markers.
+    */
     printSongSummary() {
         // Open a new window for the summary
         const win = window.open('', '_blank')
@@ -87,11 +93,11 @@ export class SongUtilities {
         }
 
         // Wait for render, then print
-        win.onload = () => {
-            win.focus();
-            win.print();
-            win.close();
-        };
+        setTimeout(() => {
+            win.focus()
+            win.print()
+            win.close()
+        }, 250)
     }
 
 }

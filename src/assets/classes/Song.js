@@ -28,8 +28,12 @@ import { SongUtilities } from './SongUtilities.js'
 */
 
 /**
- * @typedef {string} src - The URL or binary data for the song audio file.
- * @typedef {SongMeta & src} SongData 
+ * @typedef {SongMeta & {
+ *   id: string,
+ *   src: ArrayBuffer|string,
+ *   srcType: string,
+ *   waveformVolumes?: number[]
+ * }} SongData
 */
 
 /**
@@ -58,7 +62,6 @@ export class Song {
 	 * @param {Array<MarkerData>} [params.markers=[]] - An optional array of markers for the song.
 	 * @param {Array<number>} [params.waveformVolumes=[]] - An optional array of average volumes for the song waveform display.
 	 * @param {BandBook} bandbook - An instance of the BandBook class.
-	 * @returns {Song} - A new Song instance.
 	*/
 	constructor({id, slug, src, srcType, title, composer, tempo, key, timeSignature, notes, markers = [], waveformVolumes = []}, bandbook) {
 		// Assign properties
@@ -67,6 +70,7 @@ export class Song {
 		// If the src is a string, convert it to an ArrayBuffer
 		if (typeof src === 'string') {
 			try {
+				if (!src.includes(',')) throw new Error('Invalid base64 src format')
 				const binary = atob(src.split(',')[1])
 				const array = []
 
@@ -120,10 +124,10 @@ export class Song {
 	}
 
 	/**
-	 * Gets the song duration
-	 * @returns {number} - The duration of the song in seconds
-	 * @returns {null} - Returns null if the player is not available or the audio does not have a duration
-	*/
+	 * Gets the song duration in seconds.
+	 * Returns 0 if unavailable.
+	 * @returns {number}
+	 */
 	getDuration() {
 		return this.player?.getAudioElement()?.duration || 0
 	}
@@ -335,28 +339,26 @@ export class Song {
 
 	/**
 	 * Get song data for serialization
+	 * @param {boolean} [includeSrc=true] - Whether to include the song src in the data (as a base64 string)
 	 * @returns {Promise<SongData>} - A promise that resolves with the song data
 	 * @throws {Error} - An error if the song data cannot be retrieved
 	 * @async
 	*/
 	async getData(includeSrc = true) {
-		return new Promise(async (resolve, reject) => {
-			try {
-				const data = {
-					...this.getMetadata(includeSrc),
-					markers: this.getMarkerData()
-				}
-
-				if (includeSrc) {
-					const stringifiedSrc = await this.getStringifiedSrc()
-					data.src = stringifiedSrc
-				}
-
-				resolve(data)
-			} catch (error) {
-				reject(error)
+		try {
+			const data = {
+				...this.getMetadata(includeSrc),
+				markers: this.getMarkerData()
 			}
-		})
+
+			if (includeSrc) {
+				data.src = await this.getStringifiedSrc()
+			}
+
+			return data
+		} catch (error) {
+			throw error
+		}
 	}
 
 	/**
@@ -383,6 +385,7 @@ export class Song {
 
 	/**
 	 * Get song metadata for serialization
+	 * @param {boolean} [includeWaveformVolumes=true] - Whether to include the waveform volumes in the metadata
 	 * @returns {SongMeta} - A song metadata object
 	*/
 	getMetadata(includeWaveformVolumes = true) {
@@ -426,7 +429,11 @@ export class Song {
 	*/
 	updateSrc(src) {
 		this.src = src
-		delete this.player
+
+		if (this.player?.destroy) {
+			this.player.destroy()
+		}
+
 		this.player = new Player(src, this.srcType, this)
 	}
 }

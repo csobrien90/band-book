@@ -37,7 +37,6 @@ export class SettingsManager {
 	 * @type {boolean}
 	 * @default false
 	*/
-
 	constructor(bandbook) {
 		this.bandbook = bandbook
 		this.newSettingsRequireRefresh = false
@@ -67,8 +66,8 @@ export class SettingsManager {
 	}
 
 	/**
-	 * Opens the settings modal
-	 * @returns {void}
+	 * Returns the settings navigation item (button)
+	 * @returns {HTMLButtonElement} - A button element for opening the settings modal
 	*/
 	getSettingsNavItem() {
 		const settingsNavButton = document.createElement('button')
@@ -210,6 +209,7 @@ export class SettingsManager {
 	/**
 	 * Resets the given setting to its default value
 	 * @param {string | undefined} setting (optional) - The setting to reset. If not provided, all settings will be reset.
+	 * @returns {void}
 	 */
 	restoreDefault(setting) {
 		switch(setting) {
@@ -225,6 +225,7 @@ export class SettingsManager {
 	/**
 	 * Sets the theme
 	 * @param {"light" | "dark"} theme - The theme to set
+	 * @return {void}
 	 */
 	setTheme(theme) {
 		this.settings.theme = theme
@@ -252,6 +253,7 @@ export class SettingsManager {
 	/**
 	 * Sets the skip times for the player controls
 	 * @param {number[]} skipTimes - The skip times in seconds
+	 * @return {void}
 	 */
 	setSkipTimes(skipTimes) {
 		this.settings.skipTimes = skipTimes
@@ -270,7 +272,7 @@ export class SettingsManager {
 		skipTimesHeader.textContent = 'Skip Times'
 		skipTimesSection.appendChild(skipTimesHeader)
 
-		const skipTimes = this.getSkipTimes().sort((a, b) => a - b)
+		const skipTimes = [...this.getSkipTimes()].sort((a, b) => a - b)
 
 		for (let i = 0; i < 4; i++) {
 			const label = document.createElement('label')
@@ -299,7 +301,7 @@ export class SettingsManager {
 				} else if (value < -90 || value > 90) {
 					e.target.value = skipTime // Reset to previous value if out of bounds
 				} else {
-					const newSkipTimes = this.getSkipTimes()
+					const newSkipTimes = [...this.getSkipTimes()]
 					newSkipTimes[i] = value
 					this.setSkipTimes(newSkipTimes)
 				}
@@ -481,6 +483,8 @@ export class SettingsManager {
 
 		if (value) {
 			this.bandbook.wrapper.classList.add('settings-require-refresh')
+		} else {
+			this.bandbook.wrapper.classList.remove('settings-require-refresh')
 		}
 	}
 

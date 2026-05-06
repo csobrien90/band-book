@@ -1,6 +1,6 @@
 import { BandBook } from "./BandBook.js"
 import { Notification } from "./Notification.js"
-import { AUTH_API_BASE } from "../../secrets.js"
+import { AUTH_API_BASE } from "../../globals.js"
 import { Modal } from "./Modal.js"
 
 export class AuthManager {

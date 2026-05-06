@@ -83,7 +83,6 @@ export class Marker {
 	 * @param {string} [notes=""] - Notes for the marker
 	 * @param {Tag[] | string[]} [tags=[]] - Tags for the marker
 	 * @param {string} [id] - An optional id for the marker
-	 * @returns {Marker} - A new Marker instance
 	 */
 	constructor(time, song, title = "New Marker", notes, tags = [], id) {
 		this.id = id ?? crypto.randomUUID()
@@ -149,6 +148,10 @@ export class Marker {
 	 * @throws {Error} - Throws an error if the time is less than 0 or greater than the song duration
 	 */
 	setTime(time) {
+		if (time < 0 || time > this.song.getDuration()) {
+			throw new Error("Invalid marker time")
+		}
+
 		this.time = time
 		this.song.bandbook.syncManager.updateMarkerTime(this, time)
 	}
@@ -207,7 +210,7 @@ export class Marker {
 			const selected = markerList.handleSelectMarker(this)
 
 			// Update segment checkboxes based on return selected markers
-			document.querySelectorAll(".segment-checkbox").forEach((checkbox) => {
+			markerList.markersListWrapper.querySelectorAll(".segment-checkbox").forEach((checkbox) => {
 				const timeIsInSelected = [...selected].some((m) => m.time === Number(checkbox.dataset.time))
 				checkbox.checked = timeIsInSelected
 			})
@@ -230,7 +233,7 @@ export class Marker {
 			modalHeader.textContent = this.title
 
 			// Append buttons to modal header and get edit form content
-			modalHeader.appendChild(this.getEditTitleButton(modalHeader))
+			modalHeader.appendChild(this.getEditTitleButton(modalHeader, markerList))
 			modalHeader.appendChild(this.getDeleteButton(markerList))
 			const modalContent = this.getEditMarkerForm()
 
@@ -248,9 +251,10 @@ export class Marker {
 	/**
 	 * Returns an edit title button for the marker
 	 * @param {HTMLHeadingElement} modalHeader - A heading element
+	 * @param {MarkerList} markerList - The parent marker list
 	 * @returns {HTMLButtonElement} - A button element
 	 */
-	getEditTitleButton(modalHeader) {
+	getEditTitleButton(modalHeader, markerList) {
 		const button = document.createElement("button")
 		button.classList.add("edit-asset-title")
 		button.innerHTML = "&#9998"
@@ -267,13 +271,12 @@ export class Marker {
 			saveButton.addEventListener("click", (e) => {
 				e.preventDefault()
 				this.setTitle(titleInput.value)
-				this.song.bandbook.syncManager.updateMarkerTitle(this, titleInput.value)
 				this.song.bandbook.refresh()
 
 				// Update modal header
 				modalHeader.textContent = this.title
-				modalHeader.appendChild(this.getEditTitleButton(modalHeader))
-				modalHeader.appendChild(this.getDeleteButton())
+				modalHeader.appendChild(this.getEditTitleButton(modalHeader, markerList))
+				modalHeader.appendChild(this.getDeleteButton(markerList))
 			})
 
 			modalHeader.appendChild(titleInput)
@@ -429,7 +432,7 @@ export class Marker {
 		notesInput.name = "marker-notes"
 		notesInput.rows = 4
 		notesInput.addEventListener("change", () => {
-		this.setNotes(notesInput.value)
+			this.setNotes(notesInput.value)
 		})
 		notesLabel.appendChild(notesSpan)
 		notesLabel.appendChild(notesInput)

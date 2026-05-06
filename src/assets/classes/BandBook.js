@@ -7,11 +7,17 @@ import { SettingsManager } from "./SettingsManager.js"
 import { TagManager } from "./TagManager.js"
 import { AuthManager } from "./AuthManager.js"
 import { Icon } from "./Icon.js"
-import { AUTH_API_BASE } from "../../secrets.js"
+import { AUTH_API_BASE } from "../../globals.js"
 
 /**
  * Represents a collection of songs
- */
+ * 
+ * The BandBook class orchestrates:
+ * - UI (Workspace, navigation)
+ * - Persistence (SyncManager)
+ * - Domain objects (Songs, Markers)
+ * - Global event handling
+*/
 export class BandBook {
   /**
    * @typedef {import('./Song.js').SongData} SongData
@@ -66,7 +72,7 @@ export class BandBook {
    * The current version of the BandBook app
    * @type {string}
    */
-  version = CURRENT_VERSION
+  version = window.CURRENT_VERSION
 
   /**
    * @constructor
@@ -76,41 +82,56 @@ export class BandBook {
     // DOM management
     wrapperElement.id = "bandbook"
     this.wrapper = wrapperElement
+
     this.addFeedbackButton()
-	  this.addDragAndDropListeners()
+    this.addDragAndDropListeners()
     this.addVisibilityChangeListeners()
 
     // Initialize dependencies
     this.workspace = new Workspace(wrapperElement)
     this.syncManager = new SyncManager(this)
     this.settingsManager = new SettingsManager(this)
-	  this.authManager = new AuthManager(this)
+    this.authManager = new AuthManager(this)
 
     // Load the BandBook
-    this.syncManager
-      .loadBandBook()
-      .then((data) => this.init(data))
-      .catch((error) => console.error("Error loading BandBook:", error))
-	  .finally(() => this.wrapper.classList.remove("bandbook-loading"))
+    this.load()
+  }
+
+  /**
+   * Loads persisted data and initializes the application.
+   * Handles errors gracefully and ensures loading state is cleared.
+   * @returns {Promise<void>}
+   */
+  async load() {
+    try {
+      const data = await this.syncManager.loadBandBook()
+      await this.init(data || [])
+    } catch (error) {
+      console.error("Error loading BandBook:", error)
+      new Notification("Error loading saved data. Starting fresh.", "error", true)
+      await this.init([])
+    } finally {
+      this.wrapper.classList.remove("bandbook-loading")
+    }
   }
 
   /**
    * Initializes the BandBook instance
-   * @param {SongData} songData - An object containing song data
+   * @param {SongData[]} songData - An array of song data
    * @returns {void}
    */
   async init(songData) {
     if (!this.id) this.id = this.createId
 
-	  this.tagManager = new TagManager(this, songData)
-	
+    this.tagManager = new TagManager(this, songData)
+
     // Create an array of Song instances from the song data
     this.songs = songData ? songData.map((song) => new Song(song, this)) : []
-	
+
     // Set the active song
     this.setActiveSong(this.activeSong || this.songs[0])
 
-	  this.checkForUploadedAudio()
+    this.checkForUploadedAudio()
   }
 
   /**
@@ -154,7 +175,7 @@ export class BandBook {
    * @returns {void}
    */
   removeSong(song) {
-    this.songs = this.songs.filter((s) => s.title !== song.title)
+    this.songs = this.songs.filter((s) => s.id !== song.id)
     this.setActiveSong(this.songs[0] || null)
     this.renderSongNavigation()
     this.syncManager.deleteSong(song)
@@ -364,6 +385,9 @@ export class BandBook {
       const {
         target: { files },
       } = e
+
+      if (!files || files.length === 0) return
+
       const { type: fileType, name } = files[0]
 
       // Confirm the file type is audio before proceeding
@@ -678,6 +702,7 @@ export class BandBook {
 
   /**
    * Adds an event listener to make the <body> a droppable area for new songs
+    * @returns {void}
    */
   addDragAndDropListeners() {
     const body = document.querySelector('body')
@@ -685,11 +710,21 @@ export class BandBook {
     body.addEventListener('drop', e => this.newSongDropListener(e))
   }
 
+  /**
+   * Prevents default behavior for dragover events on the body to allow dropping
+   * @param {DragEvent} event - The dragover event
+   * @returns {void}
+   */
   newSongDragListener(event) {
     event.preventDefault()
     // console.log("drag", {event})
   }
 
+  /**
+   * Handles dropped files on the body to create new songs
+   * @param {DragEvent} event - The drop event
+   * @returns {void}
+   */
   newSongDropListener(event) {
     event.preventDefault()
     
@@ -709,6 +744,11 @@ export class BandBook {
     }
   }
 
+  /**
+   * Processes a dropped file and creates a new song if it's a valid audio file
+   * @param {File} file - The dropped file
+   * @returns {void}
+   */
   processAndCreateSong(file) {
     if (!file.type.includes("audio")) {
       new Notification("Upload failed. Please upload a valid audio file (e.g. mp3, wav, etc.)", "error", true)
@@ -721,11 +761,21 @@ export class BandBook {
     this.createSong(file, file.type, title)
   }
 
+  /**
+   * Adds an event listener to save data when the page visibility changes (e.g. user switches tabs or minimizes the browser)
+   * @returns {void}
+   */
   addVisibilityChangeListeners() {
     window.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "hidden") {
         try {
           const data = await this.getData(false)
+
+          /** Use sendBeacon to save data
+           *  - more reliable than beforeunload
+           *  - completes even if the user closes the tab or browser
+           *  - non-blocking
+          */
           navigator.sendBeacon(`${AUTH_API_BASE}/data`, data)
         } catch (error) {
           console.error("Error saving BandBook data on visibility change:", error)

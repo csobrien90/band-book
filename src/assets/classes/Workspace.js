@@ -18,7 +18,6 @@ export class Workspace {
 	/**
 	 * @constructor
 	 * @param {HTMLElement} parentElement - The parent element for the workspace
-	 * @returns {Workspace} - A new Workspace instance
 	*/
 	constructor(parentElement) {
 		this.parentElement = parentElement
@@ -27,6 +26,7 @@ export class Workspace {
 
 	/**
 	 * Initializes the Workspace instance
+	 * @returns {void}
 	*/
 	init() {
 		// Create workspace section element and append to parent element
@@ -39,10 +39,14 @@ export class Workspace {
 	/**
 	 * Appends song components to workspace
 	 * @param {Song} song - A Song instance to be rendered in the workspace
+	 * @return {void}
 	*/
 	setSongWorkspace(song) {
 		// Reset workspace
 		this.reset()
+		if (!song || !(song instanceof Song)) return
+
+		// Append song header to workspace
 		this.wrapper.appendChild(song.getHeader())
 
 		// Create player wrapper
@@ -58,6 +62,7 @@ export class Workspace {
 
 	/**
 	 * Reset the workspace
+	 * @returns {void}
 	*/
 	reset() {
 		this.wrapper.innerHTML = ''

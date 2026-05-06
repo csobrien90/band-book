@@ -7,7 +7,7 @@ import { Icon } from './Icon.js'
 
 export class MarkerList {
 	/**
-	 * @typedef {Object} Marker
+	 * @typedef {Object} MarkerData
 	 * @property {number} time - A time in seconds
 	 * @property {Song} song - A Song instance
 	 * @property {string} title - A title for the marker
@@ -27,7 +27,6 @@ export class MarkerList {
 	/**
 	 * @constructor
 	 * @param {Song} song - A Song instance
-	 * @returns {MarkerList} - A new MarkerList instance
 	*/
 	constructor(song) {
 		this.song = song
@@ -113,7 +112,7 @@ export class MarkerList {
 	 * @returns {void}
 	*/
 	updateSegmentBoundsDisplay(start, end) {
-		if (!start && !end) {
+		if (start == null && end == null) {
 			this.segmentBoundsDisplay.textContent = ''
 			return
 		}
@@ -214,9 +213,11 @@ export class MarkerList {
 	}
 
 	/**
-	 * Creates segment controls for the song
-	 * @returns {HTMLDivElement} - A div element containing segment controls
-	*/
+	 * Handles marker selection logic including contiguous selection rules
+	 * and updates segment bounds and loop behavior.
+	 * @param {Marker} marker
+	 * @returns {Set<Marker>}
+	 */
 	addSegmentControls() {
 		const markerListControls = document.createElement('div')
 		markerListControls.classList.add('segment-controls')
@@ -248,10 +249,13 @@ export class MarkerList {
 		downloadSegmentButton.appendChild(new Icon('download', 30, 30).getImg())
 		downloadSegmentButton.addEventListener('click', () => {
 			const bounds = this.getSegmentTimeBounds()
-			if (!bounds) return new Notification(
-				'Error: No segment selected',
-				'error'
-			)
+			if (!bounds) {
+				new Notification(
+					'Error: No segment selected',
+					'error'
+				)
+				return
+			}
 			this.downloadSegment(...bounds)
 		})
 
@@ -265,10 +269,13 @@ export class MarkerList {
 		segmentToSongButton.addEventListener('click', () => {
 			try {
 				const bounds = this.getSegmentTimeBounds()
-				if (!bounds) return new Notification(
-					'Error: No segment selected',
-					'error'
-				)
+				if (!bounds) {
+					new Notification(
+						'Error: No segment selected',
+						'error'
+					)
+					return
+				}
 				this.makeSegmentIntoNewSong(...bounds)
 			} catch (error) {
 				new Notification(
@@ -287,10 +294,13 @@ export class MarkerList {
 		deleteSegmentButton.appendChild(new Icon('cut', 30, 30).getImg())
 		deleteSegmentButton.addEventListener('click', async () => {			
 			const bounds = this.getSegmentTimeBounds()
-			if (!bounds) return new Notification(
-				'Error: No segment selected',
-				'error'
-			)
+			if (!bounds) {
+				new Notification(
+					'Error: No segment selected',
+					'error'
+				)
+				return
+			}
 			await this.deleteSegment(...bounds)
 			this.song.bandbook.refresh()
 		})
@@ -341,7 +351,7 @@ export class MarkerList {
 		const audioContext = new AudioContext();
 		const clonedSource = this.song.src.slice(0);
 
-		audioContext.decodeAudioData(clonedSource, (buffer) => {
+		audioContext.decodeAudioData(clonedSource).then((buffer) => {
 			const playbackRate = this.song.player.audioElement.playbackRate || 1
 			const segmentDuration = end - start;
 			const renderedDuration = segmentDuration / playbackRate;
@@ -392,11 +402,11 @@ export class MarkerList {
 				console.error("Rendering failed:", err);
 				this.song.bandbook.wrapper.classList.remove('bandbook-loading');
 			});
-
-			audioContext.close().catch(console.error);
-		}, (err) => {
+		}).catch((err) => {
 			console.error("Decoding failed:", err);
 			this.song.bandbook.wrapper.classList.remove('bandbook-loading');
+		}).finally(() => {
+			audioContext.close().catch(console.error);
 		});
 	}
 
@@ -416,7 +426,7 @@ export class MarkerList {
 		// Clone the source to avoid detaching the original ArrayBuffer
 		const clonedSource = this.song.src.slice(0)
 
-		audioContext.decodeAudioData(clonedSource, async (buffer) => {
+		audioContext.decodeAudioData(clonedSource).then(async (buffer) => {
 			const innerAudioContext = new AudioContext();
 			const newBuffer = innerAudioContext.createBuffer(
 				buffer.numberOfChannels,
@@ -485,13 +495,12 @@ export class MarkerList {
 				)
 			} finally {
 				this.song.bandbook.wrapper.classList.remove('bandbook-loading')
+				// Close the audio context to free up resources
+				audioContext.close().catch((error) => {
+					console.error('Error closing audio context:', error)
+				})
 			}
 		});
-
-		// Close the audio context to free up resources
-		audioContext.close().catch((error) => {
-			console.error('Error closing audio context:', error)
-		})
 	}
 
 	/**
@@ -506,7 +515,7 @@ export class MarkerList {
 			const audioContext = new AudioContext()
 			const clonedSource = this.song.src.slice(0)
 
-			audioContext.decodeAudioData(clonedSource, async (buffer) => {
+			audioContext.decodeAudioData(clonedSource).then(async (buffer) => {
 				const sampleRate = buffer.sampleRate;
 				const startSample = Math.floor(start * sampleRate);
 				const endSample = Math.floor(end * sampleRate);
@@ -574,11 +583,14 @@ export class MarkerList {
 					this.song.bandbook.wrapper.classList.remove('bandbook-loading')
 					resolve()
 				}
-			})
-
-			// Close the audio context to free up resources
-			audioContext.close().catch((error) => {
-				console.error('Error closing audio context:', error)
+			}).catch((err) => {
+				console.error("Decoding failed:", err);
+				this.song.bandbook.wrapper.classList.remove('bandbook-loading')
+				reject(err)
+			}).finally(() => {
+				audioContext.close().catch((error) => {
+					console.error('Error closing audio context:', error)
+				})
 			})
 		})
 	}

@@ -9,14 +9,13 @@
 	<link rel="stylesheet" href="styles.css" />
 	<script>
 		// Define this here so it does not require cache invalidation
-		const CURRENT_VERSION = "0.0.8"
+		window.CURRENT_VERSION = "0.0.8"
 	</script>
-	<script type="module" src="index.js"></script>
 </head>
 <body>
 	<h1 class="sr-only">Band Book - a sandbox of tools for ear musicians</h1>
 	<main class="bandbook-loading"></main>
-	<div id="bandbook-loading-overlay">
+	<div id="bandbook-loading-overlay" aria-live="polite">
 		<p>Loading...</p>
 	</div>
 </body>

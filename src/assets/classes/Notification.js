@@ -72,7 +72,6 @@ export class Notification {
 		this.element.classList.add('off-screen')
 		setTimeout(() => {
 			this.element.remove()
-			delete this
 		}, 500)
 	}
 }

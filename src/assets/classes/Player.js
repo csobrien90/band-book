@@ -2,11 +2,17 @@ import { secondsToFormattedTime as format, isIOS } from '../utils.js'
 import { Icon } from './Icon.js'
 
 export class Player {
+	/** @type {Array<{ element: EventTarget, type: string, handler: Function }>} */
+	listeners = []
+
+	/** @type {string|null} */
+	objectUrl = null
+
 	/**
 	 * @constructor
 	 * @param {ArrayBuffer} src - The URL to the audio file
 	 * @param {string} srcType - The type of the audio file
-	 * @param {Song} song - The song instance
+	 * @param {import('./Song.js').Song} song - The Song instance associated with this player
 	 * @returns {Player} - A new Player
 	*/
 	constructor(src, srcType, song) {
@@ -30,15 +36,28 @@ export class Player {
 	}
 
 	/**
+	 * Adds an event listener and tracks it for cleanup
+	 * @param {EventTarget} element
+	 * @param {string} type
+	 * @param {Function} handler
+	 */
+	addListener(element, type, handler) {
+		element.addEventListener(type, handler)
+		this.listeners.push({ element, type, handler })
+	}
+
+	/**
 	 * Creates an audio element
 	 * @param {ArrayBuffer} src - The URL to the audio file
 	 * @returns {void}
 	*/
 	createAudioElement(src) {
 		const audio = document.createElement('audio')
+
 		const songBlob = new Blob([src], { type: this.srcType })
-		const songUrl = URL.createObjectURL(songBlob)
-		audio.src = songUrl
+		this.objectUrl = URL.createObjectURL(songBlob)
+
+		audio.src = this.objectUrl
 		audio.controls = true
 		audio.preload = 'metadata'
 
@@ -115,11 +134,11 @@ export class Player {
 		durationElement.className = 'duration'
 		durationElement.textContent = format(this?.audioElement.duration) || format(0)
 
-		this?.audioElement.addEventListener('loadedmetadata', () => {
+		this.addListener(this.audioElement, 'loadedmetadata', () => {
 			durationElement.textContent = format(this?.audioElement.duration)
 		})
 
-		this?.audioElement.addEventListener('timeupdate', () => {
+		this.addListener(this.audioElement, 'timeupdate', () => {
 			currentTimeElement.textContent = format(this?.audioElement.currentTime)
 			durationElement.textContent = format(this?.audioElement.duration)
 			const currentTimeRatio = this?.audioElement.currentTime / this?.audioElement.duration
@@ -142,15 +161,16 @@ export class Player {
 		seekingInput.value = this?.audioElement.currentTime || 0
 		seekingInput.step = 1
 		seekingInput.id = 'seeking-input'
+		
 		seekingInput.addEventListener('input', () => {
 			this.audioElement.currentTime = seekingInput.value
 		})
 
-		this?.audioElement.addEventListener('loadedmetadata', () => {
+		this.addListener(this.audioElement, 'loadedmetadata', () => {
 			seekingInput.max = this?.audioElement.duration
 		})
 
-		this?.audioElement.addEventListener('timeupdate', () => {
+		this.addListener(this.audioElement, 'timeupdate', () => {
 			const current = this?.audioElement.currentTime
 			seekingInput.value = current
 			const markers = this?.song?.markerList?.markers
@@ -200,13 +220,13 @@ export class Player {
 		button.title = 'Play/Pause'
 		button.appendChild(this.playIcon)
 
-		this?.audioElement.addEventListener('play', () => {
+		this.addListener(this.audioElement, 'play', () => {
 			button.ariaLabel = 'Pause'
 			button.title = 'Pause'
 			button.replaceChildren(this.pauseIcon)
 		})
 
-		this?.audioElement.addEventListener('pause', () => {
+		this.addListener(this.audioElement, 'pause', () => {
 			button.ariaLabel = 'Play'
 			button.title = 'Play'
 			button.replaceChildren(this.playIcon)
@@ -419,6 +439,7 @@ export class Player {
 
 	/**
 	 * Make waveform display canvas element
+	 * Falls back to null if unavailable or if performance mode is enabled
 	 * @returns {HTMLDivElement} - A div element wrapping the waveform
 	 * @returns {null} - If the audio decoding times out, returns null to use backup seeking element
 	*/
@@ -517,6 +538,7 @@ export class Player {
 
 	/**
 	 * Get an array of average volumes for each 1/100th of the audio
+	 * @returns {Promise<number[]>} - An array of average volumes values from 3-100 (normalized)
 	*/
 	async getAverageVolumesArray() {
 		if (this.song.waveformVolumes.length > 0) return this.song.waveformVolumes
@@ -525,7 +547,7 @@ export class Player {
 		return new Promise((resolve, reject) => {
 			try {
 				const audioContext = new AudioContext()
-				audioContext.decodeAudioData(clonedSrc, async buffer => {
+				audioContext.decodeAudioData(clonedSrc).then(async buffer => {
 					// Get the average volume for 1/100th of the audio
 					const bufferLength = buffer.length
 					const samples = buffer.getChannelData(0)
@@ -558,7 +580,43 @@ export class Player {
 				})
 			} catch (error) {
 				reject(error)
-			}
+			} finally {() => {
+				audioContext.close().catch(error => {
+					console.error('Error closing audio context:', error)
+				})
+			}}
 		})
+	}
+
+	/**
+	 * Cleans up resources used by the Player instance
+	 * - Removes event listeners
+	 * - Revokes object URLs
+	 * - Stops audio playback
+	 */
+	destroy() {
+		// Remove event listeners
+		this.listeners.forEach(({ element, type, handler }) => {
+			element.removeEventListener(type, handler)
+		})
+		this.listeners = []
+
+		// Stop audio
+		if (this.audioElement) {
+			this.audioElement.pause()
+			this.audioElement.src = ''
+		}
+
+		// Revoke object URL
+		if (this.objectUrl) {
+			URL.revokeObjectURL(this.objectUrl)
+			this.objectUrl = null
+		}
+
+		// Remove DOM reference
+		if (this.playerElement) {
+			this.playerElement.remove()
+			this.playerElement = null
+		}
 	}
 }
