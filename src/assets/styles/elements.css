@@ -23,7 +23,8 @@ label {
 	}
 }
 
-*:is(input, textarea):invalid:not(:placeholder-shown) {
+input:invalid:not(:placeholder-shown),
+textarea:invalid:not(:placeholder-shown) {
 	border: 2px solid red;
 }
 
@@ -39,6 +40,8 @@ button, .btn {
 	height: 50px;
 }
 
-body:has(main.light) *:is(button, a, label):not(.edit-asset-title):has(.icon) img {
+body:has(main.light) button:has(.icon) img,
+body:has(main.light) a:has(.icon) img,
+body:has(main.light) label:has(.icon) img {
 	filter: invert(1);
 }
