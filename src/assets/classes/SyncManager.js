@@ -481,7 +481,7 @@ export class SyncManager {
 
 			// Load the song metadata
 			const songStore = db
-				.transaction(["songs"], "readwrite")
+				.transaction(["songs"], "readonly")
 				.objectStore("songs");
 
 			const record = await this.request(songStore.get(songId));
@@ -514,7 +514,7 @@ export class SyncManager {
 
 			// Load source data
 			const srcStore = db
-				.transaction(["songSrcs"], "readwrite")
+				.transaction(["songSrcs"], "readonly")
 				.objectStore("songSrcs");
 
 			const srcRecord = await this.request(
@@ -528,7 +528,7 @@ export class SyncManager {
 			// Load marker data
 			if (songData.markers?.length) {
 				const markerStore = db
-					.transaction(["markers"], "readwrite")
+					.transaction(["markers"], "readonly")
 					.objectStore("markers");
 
 				const markers = await Promise.all(
@@ -811,7 +811,7 @@ export class SyncManager {
 	 * @returns {Promise<undefined>} - A promise that resolves with undefined if no marker is found
 	 */
 	getMarkerData(markerId) {
-		return this.withStore("markers", "readwrite", async (store) => {
+		return this.withStore("markers", "readonly", async (store) => {
 			const record = await this.request(store.get(markerId));
 			return record ? JSON.parse(record.data) : undefined;
 		});
@@ -977,7 +977,7 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	getTags() {
-		return this.withStore("tags", "readwrite", async (store) => {
+		return this.withStore("tags", "readonly", async (store) => {
 			return await this.request(store.getAll());
 		});
 	}
@@ -1024,7 +1024,7 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	loadSettings() {
-		return this.withStore("settings", "readwrite", async (store) => {
+		return this.withStore("settings", "readonly", async (store) => {
 			const record = await this.request(store.get("settings"));
 			return record ? record.data : {};
 		});
