@@ -19,6 +19,12 @@ export class SyncManager {
 	constructor(bandbook) {
 		this.bandbook = bandbook
 		this.init()
+
+		/** @type {IDBDatabase|null} */
+		this.db = null;
+
+		/** @type {Promise<IDBDatabase>|null} */
+		this.dbPromise = null;
 	}
 
 	/**
@@ -59,6 +65,118 @@ export class SyncManager {
 		) {
 			this.bandbook.alertUserOfNewVersion()
 		}
+	}
+
+	/**
+	 * Gets a cached IndexedDB connection, opening one if necessary.
+	 *
+	 * @returns {Promise<IDBDatabase>}
+	 */
+	async getDB() {
+		// Already connected
+		if (this.db) return this.db;
+
+		// Already opening
+		if (this.dbPromise) return this.dbPromise;
+
+		this.dbPromise = new Promise((resolve, reject) => {
+			const request = indexedDB.open("bandbook", 1);
+
+			request.onupgradeneeded = (e) => this.onUpgradeNeeded(e);
+
+			request.onerror = () => {
+				this.dbPromise = null;
+				reject(request.error);
+			};
+
+			request.onsuccess = () => {
+				const db = request.result;
+
+				// Another tab upgraded the database.
+				// Close our connection and force a reopen next time.
+				db.onversionchange = () => {
+					db.close();
+					if (this.db === db) {
+						this.db = null;
+						this.dbPromise = null;
+					}
+				};
+
+				// Supported in Chromium, harmless elsewhere.
+				if ("onclose" in db) {
+					db.onclose = () => {
+						if (this.db === db) {
+							this.db = null;
+							this.dbPromise = null;
+						}
+					};
+				}
+
+				this.db = db;
+				resolve(db);
+			};
+		});
+
+		return this.dbPromise;
+	}
+
+	/**
+	 * Opens a transaction on a single object store and passes the store to a callback.
+	 *
+	 * If the cached database connection is in the process of closing, the connection
+	 * is discarded, reopened, and the transaction is retried once automatically.
+	 *
+	 * @template T
+	 * @param {string} storeName - The name of the object store.
+	 * @param {"readonly"|"readwrite"} mode - The transaction mode.
+	 * @param {(store: IDBObjectStore, transaction: IDBTransaction) => T | Promise<T>} callback
+	 *        Function that performs work against the object store.
+	 * @returns {Promise<T>} Resolves with the value returned by the callback.
+	 * @throws {Error} If the transaction cannot be created after one retry, or if the callback throws.
+	 */
+	async withStore(storeName, mode, callback) {
+		for (let attempt = 0; attempt < 2; attempt++) {
+			const db = await this.getDB();
+
+			try {
+				const transaction = db.transaction([storeName], mode);
+				const store = transaction.objectStore(storeName);
+
+				return await callback(store, transaction);
+			} catch (e) {
+				const isRetryable =
+					e instanceof DOMException &&
+					e.name === "InvalidStateError" &&
+					attempt === 0 &&
+					this.db === db;
+
+				if (!isRetryable) {
+					throw e;
+				}
+
+				// The cached connection became invalid. Clear it so the next
+				// iteration reopens the database.
+				this.db = null;
+				this.dbPromise = null;
+			}
+		}
+
+		// Should never be reached.
+		throw new Error("Failed to create IndexedDB transaction.");
+	}
+
+	/**
+	 * Wraps an IndexedDB request in a Promise.
+	 *
+	 * @template T
+	 * @param {IDBRequest<T>} request
+	 * @returns {Promise<T>}
+	 */
+	request(request) {
+		return new Promise((resolve, reject) => {
+			request.onsuccess = () => resolve(request.result);
+			request.onerror = () => reject(request.error);
+		});
 	}
 
 	/**
@@ -108,56 +226,51 @@ export class SyncManager {
 		}
 	}
 
+
 	/**
 	 * Load the data and reinitialize the BandBook instance
-	 * @returns {Promise<SongData>} - A promise that resolves with the song data (or an empty array)
-	 * @throws {Error} - If there is an error loading the BandBook record
-	*/
+	 * @returns {Promise<SongData>} A promise that resolves with the song data (or an empty array)
+	 * @throws {Error} If there is an error loading the BandBook record
+	 */
 	loadBandBook() {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['books'], 'readwrite')
-				const store = transaction.objectStore('books')
-
-				const all = store.getAll()
+		return this.withStore("books", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const all = store.getAll();
 
 				all.onsuccess = async (e) => {
 					try {
-						const { id, songs } = e.target.result[0]
+						const { id, songs } = e.target.result[0];
 
 						if (id) {
-							this.bandbook.id = id							
+							this.bandbook.id = id;
+
 							if (songs) {
-								const songIdArray = JSON.parse(songs)
-								const songData = await Promise.all(songIdArray.map(async (songId) => {
-									const song = await this.getSongData(songId)
-									return song
-								}))
+								const songIdArray = JSON.parse(songs);
 
-								const filteredSongData = songData.filter(song => song !== undefined)
+								const songData = await Promise.all(
+									songIdArray.map((songId) => this.getSongData(songId))
+								);
 
-								resolve(filteredSongData)
+								resolve(songData.filter((song) => song !== undefined));
 							} else {
-								resolve([])
+								resolve([]);
 							}
 						} else {
-							this.createNewBandBookRecord()
-							resolve([])
+							this.createNewBandBookRecord();
+							resolve([]);
 						}
-						
 					} catch {
-						this.createNewBandBookRecord()
-						resolve([])
+						this.createNewBandBookRecord();
+						resolve([]);
 					}
-				}
-				
-				all.onerror = (e) => {
-					this.createNewBandBookRecord()
-					resolve([])
-				}
+				};
 
-			})
-		})
+				all.onerror = () => {
+					this.createNewBandBookRecord();
+					resolve([]);
+				};
+			});
+		});
 	}
 
 	/**
@@ -188,63 +301,33 @@ export class SyncManager {
 	}
 
 	/**
-	 * Connect to the BandBook indexedDB
-	 * @param {function} onSuccess - A callback function to run on success
-	 * @param {function} [onError = null] - A callback function to run on error
-	 * @returns {void}
-	 * @throws {Error} - If there is an error opening the indexedDB
-	*/
-	connectToBandbookDB(onSuccess, onError = null) {
-		const request = indexedDB.open('bandbook', 1)
-
-		request.onupgradeneeded = (e) => this.onUpgradeNeeded(e)
-
-		request.onerror = (e) => {
-			console.error('Error opening indexedDB', e)
-			if(onError) onError(e)
-		}
-
-		request.onsuccess = (e) => {
-			const db = e.target.result
-			onSuccess(db)
-		}
-	}
-
-	/**
 	 * Create a new BandBook record in indexedDB
 	 * @returns {Promise<Boolean>} - A promise that resolves when the record is created
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	createNewBandBookRecord() {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['books'], 'readwrite')
-				const store = transaction.objectStore('books')
-
-				const request = store.add({ id: this.bandbook.id, songs: null })
-				request.onsuccess = () => resolve(true)
-				request.onerror = (e) => reject(e)
-			})
-		})
+		return this.withStore("books", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const request = store.add({ id: this.bandbook.id, songs: null });
+				request.onsuccess = () => resolve(true);
+				request.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
 	 * Delete the BandBook record from indexedDB
 	 * @returns {Promise<Boolean>} - A promise that resolves when the record is created
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	deleteBandBookRecord() {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['books'], 'readwrite')
-				const store = transaction.objectStore('books')
-
-				const request = store.delete(this.bandbook.id)
-				request.onsuccess = () => resolve(true)
-				request.onerror = (e) => reject(e)
-
-			})
-		})
+		return this.withStore("books", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const request = store.delete(this.bandbook.id);
+				request.onsuccess = () => resolve(true);
+				request.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
@@ -254,25 +337,25 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	reorderSongs(songIds) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
+		return this.withStore("books", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
 				// Get book by id
-				const transaction = db.transaction(['books'], 'readwrite')
-				const store = transaction.objectStore('books')
-				const existing = store.get(this.bandbook.id)
+				const existing = store.get(this.bandbook.id);
+
 				existing.onsuccess = (e) => {
-					const record = e.target.result
+					const record = e.target.result;
+
 					if (record) {
 						// Update the songs array
-						record.songs = JSON.stringify(songIds)
-						store.put(record)
-						resolve(true)
+						record.songs = JSON.stringify(songIds);
+						store.put(record);
+						resolve(true);
 					}
-				}
+				};
 
-				existing.onerror = (e) => reject(e)
-			})
-		})
+				existing.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
@@ -280,46 +363,61 @@ export class SyncManager {
 	 * @param {Song} song - A Song instance
 	 * @returns {Promise<Boolean>} - A promise that resolves when the record is created
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	createSong(song) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return new Promise(async (resolve, reject) => {
+			const db = await this.getDB();
 
-				const request = store.add({ id: song.id, data: JSON.stringify(song.getMetadata()) })
-				request.onsuccess = () => {
-					// Save src data
-					const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
-					const srcRequest = srcStore.add({ id: song.id, src: song.src })
+			try {
+				const transaction = db.transaction(
+					["songs", "songSrcs", "books"],
+					"readwrite"
+				);
 
-					srcRequest.onsuccess = () => {
-						// Update the BandBook record
-						const booksTransaction = db.transaction(['books'], 'readwrite')
-						const booksStore = booksTransaction.objectStore('books')
+				const songStore = transaction.objectStore("songs");
+				const srcStore = transaction.objectStore("songSrcs");
+				const booksStore = transaction.objectStore("books");
 
-						const existing = booksStore.get(this.bandbook.id)
-						existing.onsuccess = (e) => {
-							const record = e.target.result
-							if (record) {
-								const songs = record.songs ? JSON.parse(record.songs) : []
-								songs.push(song.id)
-								record.songs = JSON.stringify(songs)
-								booksStore.put(record)
-							}
+				const songRequest = songStore.add({
+					id: song.id,
+					data: JSON.stringify(song.getMetadata())
+				});
+
+				songRequest.onerror = (e) => reject(e);
+
+				songRequest.onsuccess = () => {
+					srcStore.add({
+						id: song.id,
+						src: song.src
+					});
+
+					const existing = booksStore.get(this.bandbook.id);
+
+					existing.onerror = (e) => reject(e);
+
+					existing.onsuccess = (e) => {
+						const record = e.target.result;
+
+						if (record) {
+							const songs = record.songs
+								? JSON.parse(record.songs)
+								: [];
+
+							songs.push(song.id);
+							record.songs = JSON.stringify(songs);
+
+							booksStore.put(record);
 						}
+					};
+				};
 
-						existing.onerror = (e) => reject(e)
-
-						resolve(true)
-					}
-
-					srcRequest.onerror = (e) => reject(e)
-				}
-
-				request.onerror = (e) => reject(e)
-			})
-		})
+				transaction.oncomplete = () => resolve(true);
+				transaction.onerror = (e) => reject(e);
+				transaction.onabort = (e) => reject(e);
+			} catch (e) {
+				reject(e);
+			}
+		});
 	}
 
 	/**
@@ -330,87 +428,87 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	*/
 	getSongData(songId) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				try {
-					const transaction = db.transaction(['songs'], 'readwrite')
-					const store = transaction.objectStore('songs')
-					
-					const existing = store.get(songId)
-					
-					/** @type {SongData} */
-					let songData
-					existing.onsuccess = (e) => {
-						const record = e.target.result
-						if (!record) {
-							// Remove the song from the BandBook record
-							const booksTransaction = db.transaction(['books'], 'readwrite')
-							const booksStore = booksTransaction.objectStore('books')
-							
-							const existing = booksStore.get(this.bandbook.id)
-							existing.onsuccess = (e) => {
-								const record = e.target.result
-								if (record) {
-									const songs = JSON.parse(record.songs)
-									const updatedSongs = songs.filter(s => s !== songId)
-									record.songs = JSON.stringify(updatedSongs)
-									booksStore.put(record)
-								}
-							}
-						}
+		return new Promise(async (resolve, reject) => {
+			const db = await this.getDB()
 
-						songData = record ? JSON.parse(record.data) : undefined
-						if (!songData) resolve(undefined)
+			try {
+				const transaction = db.transaction(['songs'], 'readwrite')
+				const store = transaction.objectStore('songs')
+				
+				const existing = store.get(songId)
+				
+				/** @type {SongData} */
+				let songData
+				existing.onsuccess = (e) => {
+					const record = e.target.result
+					if (!record) {
+						// Remove the song from the BandBook record
+						const booksTransaction = db.transaction(['books'], 'readwrite')
+						const booksStore = booksTransaction.objectStore('books')
 						
-						// Add the song ID to the song data
-						songData.id = songId
-
-						// Get src data
-						const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
-						const srcExisting = srcStore.get(songId)
-						srcExisting.onsuccess = (e) => {
-							const srcRecord = e.target.result
-							if (srcRecord) songData.src = srcRecord.src
-
-							// Get marker data
-							if (songData?.markers) {
-								const markerStore = db.transaction(['markers'], 'readwrite').objectStore('markers')
-								const markerData = songData.markers.map((markerId) => {
-									return new Promise((resolve, reject) => {
-										const markerExisting = markerStore.get(markerId)
-										markerExisting.onsuccess = (e) => {
-											const markerRecord = e.target.result
-											if (markerRecord) {
-												resolve(JSON.parse(markerRecord.data))
-											} else {
-												resolve(undefined)
-											}
-										}
-									})
-								})
-
-								Promise.all(markerData).then((markers) => {
-									// Remove duplicate markers (by id)
-									const uniqueMarkers = markers.filter(
-										(marker, index, self) => self.findIndex(m => m?.id === marker?.id) === index
-									)
-
-									songData.markers = uniqueMarkers
-									resolve(songData)
-								})
-
-							} else {
-								resolve(songData)
+						const existing = booksStore.get(this.bandbook.id)
+						existing.onsuccess = (e) => {
+							const record = e.target.result
+							if (record) {
+								const songs = JSON.parse(record.songs)
+								const updatedSongs = songs.filter(s => s !== songId)
+								record.songs = JSON.stringify(updatedSongs)
+								booksStore.put(record)
 							}
 						}
-
 					}
-				} catch (e) {
-					Sentry.captureException(error)
-					console.error('Error getting song data', e)
-					reject(e)
+
+					songData = record ? JSON.parse(record.data) : undefined
+					if (!songData) resolve(undefined)
+					
+					// Add the song ID to the song data
+					songData.id = songId
+
+					// Get src data
+					const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
+					const srcExisting = srcStore.get(songId)
+					srcExisting.onsuccess = (e) => {
+						const srcRecord = e.target.result
+						if (srcRecord) songData.src = srcRecord.src
+
+						// Get marker data
+						if (songData?.markers) {
+							const markerStore = db.transaction(['markers'], 'readwrite').objectStore('markers')
+							const markerData = songData.markers.map((markerId) => {
+								return new Promise((resolve, reject) => {
+									const markerExisting = markerStore.get(markerId)
+									markerExisting.onsuccess = (e) => {
+										const markerRecord = e.target.result
+										if (markerRecord) {
+											resolve(JSON.parse(markerRecord.data))
+										} else {
+											resolve(undefined)
+										}
+									}
+								})
+							})
+
+							Promise.all(markerData).then((markers) => {
+								// Remove duplicate markers (by id)
+								const uniqueMarkers = markers.filter(
+									(marker, index, self) => self.findIndex(m => m?.id === marker?.id) === index
+								)
+
+								songData.markers = uniqueMarkers
+								resolve(songData)
+							})
+
+						} else {
+							resolve(songData)
+						}
+					}
+
 				}
-			})
+			} catch (e) {
+				Sentry.captureException(error)
+				console.error('Error getting song data', e)
+				reject(e)
+			}
 		})
 	}
 
@@ -419,56 +517,58 @@ export class SyncManager {
 	 * @param {Song} song - A Song instance
 	 * @returns {Promise<Boolean>} - A promise that resolves when the song is deleted
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	deleteSong(song) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return new Promise(async (resolve, reject) => {
+			const db = await this.getDB();
 
-				const request = store.delete(song.id)
-				
-				request.onsuccess = () => {
-					// Delete src data
-					const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
-					const srcRequest = srcStore.delete(song.id)
-	
-					srcRequest.onsuccess = () => {
-						// Delete markers
-						const markerStore = db.transaction(['markers'], 'readwrite').objectStore('markers')
-						song.markerList.markers.forEach(marker => {
-							const markerRequest = markerStore.delete(marker.id)
-							markerRequest.onsuccess = () => {
-								// Do nothing on success
-							}
-							markerRequest.onerror = (e) => {
-								console.error('Error deleting marker', e)
-							}
-						})
-	
-						// Update the BandBook record
-						const booksTransaction = db.transaction(['books'], 'readwrite')
-						const booksStore = booksTransaction.objectStore('books')
-	
-						const existing = booksStore.get(this.bandbook.id)
-						existing.onsuccess = (e) => {
-							const record = e.target.result
-							if (record) {
-								const songs = JSON.parse(record.songs)
-								const updatedSongs = songs.filter(s => s !== song.id)
-								record.songs = JSON.stringify(updatedSongs)
-								booksStore.put(record)
-							}
+			try {
+				const transaction = db.transaction(
+					["songs", "songSrcs", "markers", "books"],
+					"readwrite"
+				);
+
+				const songStore = transaction.objectStore("songs");
+				const srcStore = transaction.objectStore("songSrcs");
+				const markerStore = transaction.objectStore("markers");
+				const booksStore = transaction.objectStore("books");
+
+				const deleteRequest = songStore.delete(song.id);
+
+				deleteRequest.onerror = (e) => reject(e);
+
+				deleteRequest.onsuccess = () => {
+					srcStore.delete(song.id);
+
+					song.markerList.markers.forEach((marker) => {
+						markerStore.delete(marker.id);
+					});
+
+					const existing = booksStore.get(this.bandbook.id);
+
+					existing.onerror = (e) => reject(e);
+
+					existing.onsuccess = (e) => {
+						const record = e.target.result;
+
+						if (record) {
+							const songs = JSON.parse(record.songs);
+							record.songs = JSON.stringify(
+								songs.filter((s) => s !== song.id)
+							);
+
+							booksStore.put(record);
 						}
-	
-						resolve(true)
-					}
-	
-					srcRequest.onerror = (e) => reject(e)
-				}
-				request.onerror = (e) => reject(e)
-			})
-		})
+					};
+				};
+
+				transaction.oncomplete = () => resolve(true);
+				transaction.onerror = (e) => reject(e);
+				transaction.onabort = (e) => reject(e);
+			} catch (e) {
+				reject(e);
+			}
+		});
 	}
 
 	/**
@@ -476,25 +576,24 @@ export class SyncManager {
 	 * @param {Song} song - A Song instance
 	 * @param {string} title - A new title
 	 * @returns {Promise<Boolean>} - A promise that resolves when the title is updated
-	*/
+	 */
 	updateSongTitle(song, title) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return this.withStore("songs", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(song.id);
 
-				const existing = store.get(song.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.title = title
-						store.put({ id: song.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.title = title;
+						store.put({ id: song.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -502,25 +601,24 @@ export class SyncManager {
 	 * @param {Song} song - A Song instance
 	 * @param {string} composer - A new composer
 	 * @returns {Promise<Boolean>} - A promise that resolves when the composer is updated
-	*/
+	 */
 	updateSongComposer(song, composer) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return this.withStore("songs", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(song.id);
 
-				const existing = store.get(song.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.composer = composer
-						store.put({ id: song.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.composer = composer;
+						store.put({ id: song.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -528,25 +626,24 @@ export class SyncManager {
 	 * @param {Song} song - A Song instance
 	 * @param {number} tempo - A new tempo
 	 * @returns {Promise<Boolean>} - A promise that resolves when the tempo is updated
-	*/
+	 */
 	updateSongTempo(song, tempo) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return this.withStore("songs", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(song.id);
 
-				const existing = store.get(song.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.tempo = tempo
-						store.put({ id: song.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.tempo = tempo;
+						store.put({ id: song.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -554,25 +651,24 @@ export class SyncManager {
 	 * @param {Song} song - A Song instance
 	 * @param {string} key - A new key
 	 * @returns {Promise<Boolean>} - A promise that resolves when the key is updated
-	*/
+	 */
 	updateSongKey(song, key) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return this.withStore("songs", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(song.id);
 
-				const existing = store.get(song.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.key = key
-						store.put({ id: song.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.key = key;
+						store.put({ id: song.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -580,25 +676,24 @@ export class SyncManager {
 	 * @param {Song} song - A Song instance
 	 * @param {string} timeSignature - A new time signature
 	 * @returns {Promise<Boolean>} - A promise that resolves when the time signature is updated
-	*/
+	 */
 	updateSongTimeSignature(song, timeSignature) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return this.withStore("songs", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(song.id);
 
-				const existing = store.get(song.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.timeSignature = timeSignature
-						store.put({ id: song.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.timeSignature = timeSignature;
+						store.put({ id: song.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -606,45 +701,49 @@ export class SyncManager {
 	 * @param {Song} song - A Song instance
 	 * @param {string} notes - New notes
 	 * @returns {Promise<Boolean>} - A promise that resolves when the notes are updated
-	*/
+	 */
 	updateSongNotes(song, notes) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return this.withStore("songs", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(song.id);
 
-				const existing = store.get(song.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.notes = notes
-						store.put({ id: song.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.notes = notes;
+						store.put({ id: song.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
+	/**
+	 * Update a song waveform volumes in indexedDB
+	 * @param {Song} song - A Song instance
+	 * @param {Array<number>} waveformVolumes - The waveform volume data
+	 * @returns {Promise<Boolean>} - A promise that resolves when the waveform volumes are updated
+	 */
 	updateSongWaveformVolumes(song, waveformVolumes) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
+		return this.withStore("songs", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(song.id);
 
-				const existing = store.get(song.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.waveformVolumes = waveformVolumes
-						store.put({ id: song.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.waveformVolumes = waveformVolumes;
+						store.put({ id: song.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -653,17 +752,16 @@ export class SyncManager {
 	 * @param {string} src - A new src
 	 * @returns {Promise<Boolean>} - A promise that resolves when the src is updated
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	updateSongSrc(song, src) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
-				const srcRequest = srcStore.put({ id: song.id, src: src })
+		return this.withStore("songSrcs", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const request = store.put({ id: song.id, src });
 
-				srcRequest.onsuccess = () => resolve(true)
-				srcRequest.onerror = (e) => reject(e)
-			})
-		})
+				request.onsuccess = () => resolve(true);
+				request.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
@@ -671,37 +769,53 @@ export class SyncManager {
 	 * @param {Marker} marker - A Marker instance
 	 * @returns {Promise<Boolean>} - A promise that resolves when the marker is created
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	createMarker(marker) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['markers'], 'readwrite')
-				const store = transaction.objectStore('markers')
+		return new Promise(async (resolve, reject) => {
+			const db = await this.getDB();
 
-				const request = store.add({ id: marker.id, data: JSON.stringify(marker.getData()) })
-				request.onsuccess = () => {
-					// Update the song record
-					const songTransaction = db.transaction(['songs'], 'readwrite')
-					const songStore = songTransaction.objectStore('songs')
+			try {
+				const transaction = db.transaction(["markers", "songs"], "readwrite");
+				const markerStore = transaction.objectStore("markers");
+				const songStore = transaction.objectStore("songs");
 
-					const existing = songStore.get(marker.song.id)
+				const addRequest = markerStore.add({
+					id: marker.id,
+					data: JSON.stringify(marker.getData())
+				});
+
+				addRequest.onerror = (e) => {
+					console.error("Error adding marker", e);
+					reject(e);
+				};
+
+				addRequest.onsuccess = () => {
+					const existing = songStore.get(marker.song.id);
+
+					existing.onerror = (e) => reject(e);
+
 					existing.onsuccess = (e) => {
-						const record = e.target.result
-						if (record) {
-							const data = JSON.parse(record.data)
-							data.markers.push(marker.id)
-							songStore.put({ id: marker.song.id, data: JSON.stringify(data) })
-						}
-					}
+						const record = e.target.result;
 
-					resolve(true)
-				}
-				request.onerror = (e) => {
-					console.error('Error adding marker', e)
-					reject(e)
-				}
-			})
-		})
+						if (record) {
+							const data = JSON.parse(record.data);
+							data.markers.push(marker.id);
+
+							songStore.put({
+								id: marker.song.id,
+								data: JSON.stringify(data)
+							});
+						}
+					};
+				};
+
+				transaction.oncomplete = () => resolve(true);
+				transaction.onerror = (e) => reject(e);
+				transaction.onabort = (e) => reject(e);
+			} catch (e) {
+				reject(e);
+			}
+		});
 	}
 
 	/**
@@ -709,24 +823,23 @@ export class SyncManager {
 	 * @param {string} markerId - A marker ID
 	 * @returns {Promise<MarkerData>} - A promise that resolves with the marker data
 	 * @returns {Promise<undefined>} - A promise that resolves with undefined if no marker is found
-	*/
+	 */
 	getMarkerData(markerId) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['markers'], 'readwrite')
-				const store = transaction.objectStore('markers')
+		return this.withStore("markers", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(markerId);
 
-				const existing = store.get(markerId)
 				existing.onsuccess = (e) => {
-					const record = e.target.result
+					const record = e.target.result;
+
 					if (record) {
-						resolve(JSON.parse(record.data))
+						resolve(JSON.parse(record.data));
 					} else {
-						resolve(undefined)
+						resolve(undefined);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -734,61 +847,72 @@ export class SyncManager {
 	 * @param {Marker} marker - A Marker instance
 	 * @returns {Promise<Boolean>} - A promise that resolves when the marker is deleted
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	deleteMarker(marker) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['markers'], 'readwrite')
-				const store = transaction.objectStore('markers')
+		return new Promise(async (resolve, reject) => {
+			const db = await this.getDB();
 
-				const request = store.delete(marker.id)
-				request.onsuccess = () => {
-					// Update the song record
-					const songTransaction = db.transaction(['songs'], 'readwrite')
-					const songStore = songTransaction.objectStore('songs')
+			try {
+				const transaction = db.transaction(["markers", "songs"], "readwrite");
+				const markerStore = transaction.objectStore("markers");
+				const songStore = transaction.objectStore("songs");
 
-					const existing = songStore.get(marker.song.id)
+				const deleteRequest = markerStore.delete(marker.id);
+
+				deleteRequest.onerror = (e) => reject(e);
+
+				deleteRequest.onsuccess = () => {
+					const existing = songStore.get(marker.song.id);
+
+					existing.onerror = (e) => reject(e);
+
 					existing.onsuccess = (e) => {
-						const record = e.target.result
-						if (record) {
-							const data = JSON.parse(record.data)
-							const updatedMarkers = data.markers.filter(m => m !== marker.id)
-							data.markers = updatedMarkers
-							songStore.put({ id: marker.song.id, data: JSON.stringify(data) })
-						}
-					}
+						const record = e.target.result;
 
-					resolve(true)
-				}
-				request.onerror = (e) => reject(e)
-			})
-		})
+						if (record) {
+							const data = JSON.parse(record.data);
+							data.markers = data.markers.filter((m) => m !== marker.id);
+
+							songStore.put({
+								id: marker.song.id,
+								data: JSON.stringify(data)
+							});
+						}
+					};
+				};
+
+				transaction.oncomplete = () => resolve(true);
+				transaction.onerror = (e) => reject(e);
+				transaction.onabort = (e) => reject(e);
+			} catch (e) {
+				reject(e);
+			}
+		});
 	}
 
 	/**
 	 * Update a marker title in indexedDB
 	 * @param {Marker} marker - A Marker instance
 	 * @param {string} title - A new title
-	 * @returns {Promise<Boolean>} - A promise that resolves when the title is updated`
-	*/
+	 * @returns {Promise<Boolean>} - A promise that resolves when the title is updated
+	 */
 	updateMarkerTitle(marker, title) {
-		return new Promise((resolve) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['markers'], 'readwrite')
-				const store = transaction.objectStore('markers')
+		return this.withStore("markers", "readwrite", (store) => {
+			return new Promise((resolve) => {
+				const existing = store.get(marker.id);
 
-				const existing = store.get(marker.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.title = title
-						store.put({ id: marker.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.title = title;
+						store.put({ id: marker.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -797,26 +921,26 @@ export class SyncManager {
 	 * @param {string} notes - New notes
 	 * @returns {Promise<Boolean>} - A promise that resolves when the notes are updated
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	updateMarkerNotes(marker, notes) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['markers'], 'readwrite')
-				const store = transaction.objectStore('markers')
+		return this.withStore("markers", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const existing = store.get(marker.id);
 
-				const existing = store.get(marker.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.notes = notes
-						store.put({ id: marker.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.notes = notes;
+						store.put({ id: marker.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-				existing.onerror = (e) => reject(e)
-			})
-		})
+				};
+
+				existing.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
@@ -825,26 +949,26 @@ export class SyncManager {
 	 * @param {number} time - A new time
 	 * @returns {Promise<Boolean>} - A promise that resolves when the time is updated
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	updateMarkerTime(marker, time) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['markers'], 'readwrite')
-				const store = transaction.objectStore('markers')
+		return this.withStore("markers", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const existing = store.get(marker.id);
 
-				const existing = store.get(marker.id)
 				existing.onsuccess = () => {
-					const record = existing.result
+					const record = existing.result;
+
 					if (record) {
-						const data = JSON.parse(record.data)
-						data.time = time
-						store.put({ id: marker.id, data: JSON.stringify(data) })
-						resolve(true)
+						const data = JSON.parse(record.data);
+						data.time = time;
+						store.put({ id: marker.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-				existing.onerror = (e) => reject(e)
-			})
-		})
+				};
+
+				existing.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
@@ -853,51 +977,47 @@ export class SyncManager {
 	 * @param {Tag[] | string[]} tags - An array of tags
 	 * @returns {Promise<Boolean>} - A promise that resolves when the tags are updated
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	updateMarkerTags(marker, tags) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['markers'], 'readwrite')
-				const store = transaction.objectStore('markers')
+		return this.withStore("markers", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const existing = store.get(marker.id);
 
-				const existing = store.get(marker.id)
 				existing.onsuccess = () => {
-					const record = existing.result
-					if (record) {
-						const data = JSON.parse(record.data)
+					const record = existing.result;
 
-						if (typeof tags[0] !== 'string') {
-							tags = tags.map(tag => tag.name)
+					if (record) {
+						const data = JSON.parse(record.data);
+
+						if (typeof tags[0] !== "string") {
+							tags = tags.map((tag) => tag.name);
 						}
 
-						data.tags = tags
-						store.put({ id: marker.id, data: JSON.stringify(data) })
-						resolve(true)
+						data.tags = tags;
+						store.put({ id: marker.id, data: JSON.stringify(data) });
+						resolve(true);
 					}
-				}
-				existing.onerror = (e) => reject(e)
-			})
-		})
+				};
+
+				existing.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
 	 * Get all tags from indexedDB
 	 * @returns {Promise<string[]>} - A promise that resolves with an array of tags
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	getTags() {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['tags'], 'readwrite')
-				const store = transaction.objectStore('tags')
+		return this.withStore("tags", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const all = store.getAll();
 
-				const all = store.getAll()
-				all.onsuccess = (e) => {
-					resolve(e.target.result)
-				}
-				all.onerror = (e) => reject(e)
-			})
-		})
+				all.onsuccess = (e) => resolve(e.target.result);
+				all.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
@@ -905,27 +1025,27 @@ export class SyncManager {
 	 * @param {string} tag - A tag to add
 	 * @returns {Promise<Boolean>} - A promise that resolves when the tag is added
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	addTag(tag) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['tags'], 'readwrite')
-				const store = transaction.objectStore('tags')
-
+		return this.withStore("tags", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
 				// Check if the tag already exists
-				const existing = store.get(tag)
+				const existing = store.get(tag);
+
 				existing.onsuccess = (e) => {
-					const record = e.target.result
+					const record = e.target.result;
+
 					if (record) {
-						resolve(true)
+						resolve(true);
 					} else {
-						const request = store.add({ name: tag })
-						request.onsuccess = () => resolve(true)
-						request.onerror = (e) => reject(e)
+						const request = store.add({ name: tag });
+
+						request.onsuccess = () => resolve(true);
+						request.onerror = (e) => reject(e);
 					}
-				}
-			})
-		})
+				};
+			});
+		});
 	}
 
 	/**
@@ -933,46 +1053,41 @@ export class SyncManager {
 	 * @param {string} tag - A tag to remove
 	 * @returns {Promise<Boolean>} - A promise that resolves when the tag is removed
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	removeTag(tag) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['tags'], 'readwrite')
-				const store = transaction.objectStore('tags')
+		return this.withStore("tags", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const request = store.delete(tag);
 
-				const request = store.delete(tag)
-				request.onsuccess = () => resolve(true)
-				request.onerror = (e) => reject(e)
-			})
-		})
+				request.onsuccess = () => resolve(true);
+				request.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
 	 * Load the settings object from indexedDB
 	 * @returns {Promise<Settings>} - A promise that resolves with the settings object
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	loadSettings() {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['settings'], 'readwrite')
-				const store = transaction.objectStore('settings')
+		return this.withStore("settings", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const existing = store.get("settings");
 
-				const existing = store.get('settings')
 				existing.onsuccess = (e) => {
-					const record = e.target.result
-					if (record) {
-						resolve(record.data)
-					} else {
-						resolve({})
-					}
-				}
+					const record = e.target.result;
 
-				existing.onerror = (e) => {
-					reject(e)
-				}
-			})
-		})
+					if (record) {
+						resolve(record.data);
+					} else {
+						resolve({});
+					}
+				};
+
+				existing.onerror = (e) => reject(e);
+			});
+		});
 	}
 
 	/**
@@ -980,17 +1095,15 @@ export class SyncManager {
 	 * @param {Settings} settings - The settings object to save
 	 * @returns {Promise<Boolean>} - A promise that resolves when the settings are saved
 	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
+	 */
 	saveSettings(settings) {
-		return new Promise((resolve, reject) => {
-			this.connectToBandbookDB((db) => {
-				const transaction = db.transaction(['settings'], 'readwrite')
-				const store = transaction.objectStore('settings')
+		return this.withStore("settings", "readwrite", (store) => {
+			return new Promise((resolve, reject) => {
+				const request = store.put({ id: "settings", data: settings });
 
-				const request = store.put({ id: 'settings', data: settings })
-				request.onsuccess = () => resolve(true)
-				request.onerror = (e) => reject(e)
-			})
-		})
+				request.onsuccess = () => resolve(true);
+				request.onerror = (e) => reject(e);
+			});
+		});
 	}
 }
