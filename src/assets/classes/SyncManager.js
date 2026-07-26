@@ -233,43 +233,38 @@ export class SyncManager {
 	 * @throws {Error} If there is an error loading the BandBook record
 	 */
 	loadBandBook() {
-		return this.withStore("books", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const all = store.getAll();
+		return this.withStore("books", "readwrite", async (store) => {
+			try {
+				const records = await this.request(store.getAll());
+				const record = records[0];
 
-				all.onsuccess = async (e) => {
-					try {
-						const { id, songs } = e.target.result[0];
+				if (!record) {
+					await this.createNewBandBookRecord();
+					return [];
+				}
 
-						if (id) {
-							this.bandbook.id = id;
+				const { id, songs } = record;
 
-							if (songs) {
-								const songIdArray = JSON.parse(songs);
+				if (!id) {
+					await this.createNewBandBookRecord();
+					return [];
+				}
 
-								const songData = await Promise.all(
-									songIdArray.map((songId) => this.getSongData(songId))
-								);
+				this.bandbook.id = id;
 
-								resolve(songData.filter((song) => song !== undefined));
-							} else {
-								resolve([]);
-							}
-						} else {
-							this.createNewBandBookRecord();
-							resolve([]);
-						}
-					} catch {
-						this.createNewBandBookRecord();
-						resolve([]);
-					}
-				};
+				if (!songs) {
+					return [];
+				}
 
-				all.onerror = () => {
-					this.createNewBandBookRecord();
-					resolve([]);
-				};
-			});
+				const songData = await Promise.all(
+					JSON.parse(songs).map((songId) => this.getSongData(songId))
+				);
+
+				return songData.filter(Boolean);
+			} catch {
+				await this.createNewBandBookRecord();
+				return [];
+			}
 		});
 	}
 
@@ -306,12 +301,15 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	createNewBandBookRecord() {
-		return this.withStore("books", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const request = store.add({ id: this.bandbook.id, songs: null });
-				request.onsuccess = () => resolve(true);
-				request.onerror = (e) => reject(e);
-			});
+		return this.withStore("books", "readwrite", async (store) => {
+			await this.request(
+				store.add({
+					id: this.bandbook.id,
+					songs: null
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -321,12 +319,12 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	deleteBandBookRecord() {
-		return this.withStore("books", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const request = store.delete(this.bandbook.id);
-				request.onsuccess = () => resolve(true);
-				request.onerror = (e) => reject(e);
-			});
+		return this.withStore("books", "readwrite", async (store) => {
+			await this.request(
+				store.delete(this.bandbook.id)
+			);
+
+			return true;
 		});
 	}
 
@@ -337,24 +335,20 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	reorderSongs(songIds) {
-		return this.withStore("books", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				// Get book by id
-				const existing = store.get(this.bandbook.id);
+		return this.withStore("books", "readwrite", async (store) => {
+			const record = await this.request(
+				store.get(this.bandbook.id)
+			);
 
-				existing.onsuccess = (e) => {
-					const record = e.target.result;
+			if (!record) return false;
 
-					if (record) {
-						// Update the songs array
-						record.songs = JSON.stringify(songIds);
-						store.put(record);
-						resolve(true);
-					}
-				};
+			record.songs = JSON.stringify(songIds);
 
-				existing.onerror = (e) => reject(e);
-			});
+			await this.request(
+				store.put(record)
+			);
+
+			return true;
 		});
 	}
 
@@ -365,151 +359,55 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	createSong(song) {
-		return new Promise(async (resolve, reject) => {
-			const db = await this.getDB();
+		return new Promise((resolve, reject) => {
+			this.getDB()
+				.then(async (db) => {
+					const transaction = db.transaction(
+						["songs", "songSrcs", "books"],
+						"readwrite"
+					);
 
-			try {
-				const transaction = db.transaction(
-					["songs", "songSrcs", "books"],
-					"readwrite"
-				);
+					const songStore = transaction.objectStore("songs");
+					const srcStore = transaction.objectStore("songSrcs");
+					const booksStore = transaction.objectStore("books");
 
-				const songStore = transaction.objectStore("songs");
-				const srcStore = transaction.objectStore("songSrcs");
-				const booksStore = transaction.objectStore("books");
+					transaction.oncomplete = () => resolve(true);
+					transaction.onerror = () => reject(transaction.error);
+					transaction.onabort = () => reject(transaction.error);
 
-				const songRequest = songStore.add({
-					id: song.id,
-					data: JSON.stringify(song.getMetadata())
-				});
+					await this.request(
+						songStore.add({
+							id: song.id,
+							data: JSON.stringify(song.getMetadata())
+						})
+					);
 
-				songRequest.onerror = (e) => reject(e);
+					await this.request(
+						srcStore.add({
+							id: song.id,
+							src: song.src
+						})
+					);
 
-				songRequest.onsuccess = () => {
-					srcStore.add({
-						id: song.id,
-						src: song.src
-					});
+					const record = await this.request(
+						booksStore.get(this.bandbook.id)
+					);
 
-					const existing = booksStore.get(this.bandbook.id);
+					if (record) {
+						const songs = record.songs
+							? JSON.parse(record.songs)
+							: [];
 
-					existing.onerror = (e) => reject(e);
+						songs.push(song.id);
+						record.songs = JSON.stringify(songs);
 
-					existing.onsuccess = (e) => {
-						const record = e.target.result;
-
-						if (record) {
-							const songs = record.songs
-								? JSON.parse(record.songs)
-								: [];
-
-							songs.push(song.id);
-							record.songs = JSON.stringify(songs);
-
-							booksStore.put(record);
-						}
-					};
-				};
-
-				transaction.oncomplete = () => resolve(true);
-				transaction.onerror = (e) => reject(e);
-				transaction.onabort = (e) => reject(e);
-			} catch (e) {
-				reject(e);
-			}
+						await this.request(
+							booksStore.put(record)
+						);
+					}
+				})
+				.catch(reject);
 		});
-	}
-
-	/**
-	 * Get song data from indexedDB
-	 * @param {string} songId - A song ID
-	 * @returns {Promise<SongData>} - A promise that resolves with the song data
-	 * @returns {Promise<undefined>} - A promise that resolves with undefined if no song is found
-	 * @returns {Promise<Error>} - A promise that rejects with an error
-	*/
-	getSongData(songId) {
-		return new Promise(async (resolve, reject) => {
-			const db = await this.getDB()
-
-			try {
-				const transaction = db.transaction(['songs'], 'readwrite')
-				const store = transaction.objectStore('songs')
-				
-				const existing = store.get(songId)
-				
-				/** @type {SongData} */
-				let songData
-				existing.onsuccess = (e) => {
-					const record = e.target.result
-					if (!record) {
-						// Remove the song from the BandBook record
-						const booksTransaction = db.transaction(['books'], 'readwrite')
-						const booksStore = booksTransaction.objectStore('books')
-						
-						const existing = booksStore.get(this.bandbook.id)
-						existing.onsuccess = (e) => {
-							const record = e.target.result
-							if (record) {
-								const songs = JSON.parse(record.songs)
-								const updatedSongs = songs.filter(s => s !== songId)
-								record.songs = JSON.stringify(updatedSongs)
-								booksStore.put(record)
-							}
-						}
-					}
-
-					songData = record ? JSON.parse(record.data) : undefined
-					if (!songData) resolve(undefined)
-					
-					// Add the song ID to the song data
-					songData.id = songId
-
-					// Get src data
-					const srcStore = db.transaction(['songSrcs'], 'readwrite').objectStore('songSrcs')
-					const srcExisting = srcStore.get(songId)
-					srcExisting.onsuccess = (e) => {
-						const srcRecord = e.target.result
-						if (srcRecord) songData.src = srcRecord.src
-
-						// Get marker data
-						if (songData?.markers) {
-							const markerStore = db.transaction(['markers'], 'readwrite').objectStore('markers')
-							const markerData = songData.markers.map((markerId) => {
-								return new Promise((resolve, reject) => {
-									const markerExisting = markerStore.get(markerId)
-									markerExisting.onsuccess = (e) => {
-										const markerRecord = e.target.result
-										if (markerRecord) {
-											resolve(JSON.parse(markerRecord.data))
-										} else {
-											resolve(undefined)
-										}
-									}
-								})
-							})
-
-							Promise.all(markerData).then((markers) => {
-								// Remove duplicate markers (by id)
-								const uniqueMarkers = markers.filter(
-									(marker, index, self) => self.findIndex(m => m?.id === marker?.id) === index
-								)
-
-								songData.markers = uniqueMarkers
-								resolve(songData)
-							})
-
-						} else {
-							resolve(songData)
-						}
-					}
-
-				}
-			} catch (e) {
-				Sentry.captureException(error)
-				console.error('Error getting song data', e)
-				reject(e)
-			}
-		})
 	}
 
 	/**
@@ -519,56 +417,144 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	deleteSong(song) {
-		return new Promise(async (resolve, reject) => {
+		return new Promise((resolve, reject) => {
+			this.getDB()
+				.then(async (db) => {
+					const transaction = db.transaction(
+						["songs", "songSrcs", "markers", "books"],
+						"readwrite"
+					);
+
+					const songStore = transaction.objectStore("songs");
+					const srcStore = transaction.objectStore("songSrcs");
+					const markerStore = transaction.objectStore("markers");
+					const booksStore = transaction.objectStore("books");
+
+					transaction.oncomplete = () => resolve(true);
+					transaction.onerror = () => reject(transaction.error);
+					transaction.onabort = () => reject(transaction.error);
+
+					await this.request(
+						songStore.delete(song.id)
+					);
+
+					await this.request(
+						srcStore.delete(song.id)
+					);
+
+					for (const marker of song.markerList.markers) {
+						await this.request(
+							markerStore.delete(marker.id)
+						);
+					}
+
+					const record = await this.request(
+						booksStore.get(this.bandbook.id)
+					);
+
+					if (record) {
+						const songs = JSON.parse(record.songs);
+
+						record.songs = JSON.stringify(
+							songs.filter((s) => s !== song.id)
+						);
+
+						await this.request(
+							booksStore.put(record)
+						);
+					}
+				})
+				.catch(reject);
+		});
+	}
+
+	/**
+	 * Get song data from indexedDB
+	 * @param {string} songId - A song ID
+	 * @returns {Promise<SongData>} - A promise that resolves with the song data
+	 * @returns {Promise<undefined>} - A promise that resolves with undefined if no song is found
+	 * @returns {Promise<Error>} - A promise that rejects with an error
+	 */
+	async getSongData(songId) {
+		try {
 			const db = await this.getDB();
 
-			try {
-				const transaction = db.transaction(
-					["songs", "songSrcs", "markers", "books"],
-					"readwrite"
+			// Load the song metadata
+			const songStore = db
+				.transaction(["songs"], "readwrite")
+				.objectStore("songs");
+
+			const record = await this.request(songStore.get(songId));
+
+			if (!record) {
+				// Remove the song from the BandBook record
+				const booksStore = db
+					.transaction(["books"], "readwrite")
+					.objectStore("books");
+
+				const book = await this.request(
+					booksStore.get(this.bandbook.id)
 				);
 
-				const songStore = transaction.objectStore("songs");
-				const srcStore = transaction.objectStore("songSrcs");
-				const markerStore = transaction.objectStore("markers");
-				const booksStore = transaction.objectStore("books");
+				if (book) {
+					const songs = JSON.parse(book.songs);
+					book.songs = JSON.stringify(
+						songs.filter((s) => s !== songId)
+					);
 
-				const deleteRequest = songStore.delete(song.id);
+					await this.request(booksStore.put(book));
+				}
 
-				deleteRequest.onerror = (e) => reject(e);
-
-				deleteRequest.onsuccess = () => {
-					srcStore.delete(song.id);
-
-					song.markerList.markers.forEach((marker) => {
-						markerStore.delete(marker.id);
-					});
-
-					const existing = booksStore.get(this.bandbook.id);
-
-					existing.onerror = (e) => reject(e);
-
-					existing.onsuccess = (e) => {
-						const record = e.target.result;
-
-						if (record) {
-							const songs = JSON.parse(record.songs);
-							record.songs = JSON.stringify(
-								songs.filter((s) => s !== song.id)
-							);
-
-							booksStore.put(record);
-						}
-					};
-				};
-
-				transaction.oncomplete = () => resolve(true);
-				transaction.onerror = (e) => reject(e);
-				transaction.onabort = (e) => reject(e);
-			} catch (e) {
-				reject(e);
+				return undefined;
 			}
-		});
+
+			/** @type {SongData} */
+			const songData = JSON.parse(record.data);
+			songData.id = songId;
+
+			// Load source data
+			const srcStore = db
+				.transaction(["songSrcs"], "readwrite")
+				.objectStore("songSrcs");
+
+			const srcRecord = await this.request(
+				srcStore.get(songId)
+			);
+
+			if (srcRecord) {
+				songData.src = srcRecord.src;
+			}
+
+			// Load marker data
+			if (songData.markers?.length) {
+				const markerStore = db
+					.transaction(["markers"], "readwrite")
+					.objectStore("markers");
+
+				const markers = await Promise.all(
+					songData.markers.map(async (markerId) => {
+						const markerRecord = await this.request(
+							markerStore.get(markerId)
+						);
+
+						return markerRecord
+							? JSON.parse(markerRecord.data)
+							: undefined;
+					})
+				);
+
+				songData.markers = markers.filter(
+					(marker, index, self) =>
+						self.findIndex((m) => m?.id === marker?.id) === index
+				);
+			}
+
+			return songData;
+		} catch (e) {
+			Sentry.captureException(e);
+			console.error("Error getting song data", e);
+			throw e;
+		}
 	}
 
 	/**
@@ -578,21 +564,22 @@ export class SyncManager {
 	 * @returns {Promise<Boolean>} - A promise that resolves when the title is updated
 	 */
 	updateSongTitle(song, title) {
-		return this.withStore("songs", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(song.id);
+		return this.withStore("songs", "readwrite", async (store) => {
+			const record = await this.request(store.get(song.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.title = title;
-						store.put({ id: song.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
-			});
+			const data = JSON.parse(record.data);
+			data.title = title;
+
+			await this.request(
+				store.put({
+					id: song.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -603,21 +590,22 @@ export class SyncManager {
 	 * @returns {Promise<Boolean>} - A promise that resolves when the composer is updated
 	 */
 	updateSongComposer(song, composer) {
-		return this.withStore("songs", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(song.id);
+		return this.withStore("songs", "readwrite", async (store) => {
+			const record = await this.request(store.get(song.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.composer = composer;
-						store.put({ id: song.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
-			});
+			const data = JSON.parse(record.data);
+			data.composer = composer;
+
+			await this.request(
+				store.put({
+					id: song.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -628,21 +616,22 @@ export class SyncManager {
 	 * @returns {Promise<Boolean>} - A promise that resolves when the tempo is updated
 	 */
 	updateSongTempo(song, tempo) {
-		return this.withStore("songs", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(song.id);
+		return this.withStore("songs", "readwrite", async (store) => {
+			const record = await this.request(store.get(song.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.tempo = tempo;
-						store.put({ id: song.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
-			});
+			const data = JSON.parse(record.data);
+			data.tempo = tempo;
+
+			await this.request(
+				store.put({
+					id: song.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -653,21 +642,22 @@ export class SyncManager {
 	 * @returns {Promise<Boolean>} - A promise that resolves when the key is updated
 	 */
 	updateSongKey(song, key) {
-		return this.withStore("songs", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(song.id);
+		return this.withStore("songs", "readwrite", async (store) => {
+			const record = await this.request(store.get(song.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.key = key;
-						store.put({ id: song.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
-			});
+			const data = JSON.parse(record.data);
+			data.key = key;
+
+			await this.request(
+				store.put({
+					id: song.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -678,21 +668,22 @@ export class SyncManager {
 	 * @returns {Promise<Boolean>} - A promise that resolves when the time signature is updated
 	 */
 	updateSongTimeSignature(song, timeSignature) {
-		return this.withStore("songs", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(song.id);
+		return this.withStore("songs", "readwrite", async (store) => {
+			const record = await this.request(store.get(song.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.timeSignature = timeSignature;
-						store.put({ id: song.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
-			});
+			const data = JSON.parse(record.data);
+			data.timeSignature = timeSignature;
+
+			await this.request(
+				store.put({
+					id: song.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -703,21 +694,22 @@ export class SyncManager {
 	 * @returns {Promise<Boolean>} - A promise that resolves when the notes are updated
 	 */
 	updateSongNotes(song, notes) {
-		return this.withStore("songs", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(song.id);
+		return this.withStore("songs", "readwrite", async (store) => {
+			const record = await this.request(store.get(song.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.notes = notes;
-						store.put({ id: song.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
-			});
+			const data = JSON.parse(record.data);
+			data.notes = notes;
+
+			await this.request(
+				store.put({
+					id: song.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -728,21 +720,22 @@ export class SyncManager {
 	 * @returns {Promise<Boolean>} - A promise that resolves when the waveform volumes are updated
 	 */
 	updateSongWaveformVolumes(song, waveformVolumes) {
-		return this.withStore("songs", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(song.id);
+		return this.withStore("songs", "readwrite", async (store) => {
+			const record = await this.request(store.get(song.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.waveformVolumes = waveformVolumes;
-						store.put({ id: song.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
-			});
+			const data = JSON.parse(record.data);
+			data.waveformVolumes = waveformVolumes;
+
+			await this.request(
+				store.put({
+					id: song.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -754,13 +747,15 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	updateSongSrc(song, src) {
-		return this.withStore("songSrcs", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const request = store.put({ id: song.id, src });
+		return this.withStore("songSrcs", "readwrite", async (store) => {
+			await this.request(
+				store.put({
+					id: song.id,
+					src
+				})
+			);
 
-				request.onsuccess = () => resolve(true);
-				request.onerror = (e) => reject(e);
-			});
+			return true;
 		});
 	}
 
@@ -771,50 +766,41 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	createMarker(marker) {
-		return new Promise(async (resolve, reject) => {
-			const db = await this.getDB();
+		return new Promise((resolve, reject) => {
+			this.getDB()
+				.then(async (db) => {
+					const transaction = db.transaction(["markers", "songs"], "readwrite");
+					const markerStore = transaction.objectStore("markers");
+					const songStore = transaction.objectStore("songs");
 
-			try {
-				const transaction = db.transaction(["markers", "songs"], "readwrite");
-				const markerStore = transaction.objectStore("markers");
-				const songStore = transaction.objectStore("songs");
+					transaction.oncomplete = () => resolve(true);
+					transaction.onerror = () => reject(transaction.error);
+					transaction.onabort = () => reject(transaction.error);
 
-				const addRequest = markerStore.add({
-					id: marker.id,
-					data: JSON.stringify(marker.getData())
-				});
+					await this.request(
+						markerStore.add({
+							id: marker.id,
+							data: JSON.stringify(marker.getData())
+						})
+					);
 
-				addRequest.onerror = (e) => {
-					console.error("Error adding marker", e);
-					reject(e);
-				};
+					const record = await this.request(
+						songStore.get(marker.song.id)
+					);
 
-				addRequest.onsuccess = () => {
-					const existing = songStore.get(marker.song.id);
+					if (record) {
+						const data = JSON.parse(record.data);
+						data.markers.push(marker.id);
 
-					existing.onerror = (e) => reject(e);
-
-					existing.onsuccess = (e) => {
-						const record = e.target.result;
-
-						if (record) {
-							const data = JSON.parse(record.data);
-							data.markers.push(marker.id);
-
+						await this.request(
 							songStore.put({
 								id: marker.song.id,
 								data: JSON.stringify(data)
-							});
-						}
-					};
-				};
-
-				transaction.oncomplete = () => resolve(true);
-				transaction.onerror = (e) => reject(e);
-				transaction.onabort = (e) => reject(e);
-			} catch (e) {
-				reject(e);
-			}
+							})
+						);
+					}
+				})
+				.catch(reject);
 		});
 	}
 
@@ -825,20 +811,9 @@ export class SyncManager {
 	 * @returns {Promise<undefined>} - A promise that resolves with undefined if no marker is found
 	 */
 	getMarkerData(markerId) {
-		return this.withStore("markers", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(markerId);
-
-				existing.onsuccess = (e) => {
-					const record = e.target.result;
-
-					if (record) {
-						resolve(JSON.parse(record.data));
-					} else {
-						resolve(undefined);
-					}
-				};
-			});
+		return this.withStore("markers", "readwrite", async (store) => {
+			const record = await this.request(store.get(markerId));
+			return record ? JSON.parse(record.data) : undefined;
 		});
 	}
 
@@ -849,44 +824,38 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	deleteMarker(marker) {
-		return new Promise(async (resolve, reject) => {
-			const db = await this.getDB();
+		return new Promise((resolve, reject) => {
+			this.getDB()
+				.then(async (db) => {
+					const transaction = db.transaction(["markers", "songs"], "readwrite");
+					const markerStore = transaction.objectStore("markers");
+					const songStore = transaction.objectStore("songs");
 
-			try {
-				const transaction = db.transaction(["markers", "songs"], "readwrite");
-				const markerStore = transaction.objectStore("markers");
-				const songStore = transaction.objectStore("songs");
+					transaction.oncomplete = () => resolve(true);
+					transaction.onerror = () => reject(transaction.error);
+					transaction.onabort = () => reject(transaction.error);
 
-				const deleteRequest = markerStore.delete(marker.id);
+					await this.request(
+						markerStore.delete(marker.id)
+					);
 
-				deleteRequest.onerror = (e) => reject(e);
+					const record = await this.request(
+						songStore.get(marker.song.id)
+					);
 
-				deleteRequest.onsuccess = () => {
-					const existing = songStore.get(marker.song.id);
+					if (record) {
+						const data = JSON.parse(record.data);
+						data.markers = data.markers.filter((m) => m !== marker.id);
 
-					existing.onerror = (e) => reject(e);
-
-					existing.onsuccess = (e) => {
-						const record = e.target.result;
-
-						if (record) {
-							const data = JSON.parse(record.data);
-							data.markers = data.markers.filter((m) => m !== marker.id);
-
+						await this.request(
 							songStore.put({
 								id: marker.song.id,
 								data: JSON.stringify(data)
-							});
-						}
-					};
-				};
-
-				transaction.oncomplete = () => resolve(true);
-				transaction.onerror = (e) => reject(e);
-				transaction.onabort = (e) => reject(e);
-			} catch (e) {
-				reject(e);
-			}
+							})
+						);
+					}
+				})
+				.catch(reject);
 		});
 	}
 
@@ -897,21 +866,22 @@ export class SyncManager {
 	 * @returns {Promise<Boolean>} - A promise that resolves when the title is updated
 	 */
 	updateMarkerTitle(marker, title) {
-		return this.withStore("markers", "readwrite", (store) => {
-			return new Promise((resolve) => {
-				const existing = store.get(marker.id);
+		return this.withStore("markers", "readwrite", async (store) => {
+			const record = await this.request(store.get(marker.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.title = title;
-						store.put({ id: marker.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
-			});
+			const data = JSON.parse(record.data);
+			data.title = title;
+
+			await this.request(
+				store.put({
+					id: marker.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -923,23 +893,22 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	updateMarkerNotes(marker, notes) {
-		return this.withStore("markers", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const existing = store.get(marker.id);
+		return this.withStore("markers", "readwrite", async (store) => {
+			const record = await this.request(store.get(marker.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.notes = notes;
-						store.put({ id: marker.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
+			const data = JSON.parse(record.data);
+			data.notes = notes;
 
-				existing.onerror = (e) => reject(e);
-			});
+			await this.request(
+				store.put({
+					id: marker.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -951,23 +920,22 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	updateMarkerTime(marker, time) {
-		return this.withStore("markers", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const existing = store.get(marker.id);
+		return this.withStore("markers", "readwrite", async (store) => {
+			const record = await this.request(store.get(marker.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
-						data.time = time;
-						store.put({ id: marker.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
+			const data = JSON.parse(record.data);
+			data.time = time;
 
-				existing.onerror = (e) => reject(e);
-			});
+			await this.request(
+				store.put({
+					id: marker.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -979,28 +947,27 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	updateMarkerTags(marker, tags) {
-		return this.withStore("markers", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const existing = store.get(marker.id);
+		return this.withStore("markers", "readwrite", async (store) => {
+			const record = await this.request(store.get(marker.id));
 
-				existing.onsuccess = () => {
-					const record = existing.result;
+			if (!record) return false;
 
-					if (record) {
-						const data = JSON.parse(record.data);
+			const data = JSON.parse(record.data);
 
-						if (typeof tags[0] !== "string") {
-							tags = tags.map((tag) => tag.name);
-						}
+			if (typeof tags[0] !== "string") {
+				tags = tags.map((tag) => tag.name);
+			}
 
-						data.tags = tags;
-						store.put({ id: marker.id, data: JSON.stringify(data) });
-						resolve(true);
-					}
-				};
+			data.tags = tags;
 
-				existing.onerror = (e) => reject(e);
-			});
+			await this.request(
+				store.put({
+					id: marker.id,
+					data: JSON.stringify(data)
+				})
+			);
+
+			return true;
 		});
 	}
 
@@ -1010,13 +977,8 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	getTags() {
-		return this.withStore("tags", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const all = store.getAll();
-
-				all.onsuccess = (e) => resolve(e.target.result);
-				all.onerror = (e) => reject(e);
-			});
+		return this.withStore("tags", "readwrite", async (store) => {
+			return await this.request(store.getAll());
 		});
 	}
 
@@ -1027,24 +989,19 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	addTag(tag) {
-		return this.withStore("tags", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				// Check if the tag already exists
-				const existing = store.get(tag);
+		return this.withStore("tags", "readwrite", async (store) => {
+			// Check if the tag already exists
+			const existing = await this.request(store.get(tag));
 
-				existing.onsuccess = (e) => {
-					const record = e.target.result;
+			if (!existing) {
+				await this.request(
+					store.add({
+						name: tag
+					})
+				);
+			}
 
-					if (record) {
-						resolve(true);
-					} else {
-						const request = store.add({ name: tag });
-
-						request.onsuccess = () => resolve(true);
-						request.onerror = (e) => reject(e);
-					}
-				};
-			});
+			return true;
 		});
 	}
 
@@ -1055,13 +1012,9 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	removeTag(tag) {
-		return this.withStore("tags", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const request = store.delete(tag);
-
-				request.onsuccess = () => resolve(true);
-				request.onerror = (e) => reject(e);
-			});
+		return this.withStore("tags", "readwrite", async (store) => {
+			await this.request(store.delete(tag));
+			return true;
 		});
 	}
 
@@ -1071,22 +1024,9 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	loadSettings() {
-		return this.withStore("settings", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const existing = store.get("settings");
-
-				existing.onsuccess = (e) => {
-					const record = e.target.result;
-
-					if (record) {
-						resolve(record.data);
-					} else {
-						resolve({});
-					}
-				};
-
-				existing.onerror = (e) => reject(e);
-			});
+		return this.withStore("settings", "readwrite", async (store) => {
+			const record = await this.request(store.get("settings"));
+			return record ? record.data : {};
 		});
 	}
 
@@ -1097,13 +1037,15 @@ export class SyncManager {
 	 * @returns {Promise<Error>} - A promise that rejects with an error
 	 */
 	saveSettings(settings) {
-		return this.withStore("settings", "readwrite", (store) => {
-			return new Promise((resolve, reject) => {
-				const request = store.put({ id: "settings", data: settings });
+		return this.withStore("settings", "readwrite", async (store) => {
+			await this.request(
+				store.put({
+					id: "settings",
+					data: settings
+				})
+			);
 
-				request.onsuccess = () => resolve(true);
-				request.onerror = (e) => reject(e);
-			});
+			return true;
 		});
 	}
 }
