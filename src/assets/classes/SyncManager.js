@@ -73,6 +73,7 @@ export class SyncManager {
 		try {
 			bandBookObj = JSON.parse(bandBookJSON)
 		} catch (e) {
+			Sentry.captureException(error)
 			console.error('Error parsing JSON', e)
 			return
 		}
@@ -102,6 +103,7 @@ export class SyncManager {
 			this.bandbook.id = bandBookObj.id
 			this.bandbook.init(bandBookObj.songs)
 		} catch (e) {
+			Sentry.captureException(error)
 			console.error('Error creating BandBook record', e)
 		}
 	}
@@ -404,6 +406,7 @@ export class SyncManager {
 
 					}
 				} catch (e) {
+					Sentry.captureException(error)
 					console.error('Error getting song data', e)
 					reject(e)
 				}

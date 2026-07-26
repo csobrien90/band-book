@@ -84,6 +84,7 @@ export class Song {
 					// TODO: fix large src conversion
 				}
 			} catch (error) {
+				Sentry.captureException(error)
 				new Notification(error, "error")
 				src = new ArrayBuffer()
 			}

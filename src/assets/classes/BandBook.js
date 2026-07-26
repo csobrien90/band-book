@@ -107,6 +107,7 @@ export class BandBook {
       const data = await this.syncManager.loadBandBook()
       await this.init(data || [])
     } catch (error) {
+      Sentry.captureException(error)
       console.error("Error loading BandBook:", error)
       new Notification("Error loading saved data. Starting fresh.", "error", true)
       await this.init([])
@@ -565,6 +566,7 @@ export class BandBook {
         return;
       }
     } catch (error) {
+      Sentry.captureException(error)
       new Notification("Error exporting BandBook data", "error", false)
       return
     }
@@ -607,6 +609,7 @@ export class BandBook {
       const stringifiedData = JSON.stringify(data, null, 2)
       return stringifiedData
     } catch (error) {
+      Sentry.captureException(error)
       throw new Error("Error stringifying BandBook data: " + error.message)
     }
   }
@@ -778,6 +781,7 @@ export class BandBook {
           */
           navigator.sendBeacon(`${AUTH_API_BASE}/data`, data)
         } catch (error) {
+          Sentry.captureException(error)
           console.error("Error saving BandBook data on visibility change:", error)
         }
       }

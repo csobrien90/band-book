@@ -168,6 +168,8 @@ export class AuthManager {
 					const data = await res.json()
 					this.bandbook.init(data?.songs)
 				} catch (e) {
+					Sentry.captureException(error)
+
 					return new Notification("Failed to load user data after login", "error");
 				}
 			}

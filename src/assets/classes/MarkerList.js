@@ -278,6 +278,7 @@ export class MarkerList {
 				}
 				this.makeSegmentIntoNewSong(...bounds)
 			} catch (error) {
+				Sentry.captureException(error)
 				new Notification(
 					'Error: Unable to create new song from segment',
 					'error'
@@ -489,6 +490,7 @@ export class MarkerList {
 					this.song.bandbook.syncManager.createMarker(marker)
 				})
 			} catch (error) {
+				Sentry.captureException(error)
 				new Notification(
 					'Error: Unable to create new song from segment',
 					'error'
@@ -575,6 +577,7 @@ export class MarkerList {
 					this.song.updateSrc(clipSrc)
 					await this.song.bandbook.syncManager.updateSongSrc(this.song, clipSrc)
 				} catch (error) {
+					Sentry.captureException(error)
 					new Notification(
 						'Error: Unable to delete time range',
 						'error'

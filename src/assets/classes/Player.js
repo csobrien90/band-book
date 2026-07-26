@@ -531,7 +531,8 @@ export class Player {
 			resolve(null);
 		}
 		} catch (error) {
-		reject(error);
+			Sentry.captureException(error);
+			reject(error);
 		}
 	});
 	}
@@ -579,6 +580,7 @@ export class Player {
 					console.error('Error closing audio context:', error)
 				})
 			} catch (error) {
+				Sentry.captureException(error)
 				reject(error)
 			} finally {() => {
 				audioContext.close().catch(error => {
